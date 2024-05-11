@@ -1,0 +1,1 @@
+A Clipboard History manager like Clipboard History from Windows
