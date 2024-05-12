@@ -1,1 +1,4 @@
 clipboard_history.txt
+clipboard_history.json
+
+venv/*
