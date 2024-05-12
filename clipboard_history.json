@@ -1,0 +1,14 @@
+[
+  {
+    "content": "handle_stack_update\n"
+  },
+  {
+    "content": "mainloop\n"
+  },
+  {
+    "content": "check_for_updates\n"
+  },
+  {
+    "content": "def update_text_widget(text_widget, stack):\n    # Get the current contents of the text widget\n    current_contents = text_widget.get(\"1.0\", tk.END).strip()\n    # Generate the contents that should be displayed from the stack\n    new_contents = \"\n\".join(stack)\n    # Only update if there are changes\n    if current_contents != new_contents:\n        text_widget.delete(\"1.0\", tk.END)  # Clear the existing content\n        text_widget.insert(tk.END, new_contents)  # Display the stack in reverse order\n\ndef display_ui():\n    root = tk.Tk()\n    root.title(\"Clipboard History\")\n\n    # Get the screen width and height\n    screen_width = root.winfo_screenwidth()\n    screen_height = root.winfo_screenheight()\n\n    # Set window size and position (bottom right)\n    window_width, window_height = 300, 400\n    x = screen_width - window_width\n    y = screen_height - window_height\n\n    # Set window properties\n    root.geometry(f'{window_width}x{window_height}+{x}+{y}')\n\n    # Create and configure a Text widget for multi-line text display\n    text_widget = tk.Text(root, font=('Arial', 12), width=50, height=20, wrap=tk.WORD)\n    text_widget.pack(pady=10, padx=10, expand=True, fill=tk.BOTH)\n\n    # Function to check for updates in the clipboard history\n    def check_for_updates():\n        # Load clipboard history into a stack\n        stack = load_clipboard_history()\n        # Update the text widget with the new stack\n        update_text_widget(text_widget, stack)\n        # Schedule this function to run again after 500 milliseconds\n        root.after(500, check_for_updates)\n\n    # Start checking for updates\n    check_for_updates()\n\n    # Start the GUI event loop\n    root.mainloop()\n"
+  }
+]

@@ -1,21 +1,26 @@
 import tkinter as tk
 import os
+import json
 
 def load_clipboard_history():
-    clipboardPath = os.path.expanduser("~/GitHub/ClipboardHistory/clipboard_history.txt")
+    clipboardPath = os.path.expanduser("~/GitHub/ClipboardHistory/clipboard_history.json")
     try:
         with open(clipboardPath, "r") as file:
-            return [line.strip() for line in file.readlines() if line.strip()]
-    except FileNotFoundError:
+            data = json.load(file)
+            # Load data into a stack, latest entry last
+            return [item['content'] for item in reversed(data)]  # Reverse to make latest entry first
+    except (FileNotFoundError, json.JSONDecodeError):
         return []
 
-def update_text_widget(text_widget):
-    stack = load_clipboard_history()
-    current_content = text_widget.get("1.0", tk.END).strip()
-    new_content = "\n".join(reversed(stack))
-    if current_content != new_content:
+def update_text_widget(text_widget, stack):
+    # Get the current contents of the text widget
+    current_contents = text_widget.get("1.0", tk.END).strip()
+    # Generate the contents that should be displayed from the stack
+    new_contents = "\n".join(stack)
+    # Only update if there are changes
+    if current_contents != new_contents:
         text_widget.delete("1.0", tk.END)  # Clear the existing content
-        text_widget.insert(tk.END, new_content)  # Display the stack in reverse order
+        text_widget.insert(tk.END, new_contents)  # Display the stack in reverse order
 
 def display_ui():
     root = tk.Tk()
@@ -37,15 +42,17 @@ def display_ui():
     text_widget = tk.Text(root, font=('Arial', 12), width=50, height=20, wrap=tk.WORD)
     text_widget.pack(pady=10, padx=10, expand=True, fill=tk.BOTH)
 
-    # Initially populate the text widget
-    update_text_widget(text_widget)
+    # Function to check for updates in the clipboard history
+    def check_for_updates():
+        # Load clipboard history into a stack
+        stack = load_clipboard_history()
+        # Update the text widget with the new stack
+        update_text_widget(text_widget, stack)
+        # Schedule this function to run again after 500 milliseconds
+        root.after(500, check_for_updates)
 
-    # Schedule the text widget to be updated every 500 milliseconds
-    def schedule_update():
-        update_text_widget(text_widget)
-        root.after(500, schedule_update)  # Reschedule the update
-
-    schedule_update()  # Start the periodic update
+    # Start checking for updates
+    check_for_updates()
 
     # Start the GUI event loop
     root.mainloop()
