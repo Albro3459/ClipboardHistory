@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-basePath="$HOME/GitHub/ClipboardHistory"
+basePath="$HOME/GitHub/ClipboardHistory/old_shell_+_python"
 
 clipboard_history_file="$basePath/clipboard_history.json"
 
