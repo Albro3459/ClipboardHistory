@@ -11,7 +11,6 @@ import Cocoa
 class ClipboardMonitor: ObservableObject {
     private var checkTimer: Timer?
     private var lastChangeCount: Int = NSPasteboard.general.changeCount
-    @Published var clipboardItems: [String] = [] // Example property
     
     func startMonitoring() {
         checkTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(checkClipboard), userInfo: nil, repeats: true)
