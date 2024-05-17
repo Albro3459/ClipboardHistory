@@ -19,8 +19,8 @@ while true; do
 
     currentTime=$(date +%s)
 
-    if (( currentTime - startTime > 600 )); then
-        echo "10 minutes have elapsed. Exiting."
+    if (( currentTime - startTime > 6000 )); then
+        echo "100 minutes have elapsed. Exiting."
         break
     fi
 

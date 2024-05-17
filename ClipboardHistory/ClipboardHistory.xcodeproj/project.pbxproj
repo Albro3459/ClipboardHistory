@@ -16,6 +16,9 @@
 		6072ABD22BF3157B0091E218 /* ClipboardHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABD12BF3157B0091E218 /* ClipboardHistoryTests.swift */; };
 		6072ABDC2BF3157B0091E218 /* ClipboardHistoryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABDB2BF3157B0091E218 /* ClipboardHistoryUITests.swift */; };
 		6072ABDE2BF3157B0091E218 /* ClipboardHistoryUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABDD2BF3157B0091E218 /* ClipboardHistoryUITestsLaunchTests.swift */; };
+		6072ABEC2BF7D3910091E218 /* ClipboardItem+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABEA2BF7D3910091E218 /* ClipboardItem+CoreDataClass.swift */; };
+		6072ABED2BF7D3910091E218 /* ClipboardItem+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABEB2BF7D3910091E218 /* ClipboardItem+CoreDataProperties.swift */; };
+		6072ABEF2BF7D6CF0091E218 /* ClipboardMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABEE2BF7D6CF0091E218 /* ClipboardMonitor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +52,9 @@
 		6072ABD72BF3157B0091E218 /* ClipboardHistoryUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClipboardHistoryUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6072ABDB2BF3157B0091E218 /* ClipboardHistoryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryUITests.swift; sourceTree = "<group>"; };
 		6072ABDD2BF3157B0091E218 /* ClipboardHistoryUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		6072ABEA2BF7D3910091E218 /* ClipboardItem+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipboardItem+CoreDataClass.swift"; sourceTree = "<group>"; };
+		6072ABEB2BF7D3910091E218 /* ClipboardItem+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipboardItem+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		6072ABEE2BF7D6CF0091E218 /* ClipboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMonitor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +105,7 @@
 		6072ABB92BF3157A0091E218 /* ClipboardHistory */ = {
 			isa = PBXGroup;
 			children = (
+				6072ABF02BF7DD4A0091E218 /* Model */,
 				6072ABBA2BF3157A0091E218 /* ClipboardHistoryApp.swift */,
 				6072ABBC2BF3157A0091E218 /* ContentView.swift */,
 				6072ABBE2BF3157B0091E218 /* Assets.xcassets */,
@@ -106,6 +113,7 @@
 				6072ABC82BF3157B0091E218 /* ClipboardHistory.entitlements */,
 				6072ABC52BF3157B0091E218 /* ClipboardHistory.xcdatamodeld */,
 				6072ABC02BF3157B0091E218 /* Preview Content */,
+				6072ABEE2BF7D6CF0091E218 /* ClipboardMonitor.swift */,
 			);
 			path = ClipboardHistory;
 			sourceTree = "<group>";
@@ -133,6 +141,15 @@
 				6072ABDD2BF3157B0091E218 /* ClipboardHistoryUITestsLaunchTests.swift */,
 			);
 			path = ClipboardHistoryUITests;
+			sourceTree = "<group>";
+		};
+		6072ABF02BF7DD4A0091E218 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				6072ABEA2BF7D3910091E218 /* ClipboardItem+CoreDataClass.swift */,
+				6072ABEB2BF7D3910091E218 /* ClipboardItem+CoreDataProperties.swift */,
+			);
+			path = Model;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -266,6 +283,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				6072ABC42BF3157B0091E218 /* Persistence.swift in Sources */,
+				6072ABEF2BF7D6CF0091E218 /* ClipboardMonitor.swift in Sources */,
+				6072ABEC2BF7D3910091E218 /* ClipboardItem+CoreDataClass.swift in Sources */,
+				6072ABED2BF7D3910091E218 /* ClipboardItem+CoreDataProperties.swift in Sources */,
 				6072ABBD2BF3157A0091E218 /* ContentView.swift in Sources */,
 				6072ABBB2BF3157A0091E218 /* ClipboardHistoryApp.swift in Sources */,
 				6072ABC72BF3157B0091E218 /* ClipboardHistory.xcdatamodeld in Sources */,

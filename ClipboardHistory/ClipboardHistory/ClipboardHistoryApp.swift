@@ -10,11 +10,15 @@ import SwiftUI
 @main
 struct ClipboardHistoryApp: App {
     let persistenceController = PersistenceController.shared
+    let clipboardMonitor = ClipboardMonitor()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .onAppear {
+                    clipboardMonitor.startMonitoring()
+                }
         }
     }
 }
