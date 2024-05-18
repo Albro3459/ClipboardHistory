@@ -8,6 +8,60 @@
 import SwiftUI
 import CoreData
 
+//struct ContentView: View {
+//    @Environment(\.managedObjectContext) private var viewContext
+//
+//    @FetchRequest(
+//        entity: ClipboardItem.entity(),
+//        sortDescriptors: [NSSortDescriptor(keyPath: \ClipboardItem.timestamp, ascending: false)],
+//        animation: .default)
+//    private var clipboardItems: FetchedResults<ClipboardItem>
+//
+//    @State private var showingClearAlert = false
+//
+//    var body: some View {
+//        VStack {
+//            VStack {
+//                ScrollViewReader { scrollProxy in
+//                    List {
+//                        ForEach(clipboardItems, id: \.self) { item in
+//                            ClipboardItemView(item: item)
+//                                .id(item.objectID)
+//                        }
+//                    }
+//                }
+//                Spacer()
+//            }
+//            Button("Clear All") {
+//                showingClearAlert = true
+//            }
+//            .buttonStyle(BorderlessButtonStyle())
+//            .padding()
+//            .alert(isPresented: $showingClearAlert) {
+//                Alert(
+//                    title: Text("Confirm Clear"),
+//                    message: Text("Are you sure you want to clear all clipboard items?"),
+//                    primaryButton: .destructive(Text("Clear")) {
+//                        clearClipboardItems()
+//                    },
+//                    secondaryButton: .cancel()
+//                )
+//            }
+//        }
+//    }
+//
+//    private func clearClipboardItems() {
+//        for item in clipboardItems {
+//            viewContext.delete(item)
+//        }
+//        do {
+//            try viewContext.save()
+//        } catch {
+//            print("Error saving managed object context: \(error)")
+//        }
+//    }
+//}
+
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
@@ -17,21 +71,34 @@ struct ContentView: View {
         animation: .default)
     private var clipboardItems: FetchedResults<ClipboardItem>
 
+    @State private var lastItemID: NSManagedObjectID?
     @State private var showingClearAlert = false
 
     var body: some View {
         VStack {
-            VStack {
-                ScrollViewReader { scrollProxy in
-                    List {
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    VStack {
                         ForEach(clipboardItems, id: \.self) { item in
                             ClipboardItemView(item: item)
                                 .id(item.objectID)
+                                .padding(.leading, 10)
+                        }
+                    }
+                    .onAppear {
+                        lastItemID = clipboardItems.first?.objectID
+                    }
+                    .onChange(of: clipboardItems.count) { _, newCount in
+                        if let newID = clipboardItems.first?.objectID, newID != lastItemID {
+                            lastItemID = newID
+                            withAnimation {
+                                scrollProxy.scrollTo(newID, anchor: .bottom)
+                            }
                         }
                     }
                 }
-                Spacer()
             }
+            Spacer()
             Button("Clear All") {
                 showingClearAlert = true
             }
@@ -68,7 +135,7 @@ struct ClipboardItemView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
     @State private var showingClearAlert = false
-
+    
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 5) {
@@ -105,7 +172,7 @@ struct ClipboardItemView: View {
                 )
             }
         }
-        .padding(.vertical, 1)
+        .padding(.vertical, 4)
     }
 
     private func copyToClipboard(content: String?) {

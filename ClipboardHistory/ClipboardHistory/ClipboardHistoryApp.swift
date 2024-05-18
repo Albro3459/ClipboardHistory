@@ -62,7 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         DispatchQueue.main.async {
             if let window = self.window {
-                if !window.isVisible {
+                if !window.isKeyWindow {
                     window.makeKeyAndOrderFront(nil)
                     window.collectionBehavior = .canJoinAllSpaces
                     NSApplication.shared.activate(ignoringOtherApps: true)
@@ -88,7 +88,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
             window.setFrame(frame, display: true)
-            window.level = .floating
+//            window.level = .floating
             window.collectionBehavior = .canJoinAllSpaces
             self.window = window
         }
