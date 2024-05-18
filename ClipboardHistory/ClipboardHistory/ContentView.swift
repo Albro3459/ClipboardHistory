@@ -32,7 +32,6 @@ struct ContentView: View {
                 }
                 Spacer()
             }
-            Spacer()
             Button("Clear All") {
                 showingClearAlert = true
             }
@@ -67,6 +66,8 @@ struct ContentView: View {
 struct ClipboardItemView: View {
     var item: ClipboardItem
     @Environment(\.managedObjectContext) private var viewContext
+    
+    @State private var showingClearAlert = false
 
     var body: some View {
         HStack {
@@ -86,8 +87,25 @@ struct ClipboardItemView: View {
                 Image(systemName: "doc.on.doc")
             }
             .buttonStyle(BorderlessButtonStyle())
+            Button(action: {
+                showingClearAlert = true
+            }) {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(BorderlessButtonStyle())
+            .padding()
+            .alert(isPresented: $showingClearAlert) {
+                Alert(
+                    title: Text("Confirm Delete"),
+                    message: Text("Are you sure you want to delete this clipboard item?"),
+                    primaryButton: .destructive(Text("Delete")) {
+                        self.deleteItem(item: self.item)
+                    },
+                    secondaryButton: .cancel()
+                )
+            }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 1)
     }
 
     private func copyToClipboard(content: String?) {
@@ -95,6 +113,15 @@ struct ClipboardItemView: View {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(content, forType: .string)
+    }
+    
+    private func deleteItem(item: ClipboardItem) {
+        viewContext.delete(item)
+        do {
+            try viewContext.save()
+        } catch {
+            print("Error saving managed object context: \(error)")
+        }
     }
 }
 

@@ -7,6 +7,7 @@
 
 import Combine
 import Cocoa
+import CoreData
 
 class ClipboardMonitor: ObservableObject {
     private var checkTimer: Timer?
@@ -27,24 +28,39 @@ class ClipboardMonitor: ObservableObject {
     }
     
     private func processDataFromClipboard() {
-            DispatchQueue.main.async {
-                let pasteboard = NSPasteboard.general
-                if let content = pasteboard.string(forType: .string) {
-                    let newClipboardItem = ClipboardItem(context: PersistenceController.shared.container.viewContext)
+        DispatchQueue.main.async {
+            let pasteboard = NSPasteboard.general
+            if let content = pasteboard.string(forType: .string) {
+                let context = PersistenceController.shared.container.viewContext
+
+                // Wrap database operations within a perform block for atomic execution
+                context.perform {
+                    let newClipboardItem = ClipboardItem(context: context)
                     newClipboardItem.content = content
                     newClipboardItem.timestamp = Date()
                     newClipboardItem.type = "text"
-                    
+
+                    // Manage clipboard item limit
+                    let fetchRequest: NSFetchRequest<ClipboardItem> = ClipboardItem.fetchRequest()
+                    fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: true)]
+
+                    if let items = try? context.fetch(fetchRequest), items.count >= 30 {
+                        context.delete(items.first!) // Delete the oldest item
+                    }
+
+                    // Attempt to save the context with changes
                     do {
-                        try PersistenceController.shared.container.viewContext.save()
+                        try context.save()
                     } catch {
-                        print("Failed to save clipboard item: \(error)")
+                        print("Failed to save context after updating clipboard items: \(error)")
                     }
                 }
             }
         }
+    }
     
     deinit {
         checkTimer?.invalidate()
     }
 }
+
