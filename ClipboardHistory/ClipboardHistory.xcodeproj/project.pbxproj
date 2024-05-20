@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		60368B622BFAD56D0096A21D /* backupContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60368B612BFAD56D0096A21D /* backupContentView.swift */; };
-		6061924D2BF91DE500C3BD34 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 6061924C2BF91DE500C3BD34 /* HotKey */; };
 		606192502BF923D700C3BD34 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 6061924F2BF923D700C3BD34 /* KeyboardShortcuts */; };
 		6072ABBB2BF3157A0091E218 /* ClipboardHistoryApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABBA2BF3157A0091E218 /* ClipboardHistoryApp.swift */; };
 		6072ABBD2BF3157A0091E218 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABBC2BF3157A0091E218 /* ContentView.swift */; };
@@ -22,7 +21,6 @@
 		6072ABEC2BF7D3910091E218 /* ClipboardItem+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABEA2BF7D3910091E218 /* ClipboardItem+CoreDataClass.swift */; };
 		6072ABED2BF7D3910091E218 /* ClipboardItem+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABEB2BF7D3910091E218 /* ClipboardItem+CoreDataProperties.swift */; };
 		6072ABEF2BF7D6CF0091E218 /* ClipboardMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABEE2BF7D6CF0091E218 /* ClipboardMonitor.swift */; };
-		60FCB8712BF809D200221509 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 60FCB8702BF809D200221509 /* Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,7 +58,6 @@
 		6072ABEA2BF7D3910091E218 /* ClipboardItem+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipboardItem+CoreDataClass.swift"; sourceTree = "<group>"; };
 		6072ABEB2BF7D3910091E218 /* ClipboardItem+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipboardItem+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		6072ABEE2BF7D6CF0091E218 /* ClipboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMonitor.swift; sourceTree = "<group>"; };
-		60FCB8702BF809D200221509 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		60FCB8722BF80BB700221509 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -69,7 +66,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6061924D2BF91DE500C3BD34 /* HotKey in Frameworks */,
 				606192502BF923D700C3BD34 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -94,7 +90,6 @@
 		6072ABAE2BF3157A0091E218 = {
 			isa = PBXGroup;
 			children = (
-				60FCB8702BF809D200221509 /* Info.plist */,
 				6072ABB92BF3157A0091E218 /* ClipboardHistory */,
 				6072ABD02BF3157B0091E218 /* ClipboardHistoryTests */,
 				6072ABDA2BF3157B0091E218 /* ClipboardHistoryUITests */,
@@ -181,7 +176,6 @@
 			);
 			name = ClipboardHistory;
 			packageProductDependencies = (
-				6061924C2BF91DE500C3BD34 /* HotKey */,
 				6061924F2BF923D700C3BD34 /* KeyboardShortcuts */,
 			);
 			productName = ClipboardHistory;
@@ -257,7 +251,6 @@
 			);
 			mainGroup = 6072ABAE2BF3157A0091E218;
 			packageReferences = (
-				6061924B2BF91DE500C3BD34 /* XCRemoteSwiftPackageReference "HotKey" */,
 				6061924E2BF923D700C3BD34 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 			);
 			productRefGroup = 6072ABB82BF3157A0091E218 /* Products */;
@@ -278,7 +271,6 @@
 			files = (
 				6072ABC22BF3157B0091E218 /* Preview Assets.xcassets in Resources */,
 				6072ABBF2BF3157B0091E218 /* Assets.xcassets in Resources */,
-				60FCB8712BF809D200221509 /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -643,14 +635,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		6061924B2BF91DE500C3BD34 /* XCRemoteSwiftPackageReference "HotKey" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/soffes/HotKey";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 		6061924E2BF923D700C3BD34 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
@@ -662,11 +646,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		6061924C2BF91DE500C3BD34 /* HotKey */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 6061924B2BF91DE500C3BD34 /* XCRemoteSwiftPackageReference "HotKey" */;
-			productName = HotKey;
-		};
 		6061924F2BF923D700C3BD34 /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 6061924E2BF923D700C3BD34 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
