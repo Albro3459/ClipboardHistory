@@ -6,13 +6,7 @@
 
 * once running, it can be opened and closed with cmd + shift + c
 
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
+<!-- <br />
 
 ##### OLD:
 
@@ -32,4 +26,4 @@ pip install pyperclip ## to install pyperclip
 to deactivate:
 ```sh
 source deactivate
-```
+``` -->
