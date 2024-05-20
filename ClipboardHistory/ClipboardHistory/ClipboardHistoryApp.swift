@@ -26,6 +26,7 @@ struct ClipboardHistoryApp: App {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
+//                .environmentObject(clipboardMonitor!)
         }
         //        .commands {
         //            SidebarCommands()
@@ -37,7 +38,7 @@ struct ClipboardHistoryApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow?
     private var lastToggleTime: Date?
-    
+        
     override init() {
         super.init()
         setupGlobalHotKey()

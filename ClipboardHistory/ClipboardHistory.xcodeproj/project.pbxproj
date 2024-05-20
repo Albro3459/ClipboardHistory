@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		60368B622BFAD56D0096A21D /* backupContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60368B612BFAD56D0096A21D /* backupContentView.swift */; };
 		6061924D2BF91DE500C3BD34 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 6061924C2BF91DE500C3BD34 /* HotKey */; };
 		606192502BF923D700C3BD34 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 6061924F2BF923D700C3BD34 /* KeyboardShortcuts */; };
 		6072ABBB2BF3157A0091E218 /* ClipboardHistoryApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABBA2BF3157A0091E218 /* ClipboardHistoryApp.swift */; };
@@ -42,6 +43,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		60368B612BFAD56D0096A21D /* backupContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = backupContentView.swift; sourceTree = "<group>"; };
 		6072ABB72BF3157A0091E218 /* ClipboardHistory.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClipboardHistory.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6072ABBA2BF3157A0091E218 /* ClipboardHistoryApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryApp.swift; sourceTree = "<group>"; };
 		6072ABBC2BF3157A0091E218 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -123,6 +125,7 @@
 				6072ABC52BF3157B0091E218 /* ClipboardHistory.xcdatamodeld */,
 				6072ABC02BF3157B0091E218 /* Preview Content */,
 				6072ABEE2BF7D6CF0091E218 /* ClipboardMonitor.swift */,
+				60368B612BFAD56D0096A21D /* backupContentView.swift */,
 			);
 			path = ClipboardHistory;
 			sourceTree = "<group>";
@@ -303,6 +306,7 @@
 				6072ABC42BF3157B0091E218 /* Persistence.swift in Sources */,
 				6072ABEF2BF7D6CF0091E218 /* ClipboardMonitor.swift in Sources */,
 				6072ABEC2BF7D3910091E218 /* ClipboardItem+CoreDataClass.swift in Sources */,
+				60368B622BFAD56D0096A21D /* backupContentView.swift in Sources */,
 				6072ABED2BF7D3910091E218 /* ClipboardItem+CoreDataProperties.swift in Sources */,
 				6072ABBD2BF3157A0091E218 /* ContentView.swift in Sources */,
 				6072ABBB2BF3157A0091E218 /* ClipboardHistoryApp.swift in Sources */,

@@ -12,6 +12,8 @@ import CoreData
 class ClipboardMonitor: ObservableObject {
     private var checkTimer: Timer?
     private var lastChangeCount: Int = NSPasteboard.general.changeCount
+//    @Published var lastChangeCount: Int = NSPasteboard.general.changeCount
+
     
     func startMonitoring() {
         checkTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(checkClipboard), userInfo: nil, repeats: true)
@@ -44,7 +46,10 @@ class ClipboardMonitor: ObservableObject {
                     let fetchRequest: NSFetchRequest<ClipboardItem> = ClipboardItem.fetchRequest()
                     fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: true)]
 
-                    if let items = try? context.fetch(fetchRequest), items.count >= 30 {
+//                    let items = try? context.fetch(fetchRequest)
+//                    print("item count: \(String(describing: items?.count))")
+                    
+                    if let items = try? context.fetch(fetchRequest), items.count > 30 {
                         context.delete(items.first!) // Delete the oldest item
                     }
 
