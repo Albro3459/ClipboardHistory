@@ -1,6 +1,22 @@
-##A Clipboard History manager like Clipboard History from Windows
+## A Clipboard History manager like Clipboard History from Windows
 
-###need to activate python virtual environment every time with
+* it is fully built in Swift for Mac OS.
+
+* it opens on the bottom right on all the desktop windows (like in mission control)
+
+* once running, it can be opened and closed with cmd + shift + c
+
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+
+##### OLD:
+
+need to activate python virtual environment every time with
 ```sh
 source venv/bin/activate
 ```
