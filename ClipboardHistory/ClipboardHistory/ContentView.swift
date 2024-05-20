@@ -18,7 +18,6 @@ struct ContentView: View {
 
     @State private var showingClearAlert = false
     @State private var atTopOfList = true
-    @State private var topItemID: NSManagedObjectID? = nil  // Track the ID of the first item
     
     var body: some View {
         VStack {

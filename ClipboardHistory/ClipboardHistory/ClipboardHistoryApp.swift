@@ -26,7 +26,6 @@ struct ClipboardHistoryApp: App {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
-//                .environmentObject(clipboardMonitor!)
         }
         //        .commands {
         //            SidebarCommands()
