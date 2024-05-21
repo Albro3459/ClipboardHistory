@@ -75,7 +75,7 @@ class ClipboardMonitor: ObservableObject {
                             }
                         }
                     } catch {
-//                        print("Error checking file type: \(error)")
+                        print("Error checking file type: \(error)")
                     }
                 }
             }
