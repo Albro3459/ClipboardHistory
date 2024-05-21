@@ -5,6 +5,7 @@
 //  Created by Alex Brodsky on 5/13/24.
 //
 
+import AppKit
 import Cocoa
 import SwiftUI
 import KeyboardShortcuts
@@ -16,6 +17,8 @@ struct ClipboardHistoryApp: App {
     
     let persistenceController = PersistenceController.shared
     var clipboardMonitor: ClipboardMonitor?
+    @State private var hideTitle = false
+    
     
     init() {
         self.clipboardMonitor = ClipboardMonitor()
@@ -26,7 +29,13 @@ struct ClipboardHistoryApp: App {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
+//                .toolbar {
+//                    ToolbarItem(placement: .automatic) {
+//                        SearchBarView()
+//                    }
+//                }
         }
+        
     }
 }
 
@@ -119,7 +128,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         paste()
     }
     
-    func paste() {        
+    func paste() {
         let now = Date()
         if let lastPasteNoFormatTime = lastPasteNoFormatTime, now.timeIntervalSince(lastPasteNoFormatTime) < 0.33 {
             return
@@ -155,22 +164,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             button.action = #selector(toggleWindowVisibility)
             button.target = self
-            print("Status bar item set up")
+            //            print("Status bar item set up")
         } else {
-            print("Failed to create status bar item")
+            //            print("Failed to create status bar item")
         }
     }
     
     func resizeImage(image: NSImage, width: CGFloat, height: CGFloat) -> NSImage {
-            let newSize = NSMakeSize(width, height)
-            let newImage = NSImage(size: newSize)
-            newImage.lockFocus()
-            image.draw(in: NSRect(origin: .zero, size: newSize))
-            newImage.unlockFocus()
-            newImage.isTemplate = image.isTemplate
-            return newImage
-        }
-        
+        let newSize = NSMakeSize(width, height)
+        let newImage = NSImage(size: newSize)
+        newImage.lockFocus()
+        image.draw(in: NSRect(origin: .zero, size: newSize))
+        newImage.unlockFocus()
+        newImage.isTemplate = image.isTemplate
+        return newImage
+    }
+    
 }
 
 extension KeyboardShortcuts.Name {

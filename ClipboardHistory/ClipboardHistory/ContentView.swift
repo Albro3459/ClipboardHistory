@@ -21,6 +21,14 @@ struct ContentView: View {
     
     var body: some View {
         VStack {
+//            HStack {
+//                Spacer()
+//                SearchBarView()
+//                    .padding(.trailing, 10)
+//            }
+//            .padding(.top, 10)
+//            .padding(.bottom, 5)
+//            
             ScrollView {
                 GeometryReader { geometry in
                     Color.clear.onChange(of: geometry.frame(in: .named("ScrollViewArea")).minY) { oldValue, newValue in
@@ -57,6 +65,7 @@ struct ContentView: View {
                     secondaryButton: .cancel()
                 )
             }
+            
         }
     }
     
@@ -80,7 +89,7 @@ struct ClipboardItemView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
     @State private var showingClearAlert = false
-    
+        
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 5) {
