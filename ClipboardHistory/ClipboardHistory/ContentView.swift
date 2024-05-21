@@ -15,7 +15,7 @@ struct ContentView: View {
         sortDescriptors: [NSSortDescriptor(keyPath: \ClipboardItem.timestamp, ascending: false)],
         animation: nil)
     private var clipboardItems: FetchedResults<ClipboardItem>
-
+    
     @State private var showingClearAlert = false
     @State private var atTopOfList = true
     
@@ -25,18 +25,18 @@ struct ContentView: View {
                 GeometryReader { geometry in
                     Color.clear.onChange(of: geometry.frame(in: .named("ScrollViewArea")).minY) { oldValue, newValue in
                         atTopOfList = newValue >= 0
-//                        print(atTopOfList)
+                        //                        print(atTopOfList)
                     }
                 }
                 .frame(height: 0)
-
+                
                 LazyVStack {
                     ForEach(clipboardItems, id: \.self) { item in
                         ClipboardItemView(item: item)
                             .id(item.objectID)
                             .padding(.leading, 10)
                             .animation(atTopOfList ? .default : nil, value: clipboardItems.first?.objectID)
-
+                        
                     }
                 }
             }
@@ -59,7 +59,7 @@ struct ContentView: View {
             }
         }
     }
-
+    
     private func clearClipboardItems() {
         for item in clipboardItems {
             viewContext.delete(item)
@@ -84,17 +84,35 @@ struct ClipboardItemView: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 5) {
-                Text(item.content ?? "Unknown content")
-                    .font(.headline)
-                    .lineLimit(3)
-                Text("Type: \(item.type ?? "Unknown")")
-                    .font(.subheadline)
-                Text("Saved at \(item.timestamp.map { itemFormatter.string(from: $0) } ?? "Unknown Date")")
-                    .font(.footnote)
+                if item.type == "text" {
+                    Text(item.content ?? "Unknown content")
+                        .font(.headline)
+                        .lineLimit(3)
+                }
+                else if item.type == "imageData" || item.type == "image" || item.type == "file", let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 80)
+                    Text(item.content ?? "Unknown content")
+                        .font(.subheadline)
+                        .bold()
+                        .lineLimit(1)
+                }
+                else if item.type == "folder" || item.type == "alias"{
+                    Image("FolderThumbnail")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 80)
+                    Text(item.content ?? "Unknown content")
+                        .font(.subheadline)
+                        .bold()
+                        .lineLimit(1)
+                }
             }
             Spacer()
             Button(action: {
-                self.copyToClipboard(content: item.content)
+                self.copyToClipboard(item: item)
             }) {
                 Image(systemName: "doc.on.doc")
             }
@@ -119,12 +137,28 @@ struct ClipboardItemView: View {
         }
         .padding(.vertical, 4)
     }
-
-    private func copyToClipboard(content: String?) {
-        guard let content = content else { return }
+    
+    private func copyToClipboard(item: ClipboardItem) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setString(content, forType: .string)
+        
+        switch item.type {
+        case "text":
+            if let content = item.content {
+                pasteboard.setString(content, forType: .string)
+            }
+        case "imageData":
+            if let imageData = item.imageData {
+                pasteboard.setData(imageData, forType: .tiff)
+            }
+        case "image", "file", "folder", "alias":
+            if let fileName = item.fileName {
+                let url = URL(fileURLWithPath: fileName)
+                pasteboard.writeObjects([url as NSURL])
+            }
+        default:
+            break
+        }
     }
     
     private func deleteItem(item: ClipboardItem) {
