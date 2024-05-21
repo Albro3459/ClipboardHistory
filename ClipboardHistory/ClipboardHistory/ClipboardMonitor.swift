@@ -82,17 +82,13 @@ class ClipboardMonitor: ObservableObject {
             // Working
             else if let imageData = pasteboard.data(forType: .tiff), let image = NSImage(data: imageData) {
 //                                print("Image DATA")
-                self.saveClipboard(content: "Image", type: "imageData", imageData: image.tiffRepresentation, fileName: nil)
+                self.saveClipboard(content: "Screenshot", type: "imageData", imageData: image.tiffRepresentation, fileName: nil)
             }
             // Working
             else if let content = pasteboard.string(forType: .string) {
-//                                print("String")
+                                print("String")
                 
                 self.saveClipboard(content: content, type: "text", imageData: nil, fileName: nil)
-            }
-            else {
-//                print("ELSE")
-//                print()
             }
             
 //            print("\n")
