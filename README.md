@@ -1,10 +1,16 @@
-## A Clipboard History manager like Clipboard History from Windows
+## ClipboardHistory, a clipboard history manager like Clipboard History from Windows
 
 * it is fully built in Swift for Mac OS.
 
 * it opens on the bottom right on all the desktop windows (like in mission control)
 
 * once running, it can be opened and closed with cmd + shift + c
+
+* there is a clipboard status bar icon that will hide and show the app while running
+
+* Also, cmd + shift + v will paste text without formatting while running
+
+* clipboard history is currently limited to 30 items. I picked a limit.
 
 <!-- <br />
 

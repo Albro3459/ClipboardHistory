@@ -4,5 +4,7 @@
 <dict>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>It monitors for shift + cmd + v to open and close the UI for the Clipboard Manager</string>
+	<key>LSUIElement</key>
+	<string>1</string>
 </dict>
 </plist>

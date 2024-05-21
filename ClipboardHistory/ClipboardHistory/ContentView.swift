@@ -25,7 +25,7 @@ struct ContentView: View {
                 GeometryReader { geometry in
                     Color.clear.onChange(of: geometry.frame(in: .named("ScrollViewArea")).minY) { oldValue, newValue in
                         atTopOfList = newValue >= 0
-                        //                        print(atTopOfList)
+                        // print(atTopOfList)
                     }
                 }
                 .frame(height: 0)
@@ -171,17 +171,6 @@ struct ClipboardItemView: View {
     }
 }
 
-//extension String {
-//    func truncatedLines(to maxLines: Int = 3) -> String {
-//        let lines = self.split(separator: "\n", maxSplits: maxLines, omittingEmptySubsequences: false)
-//        if lines.count > maxLines {
-//            return lines[0..<maxLines].joined(separator: "\n") + "..."
-//        } else {
-//            return self
-//        }
-//    }
-//}
-
 
 private let itemFormatter: DateFormatter = {
     let formatter = DateFormatter()
@@ -191,9 +180,6 @@ private let itemFormatter: DateFormatter = {
 }()
 
 
-//#Preview {
-//    ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-//}
 
 #if DEBUG
 struct ContentView_Previews: PreviewProvider {
