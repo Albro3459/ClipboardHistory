@@ -94,6 +94,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let windowWidth: CGFloat = 300
             let windowHeight: CGFloat = 500
             
+            window.standardWindowButton(.closeButton)?.isHidden = true
+            window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+            window.standardWindowButton(.zoomButton)?.isHidden = true
+            
             let xPosition = screen.visibleFrame.maxX - windowWidth
             let yPosition = screen.visibleFrame.minY
             
