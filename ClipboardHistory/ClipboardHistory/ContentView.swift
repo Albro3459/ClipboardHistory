@@ -25,7 +25,7 @@ struct ContentView: View {
 //                Spacer()
 //                SearchBarView()
 //                    .padding(.trailing, 10)
-//            }
+//            } 
 //            .padding(.top, 10)
 //            .padding(.bottom, 5)
 //            
@@ -103,10 +103,12 @@ struct ClipboardItemView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(height: 80)
-                    Text(item.content ?? "Unknown content")
-                        .font(.subheadline)
-                        .bold()
-                        .lineLimit(1)
+                    if item.type != "imageData" {
+                        Text(item.content ?? "Unknown content")
+                            .font(.subheadline)
+                            .bold()
+                            .lineLimit(1)
+                    }
                 }
                 else if item.type == "folder" || item.type == "alias"{
                     Image("FolderThumbnail")

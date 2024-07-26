@@ -67,7 +67,7 @@ class ClipboardMonitor: ObservableObject {
                 }
             }
             else if let imageData = pasteboard.data(forType: .tiff), let image = NSImage(data: imageData) {
-                self.saveClipboard(content: "Screenshot", type: "imageData", imageData: image.tiffRepresentation, fileName: nil)
+                self.saveClipboard(content: "probablyScreenshot", type: "imageData", imageData: image.tiffRepresentation, fileName: nil)
             }
             else if let content = pasteboard.string(forType: .string) {
                 
@@ -117,17 +117,32 @@ class ClipboardMonitor: ObservableObject {
         let context = PersistenceController.shared.container.viewContext
         let fetchRequest: NSFetchRequest<NSFetchRequestResult> = ClipboardItem.fetchRequest()
         fetchRequest.fetchLimit = 30
-        fetchRequest.propertiesToFetch = ["content"]
+        fetchRequest.propertiesToFetch = ["content", "type", "imageData"]
         fetchRequest.resultType = .dictionaryResultType
+        
         
         do {
             let results = try context.fetch(fetchRequest) as? [[String: Any]] // Cast directly to an array of dictionaries
             
             if results?.last == nil {
                 shouldSave = true
-            } else if let firstResult = results?.last, let lastContent = firstResult["content"] as? String {
-                if lastContent != content {
-                    shouldSave = true
+            }
+            else if let lastItem = results?.last {
+                let lastContent = lastItem["content"] as? String
+                let lastType = lastItem["type"] as? String
+                let lastImageData = lastItem["imageData"] as? Data
+                
+                if type == "imageData" && lastType == "imageData" {
+                    // Both items are screenshots
+                    if let lastImageData = lastImageData, lastImageData != imageData {
+                        shouldSave = true  // Different image data
+                    }
+                } 
+                else {
+                    // Different types or content
+                    if lastContent != content || lastType != type {
+                        shouldSave = true
+                    }
                 }
             }
         } catch {
