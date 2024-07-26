@@ -36,33 +36,35 @@ class ClipboardMonitor: ObservableObject {
             let imageExtensions = ["tiff", "jpeg", "jpg", "png", "svg", "gif"]
             
             // Check for file URLs first
-            if let fileUrls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], let fileUrl = fileUrls.first {
-                let fileExtension = fileUrl.pathExtension.lowercased()
-                
-                if imageExtensions.contains(fileExtension) {
-                    if let image = NSImage(contentsOf: fileUrl) {
-                        self.saveClipboard(content: fileUrl.lastPathComponent, type: "image", imageData: image.tiffRepresentation, fileName: fileUrl.path)
-                    }
-                } else {
-                    do {
-                        let resourceValues = try fileUrl.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isAliasFileKey, .isUbiquitousItemKey, .volumeIsRemovableKey])
-                        
-                        if let isDirectory = resourceValues.isDirectory, isDirectory {
-                            self.saveClipboard(content: fileUrl.lastPathComponent, type: "folder", imageData: nil, fileName: fileUrl.path)
-                        } else if let isSymbolicLink = resourceValues.isSymbolicLink, isSymbolicLink {
-                            self.saveClipboard(content: fileUrl.lastPathComponent, type: "symlink", imageData: nil, fileName: fileUrl.path)
-                        } else if let isAliasFile = resourceValues.isAliasFile, isAliasFile {
-                            self.saveClipboard(content: fileUrl.lastPathComponent, type: "alias", imageData: nil, fileName: fileUrl.path)
-                        } else if let volumeIsRemovable = resourceValues.volumeIsRemovable, volumeIsRemovable {
-                            self.saveClipboard(content: fileUrl.lastPathComponent, type: "removable", imageData: nil, fileName: fileUrl.path)
-                        } else {
-
-                            self.generateThumbnail(for: fileUrl.path) { thumbnail in
-                                self.saveClipboard(content: fileUrl.lastPathComponent, type: "file", imageData: thumbnail?.tiffRepresentation, fileName: fileUrl.path)
-                            }
+            if let fileUrls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], let _ = fileUrls.first {
+                for fileUrl in fileUrls {
+                    let fileExtension = fileUrl.pathExtension.lowercased()
+                    
+                    if imageExtensions.contains(fileExtension) {
+                        if let image = NSImage(contentsOf: fileUrl) {
+                            self.saveClipboard(content: fileUrl.lastPathComponent, type: "image", imageData: image.tiffRepresentation, fileName: fileUrl.path)
                         }
-                    } catch {
-                        print("Error checking file type: \(error)")
+                    } else {
+                        do {
+                            let resourceValues = try fileUrl.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isAliasFileKey, .isUbiquitousItemKey, .volumeIsRemovableKey])
+                            
+                            if let isDirectory = resourceValues.isDirectory, isDirectory {
+                                self.saveClipboard(content: fileUrl.lastPathComponent, type: "folder", imageData: nil, fileName: fileUrl.path)
+                            } else if let isSymbolicLink = resourceValues.isSymbolicLink, isSymbolicLink {
+                                self.saveClipboard(content: fileUrl.lastPathComponent, type: "symlink", imageData: nil, fileName: fileUrl.path)
+                            } else if let isAliasFile = resourceValues.isAliasFile, isAliasFile {
+                                self.saveClipboard(content: fileUrl.lastPathComponent, type: "alias", imageData: nil, fileName: fileUrl.path)
+                            } else if let volumeIsRemovable = resourceValues.volumeIsRemovable, volumeIsRemovable {
+                                self.saveClipboard(content: fileUrl.lastPathComponent, type: "removable", imageData: nil, fileName: fileUrl.path)
+                            } else {
+                                
+                                self.generateThumbnail(for: fileUrl.path) { thumbnail in
+                                    self.saveClipboard(content: fileUrl.lastPathComponent, type: "file", imageData: thumbnail?.tiffRepresentation, fileName: fileUrl.path)
+                                }
+                            }
+                        } catch {
+                            print("Error checking file type: \(error)")
+                        }
                     }
                 }
             }
@@ -70,7 +72,6 @@ class ClipboardMonitor: ObservableObject {
                 self.saveClipboard(content: "probablyScreenshot", type: "imageData", imageData: image.tiffRepresentation, fileName: nil)
             }
             else if let content = pasteboard.string(forType: .string) {
-                
                 self.saveClipboard(content: content, type: "text", imageData: nil, fileName: nil)
             }
             
