@@ -10,7 +10,6 @@ import Cocoa
 import SwiftUI
 import KeyboardShortcuts
 
-
 @main
 struct ClipboardHistoryApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -23,6 +22,7 @@ struct ClipboardHistoryApp: App {
     init() {
         self.clipboardMonitor = ClipboardMonitor()
         self.clipboardMonitor?.startMonitoring()
+    
     }
     
     var body: some Scene {
@@ -40,7 +40,7 @@ struct ClipboardHistoryApp: App {
     }
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var window: NSWindow?
     var statusBarItem: NSStatusItem?
     
@@ -49,11 +49,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var lastToggleTime: Date?
     private var lastPasteNoFormatTime: Date?
     
+    private var isSwitchingSpaces = false
+        
     override init() {
         super.init()
         setupGlobalHotKey()
+        observeSpaceSwitch()
     }
     
+    func observeSpaceSwitch() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(spaceDidChange),
+            name: NSWorkspace.activeSpaceDidChangeNotification,
+            object: nil
+        )
+    }
+    
+    @objc func spaceDidChange() {
+        isSwitchingSpaces = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.isSwitchingSpaces = false
+        }
+    }
+
     func setupGlobalHotKey() {
         KeyboardShortcuts.onKeyDown(for: .toggleVisibility) {
             self.toggleWindowVisibility()
@@ -63,11 +82,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self.pasteNoFormatting()
         }
         
-//        KeyboardShortcuts.onKeyUp(for: .copySelected) {
-//            if NSApplication.shared.isActive {
-//                self.clipboardManager.copySelectedItem()
-//            }
-//        }
+        KeyboardShortcuts.onKeyUp(for: .resetWindow) {
+            self.resetWindow()
+        }
+        
     }
     
     @objc func toggleWindowVisibility() {
@@ -94,30 +112,67 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupGlobalHotKey()
         
         if let window = NSApplication.shared.windows.first {
+            setupWindow(window: window)
+                   
+            self.window = window
+        }
+        
+        setupStatusBar()
+    }
+    
+    func setupWindow(window: NSWindow) {
+        let screen = window.screen ?? NSScreen.main!
+        let windowWidth: CGFloat = 300
+        let windowHeight: CGFloat = 500
+        
+        let xPosition = screen.visibleFrame.maxX - windowWidth
+        let yPosition = screen.visibleFrame.minY
+        
+        let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
+        window.setFrame(frame, display: true)
+        window.level = .floating
+        window.collectionBehavior = .canJoinAllSpaces
+
+        window.delegate = self
+        
+        window.standardWindowButton(.closeButton)?.isHidden = true
+        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        window.standardWindowButton(.zoomButton)?.isHidden = true
+    }
+    
+    func resetWindow() {
+        if let window = NSApplication.shared.windows.first {
+            window.makeKeyAndOrderFront(nil)
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            
             let screen = window.screen ?? NSScreen.main!
+
             let windowWidth: CGFloat = 300
             let windowHeight: CGFloat = 500
-            
-            window.standardWindowButton(.closeButton)?.isHidden = true
-            window.standardWindowButton(.miniaturizeButton)?.isHidden = true
-            window.standardWindowButton(.zoomButton)?.isHidden = true
             
             let xPosition = screen.visibleFrame.maxX - windowWidth
             let yPosition = screen.visibleFrame.minY
             
             let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
             window.setFrame(frame, display: true)
-            //            window.level = .floating
-            window.collectionBehavior = .canJoinAllSpaces
-            self.window = window
         }
-        
-        setupStatusBar()
+    }
+    
+    func windowDidResignKey(_ notification: Notification) {
+        if let window = notification.object as? NSWindow, window == self.window {
+            if !isSwitchingSpaces {
+                window.orderOut(nil)
+            }
+            else {
+                window.makeKeyAndOrderFront(nil)
+                NSApplication.shared.activate(ignoringOtherApps: true)
+            }
+        }
     }
     
     public func pasteNoFormatting() {
@@ -198,5 +253,5 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 extension KeyboardShortcuts.Name {
     static var toggleVisibility = Self("toggleVisibility", default: .init(.c, modifiers: [.command, .shift]))
     static var pasteNoFormatting = Self("pasteNoFormatting", default: .init(.v, modifiers: [.command, .shift]))
-//    static var copySelected = Self("copySelected", default: .init(.c, modifiers: [.command]))
+    static var resetWindow = Self("resetWindow", default: .init(.r, modifiers: [.option]))
 }

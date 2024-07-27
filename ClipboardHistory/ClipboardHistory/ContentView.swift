@@ -21,6 +21,7 @@ struct ContentView: View {
     
     @State private var showingClearAlert = false
     @State private var atTopOfList = true
+    
 //    @State private var selectedItem: ClipboardItem?
     
     var body: some View {
@@ -32,7 +33,7 @@ struct ContentView: View {
 //            } 
 //            .padding(.top, 10)
 //            .padding(.bottom, 5)
-//            
+                        
             ScrollView {
                 GeometryReader { geometry in
                     Color.clear.onChange(of: geometry.frame(in: .named("ScrollViewArea")).minY) { oldValue, newValue in
@@ -41,21 +42,34 @@ struct ContentView: View {
                     }
                 }
                 .frame(height: 0)
-                
-                LazyVStack(spacing: 0) {
-                    ForEach(clipboardItems, id: \.self) { item in
-                        ClipboardItemView(item: item, isSelected: Binding(
-                            get: { self.clipboardManager.selectedItem == item },
-                            set: { _ in self.clipboardManager.selectedItem = item }))
+                ScrollViewReader { scrollView in
+                    LazyVStack(spacing: 0) {
+                        ForEach(clipboardItems, id: \.self) { item in
+                            ClipboardItemView(item: item, isSelected: Binding(
+                                get: { self.clipboardManager.selectedItem == item },
+                                set: { _ in self.clipboardManager.selectedItem = item }))
                             .id(item.objectID)
 //                            .animation(atTopOfList ? .default : nil, value: clipboardItems.first?.objectID)
-//                            .onAppear {
-//                                setUpKeyboardHandling()
+                            
+                        }
+                        
+                    }
+                    .padding(.top, -10)
+//                    .onChange(of: clipboardManager.selectedItem) { newValue in
+//                        if let newValue = newValue, let index = clipboardItems.firstIndex(of: newValue) {
+//                            withAnimation {
+//                                scrollView.scrollTo(clipboardItems[index].objectID, anchor: .center)
 //                            }
-                         
+//                        }
+//                    }
+                    .onChange(of: clipboardManager.selectedItem, initial: false) {
+                        if let selectedItem = clipboardManager.selectedItem, let index = clipboardItems.firstIndex(of: selectedItem) {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                scrollView.scrollTo(clipboardItems[index].objectID)
+                            }
+                        }
                     }
                 }
-                .padding(.top, -10)
             }
             
             .overlay( // Adds a thin line at the bottom
@@ -114,24 +128,20 @@ struct ContentView: View {
             
             if event.type == .keyDown {
                 switch event.keyCode {
-                case 8: // 'c' key code
+                case 8:
                     if event.modifierFlags.contains(.command) {
                         // Handle Command + C
-                        // print("Command + C was pressed")
                         clipboardManager.copySelectedItem()
                         return nil // no more beeps
                     }
-                case 126: // key code for up arrow
+                case 126:
                     // Handle up arrow
-                    // print("Up arrow pressed")
-//                    print(currentIndex)
                     if currentIndex != nil && currentIndex! > 0 {
                         clipboardManager.selectedItem = clipboardItems[currentIndex!-1]
                     }
                     return nil //no more beeps
-                case 125: // key code for down arrow
+                case 125:
                     // Handle down arrow
-                    // print("Down arrow pressed")
                     if currentIndex != nil && currentIndex! < clipboardItems.count - 1 {
                         clipboardManager.selectedItem = clipboardItems[currentIndex!+1]
                     }
@@ -194,6 +204,7 @@ struct ClipboardItemView: View {
                         .lineLimit(1)
                 }
             }
+           
             Spacer()
             Button(action: {
                 self.copyToClipboard(item: item)
@@ -226,8 +237,9 @@ struct ClipboardItemView: View {
             Rectangle().frame(height: 1).foregroundColor(.gray), alignment: .bottom
         )
         .background(isSelected ? Color.gray.opacity(0.5) : Color.clear) // Highlight
+        .contentShape(Rectangle()) // Makes the entire area tappable
         .onTapGesture {
-            self.isSelected = true
+            isSelected = true
         }
     }
     
@@ -238,7 +250,6 @@ struct ClipboardItemView: View {
         switch item.type {
         case "text":
             if let content = item.content {
-                print("content: \(content)")
                 pasteboard.setString(content, forType: .string)
             }
         case "imageData":
