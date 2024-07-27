@@ -17,8 +17,8 @@ struct ClipboardHistoryApp: App {
     
     let persistenceController = PersistenceController.shared
     var clipboardMonitor: ClipboardMonitor?
-    @State private var hideTitle = false
     
+    @State private var hideTitle = false
     
     init() {
         self.clipboardMonitor = ClipboardMonitor()
@@ -29,6 +29,7 @@ struct ClipboardHistoryApp: App {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environmentObject(appDelegate.clipboardManager)
 //                .toolbar {
 //                    ToolbarItem(placement: .automatic) {
 //                        SearchBarView()
@@ -42,6 +43,8 @@ struct ClipboardHistoryApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow?
     var statusBarItem: NSStatusItem?
+    
+    var clipboardManager = ClipboardManager()
     
     private var lastToggleTime: Date?
     private var lastPasteNoFormatTime: Date?
@@ -59,6 +62,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
             self.pasteNoFormatting()
         }
+        
+//        KeyboardShortcuts.onKeyUp(for: .copySelected) {
+//            if NSApplication.shared.isActive {
+//                self.clipboardManager.copySelectedItem()
+//            }
+//        }
     }
     
     @objc func toggleWindowVisibility() {
@@ -189,4 +198,5 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 extension KeyboardShortcuts.Name {
     static var toggleVisibility = Self("toggleVisibility", default: .init(.c, modifiers: [.command, .shift]))
     static var pasteNoFormatting = Self("pasteNoFormatting", default: .init(.v, modifiers: [.command, .shift]))
+//    static var copySelected = Self("copySelected", default: .init(.c, modifiers: [.command]))
 }
