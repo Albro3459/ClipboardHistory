@@ -21,7 +21,7 @@ struct ContentView: View {
     
     @State private var showingClearAlert = false
     @State private var atTopOfList = true
-    
+        
 //    @State private var selectedItem: ClipboardItem?
     
     var body: some View {
@@ -47,21 +47,15 @@ struct ContentView: View {
                         ForEach(clipboardItems, id: \.self) { item in
                             ClipboardItemView(item: item, isSelected: Binding(
                                 get: { self.clipboardManager.selectedItem == item },
-                                set: { _ in self.clipboardManager.selectedItem = item }))
+                                set: { _ in self.clipboardManager.selectedItem = item })
+                            )
                             .id(item.objectID)
 //                            .animation(atTopOfList ? .default : nil, value: clipboardItems.first?.objectID)
                             
                         }
                         
                     }
-                    .padding(.top, -10)
-//                    .onChange(of: clipboardManager.selectedItem) { newValue in
-//                        if let newValue = newValue, let index = clipboardItems.firstIndex(of: newValue) {
-//                            withAnimation {
-//                                scrollView.scrollTo(clipboardItems[index].objectID, anchor: .center)
-//                            }
-//                        }
-//                    }
+                    .padding(.top, -5)
                     .onChange(of: clipboardManager.selectedItem, initial: false) {
                         if let selectedItem = clipboardManager.selectedItem, let index = clipboardItems.firstIndex(of: selectedItem) {
                             withAnimation(.easeInOut(duration: 0.5)) {
@@ -72,16 +66,24 @@ struct ContentView: View {
                 }
             }
             
-            .overlay( // Adds a thin line at the bottom
-                Rectangle().frame(height: 1).foregroundColor(.gray), alignment: .bottom
-            )
+//            .overlay( // Adds a thin line at the bottom
+//                Rectangle().frame(height: 1).foregroundColor(.gray), alignment: .bottom
+//            )
             .coordinateSpace(name: "ScrollViewArea")
             Spacer()
-            Button("Clear All") {
+            Button {
                 showingClearAlert = true
+            } label: {
+                
+                Text("Clear All")
+                    .frame(maxWidth: 90)
+                    
             }
-            .buttonStyle(BorderlessButtonStyle())
-            .padding()
+            .buttonStyle(.bordered)
+            .tint(.gray)
+            .padding(.bottom, 10)
+            
+            
             .alert(isPresented: $showingClearAlert) {
                 Alert(
                     title: Text("Confirm Clear"),
@@ -176,6 +178,7 @@ struct ClipboardItemView: View {
                     if item.type == "text" {
                         Text(content)
                             .font(.headline)
+                            .frame(minHeight: 35)
                             .lineLimit(3)
                     }
                 }
@@ -184,7 +187,7 @@ struct ClipboardItemView: View {
                     Image(nsImage: nsImage)
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 80)
+                        .frame(height: 70)
                     
                     if item.type != "imageData", let content = item.content {
                         Text(content)
@@ -197,28 +200,33 @@ struct ClipboardItemView: View {
                     Image("FolderThumbnail")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 80)
+                        .frame(height: 60)
                     Text(content)
                         .font(.subheadline)
                         .bold()
                         .lineLimit(1)
                 }
             }
+            .padding(.all, 10)
            
             Spacer()
             Button(action: {
                 self.copyToClipboard(item: item)
             }) {
                 Image(systemName: "doc.on.doc")
+                    .foregroundColor(.white)
             }
             .buttonStyle(BorderlessButtonStyle())
+            
             Button(action: {
                 showingClearAlert = true
             }) {
                 Image(systemName: "trash")
+                    .foregroundColor(.white)
             }
             .buttonStyle(BorderlessButtonStyle())
-            .padding()
+            .padding(.leading, 5)
+            .padding(.trailing, 10)
             .alert(isPresented: $showingClearAlert) {
                 Alert(
                     title: Text("Confirm Delete"),
@@ -231,12 +239,17 @@ struct ClipboardItemView: View {
             }
         }
         .padding(.top, 4)
-        .padding(.leading, 10)
-        .padding(.bottom, 4)
-        .overlay( // Adds a thin line at the bottom
-            Rectangle().frame(height: 1).foregroundColor(.gray), alignment: .bottom
+        .padding(.leading, 15)
+        .padding(.trailing, 15)
+        .padding(.bottom, 2)
+//        .overlay( // Adds a thin line at the bottom
+//            Rectangle().frame(height: 1).foregroundColor(.gray), alignment: .bottom
+//        )
+        .background(RoundedRectangle(cornerRadius: 10)
+            .fill(!isSelected ? Color(.darkGray).opacity(0.5) : Color(.darkGray))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
         )
-        .background(isSelected ? Color.gray.opacity(0.5) : Color.clear) // Highlight
         .contentShape(Rectangle()) // Makes the entire area tappable
         .onTapGesture {
             isSelected = true

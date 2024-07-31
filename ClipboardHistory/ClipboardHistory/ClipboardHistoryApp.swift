@@ -50,21 +50,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var lastPasteNoFormatTime: Date?
     
     private var isSwitchingSpaces = false
+    
+    @Published var windowWidth: CGFloat = 300
+    @Published var windowHeight: CGFloat = 500
+    
         
     override init() {
         super.init()
         setupGlobalHotKey()
-        observeSpaceSwitch()
+//        observeSpaceSwitch()
     }
     
-    func observeSpaceSwitch() {
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(spaceDidChange),
-            name: NSWorkspace.activeSpaceDidChangeNotification,
-            object: nil
-        )
-    }
+//    func observeSpaceSwitch() {
+//        NSWorkspace.shared.notificationCenter.addObserver(
+//            self,
+//            selector: #selector(spaceDidChange),
+//            name: NSWorkspace.activeSpaceDidChangeNotification,
+//            object: nil
+//        )
+//    }
     
     @objc func spaceDidChange() {
         isSwitchingSpaces = true
@@ -89,7 +93,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     
     @objc func toggleWindowVisibility() {
-        //        print("Cmd-Shift-C pressed: Toggling window visibility")
+//                print("Cmd-Shift-C pressed: Toggling window visibility")
         
         let now = Date()
         if let lastToggleTime = lastToggleTime, now.timeIntervalSince(lastToggleTime) < 0.33 {
@@ -99,6 +103,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         self.lastToggleTime = now
         
         DispatchQueue.main.async {
+//            self.isSwitchingSpaces = false
+            NSApplication.shared.activate(ignoringOtherApps: true)
             if let window = self.window {
                 if !window.isKeyWindow {
                     window.makeKeyAndOrderFront(nil)
@@ -127,22 +133,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     
     func setupWindow(window: NSWindow) {
         let screen = window.screen ?? NSScreen.main!
-        let windowWidth: CGFloat = 300
-        let windowHeight: CGFloat = 500
+        let windowWidth: CGFloat = windowWidth
+        let windowHeight: CGFloat = windowHeight
         
         let xPosition = screen.visibleFrame.maxX - windowWidth
         let yPosition = screen.visibleFrame.minY
         
         let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
         window.setFrame(frame, display: true)
-        window.level = .floating
+//        window.level = .floating
         window.collectionBehavior = .canJoinAllSpaces
+        NSApplication.shared.activate(ignoringOtherApps: true)
 
-        window.delegate = self
+//        window.delegate = self
         
-        window.standardWindowButton(.closeButton)?.isHidden = true
-        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
-        window.standardWindowButton(.zoomButton)?.isHidden = true
+//        window.standardWindowButton(.closeButton)?.isHidden = true
+//        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+//        window.standardWindowButton(.zoomButton)?.isHidden = true
     }
     
     func resetWindow() {
@@ -152,8 +159,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             
             let screen = window.screen ?? NSScreen.main!
 
-            let windowWidth: CGFloat = 300
-            let windowHeight: CGFloat = 500
+            let windowWidth: CGFloat = windowWidth
+            let windowHeight: CGFloat = windowHeight
             
             let xPosition = screen.visibleFrame.maxX - windowWidth
             let yPosition = screen.visibleFrame.minY
@@ -163,17 +170,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
     
-    func windowDidResignKey(_ notification: Notification) {
-        if let window = notification.object as? NSWindow, window == self.window {
-            if !isSwitchingSpaces {
-                window.orderOut(nil)
-            }
-            else {
+    @objc func showWindow() {
+        DispatchQueue.main.async {
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            if let window = self.window {
                 window.makeKeyAndOrderFront(nil)
+                window.collectionBehavior = .canJoinAllSpaces
                 NSApplication.shared.activate(ignoringOtherApps: true)
             }
         }
     }
+    
+//    func windowDidResignKey(_ notification: Notification) {
+//        if let window = notification.object as? NSWindow, window == self.window {
+//            if !isSwitchingSpaces {
+//                window.orderOut(nil)
+//            }
+//            else {
+//                window.makeKeyAndOrderFront(nil)
+//                NSApplication.shared.activate(ignoringOtherApps: true)
+//            }
+//        }
+//    }
     
     public func pasteNoFormatting() {
         let pasteboard = NSPasteboard.general
@@ -230,12 +248,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             } else {
                 button.title = "ClipboardHistory"
             }
-            button.action = #selector(toggleWindowVisibility)
+            button.action = #selector(showWindow)
             button.target = self
             //            print("Status bar item set up")
         } else {
             //            print("Failed to create status bar item")
         }
+        
     }
     
     func resizeImage(image: NSImage, width: CGFloat, height: CGFloat) -> NSImage {
