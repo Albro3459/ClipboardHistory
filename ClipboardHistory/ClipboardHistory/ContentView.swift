@@ -24,15 +24,12 @@ struct ContentView: View {
         
 //    @State private var selectedItem: ClipboardItem?
     
+    @State private var searchText = ""
+    
     var body: some View {
         VStack {
-//            HStack {
-//                Spacer()
-//                SearchBarView()
-//                    .padding(.trailing, 10)
-//            } 
-//            .padding(.top, 10)
-//            .padding(.bottom, 5)
+            SearchBarView(searchText: $searchText)
+                .padding(.trailing, 4)
                         
             ScrollView {
                 GeometryReader { geometry in
@@ -42,6 +39,7 @@ struct ContentView: View {
                     }
                 }
                 .frame(height: 0)
+                
                 ScrollViewReader { scrollView in
                     LazyVStack(spacing: 0) {
                         ForEach(clipboardItems, id: \.self) { item in
@@ -52,10 +50,9 @@ struct ContentView: View {
                             .id(item.objectID)
 //                            .animation(atTopOfList ? .default : nil, value: clipboardItems.first?.objectID)
                             
-                        }
-                        
+                        }                        
                     }
-                    .padding(.top, -5)
+                    .padding(.top, -10)
                     .onChange(of: clipboardManager.selectedItem, initial: false) {
                         if let selectedItem = clipboardManager.selectedItem, let index = clipboardItems.firstIndex(of: selectedItem) {
                             withAnimation(.easeInOut(duration: 0.5)) {
@@ -65,10 +62,6 @@ struct ContentView: View {
                     }
                 }
             }
-            
-//            .overlay( // Adds a thin line at the bottom
-//                Rectangle().frame(height: 1).foregroundColor(.gray), alignment: .bottom
-//            )
             .coordinateSpace(name: "ScrollViewArea")
             Spacer()
             Button {
@@ -148,6 +141,12 @@ struct ContentView: View {
                         clipboardManager.selectedItem = clipboardItems[currentIndex!+1]
                     }
                     return nil // no more beeps
+//                case 53:
+//                    DispatchQueue.main.async {
+//                        self.isSearchBarFocused = false
+//                    }
+//                    print("here")
+//                    return nil
                 default:
                     break
                 }

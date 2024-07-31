@@ -8,53 +8,72 @@
 import SwiftUI
 
 struct SearchBarView: View {
-    @State private var searchText = ""
-    @State private var isModalPresented = false
+    @Binding var searchText: String
+    @FocusState private var isTextFieldFocused: Bool
+
     
     var body: some View {
-        HStack {
-            Button(action: {
-                isModalPresented.toggle()
-            }) {
+        ZStack(alignment: .leading) {
+            HStack {
                 Image(systemName: "magnifyingglass")
+                    .foregroundColor(.gray)
+                    .padding(.leading, 8)
+
+                TextField("Search", text: $searchText)
+                    .focused($isTextFieldFocused)
+                    .padding(.trailing, searchText.isEmpty ? 10 : 0)
+
+                if !searchText.isEmpty {
+                    Button(action: {
+                        searchText = ""
+                        isTextFieldFocused = false
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                            .padding(.trailing, 10)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
             }
-            .buttonStyle(BorderlessButtonStyle())
-            .sheet(isPresented: $isModalPresented) {
-                SearchModalView(searchText: $searchText, isPresented: $isModalPresented)
+        }
+        .padding(.top, 3)
+        .onAppear {
+            setUpKeyboardHandling()
+            DispatchQueue.main.async {
+                isTextFieldFocused = false
             }
         }
     }
+    private func setUpKeyboardHandling() {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            
+            if event.type == .keyDown {
+                switch event.keyCode {
+                case 3:
+                    if event.modifierFlags.contains(.command) {
+                        // Handle Command + F
+                        DispatchQueue.main.async {
+                            isTextFieldFocused = true
+                        }
+                        return nil // no more beeps
+                    }
+                case 53:
+                    // escape key
+                    DispatchQueue.main.async {
+                        isTextFieldFocused = false
+                    }
+                    return nil
+                default:
+                    break
+                }
+            }
+            return event
+        }
+    }
+
 }
 
-struct SearchModalView: View {
-    @Binding var searchText: String
-    @Binding var isPresented: Bool
-    
-    var body: some View {
-        VStack {
-            TextField("Search...", text: $searchText)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-            
-            HStack {
-                Button("Close") {
-                    isPresented = false
-                }
-                .padding()
-                Button("Search") {
-                    search()
-                }
-                .padding()
-            }
-        }
-        .frame(width: 250, height: 125)
-//        .background(Color.white)
-        .cornerRadius(10)
-        .shadow(radius: 5)
-    }
-}
 
 private func search() {
     
 }
-
