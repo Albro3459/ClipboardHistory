@@ -10,7 +10,6 @@ import SwiftUI
 struct SearchBarView: View {
     @Binding var searchText: String
     @FocusState private var isTextFieldFocused: Bool
-
     
     var body: some View {
         ZStack(alignment: .leading) {
@@ -18,6 +17,9 @@ struct SearchBarView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.gray)
                     .padding(.leading, 8)
+                    .onTapGesture {
+                        isTextFieldFocused = false
+                    }
 
                 TextField("Search", text: $searchText)
                     .focused($isTextFieldFocused)

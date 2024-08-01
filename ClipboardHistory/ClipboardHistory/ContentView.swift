@@ -25,72 +25,88 @@ struct ContentView: View {
 //    @State private var selectedItem: ClipboardItem?
     
     @State private var searchText = ""
+    @FocusState private var isFocused: Bool
     
     var body: some View {
-        VStack {
-            SearchBarView(searchText: $searchText)
-                .padding(.trailing, 4)
-                        
-            ScrollView {
-                GeometryReader { geometry in
-                    Color.clear.onChange(of: geometry.frame(in: .named("ScrollViewArea")).minY) { oldValue, newValue in
-                        atTopOfList = newValue >= 0
-                        // print(atTopOfList)
-                    }
+        ZStack {
+            Rectangle()
+                .foregroundColor(.clear)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    isFocused = false
                 }
-                .frame(height: 0)
+            VStack {
                 
-                ScrollViewReader { scrollView in
-                    LazyVStack(spacing: 0) {
-                        ForEach(clipboardItems, id: \.self) { item in
-                            ClipboardItemView(item: item, isSelected: Binding(
-                                get: { self.clipboardManager.selectedItem == item },
-                                set: { _ in self.clipboardManager.selectedItem = item })
-                            )
-                            .id(item.objectID)
-//                            .animation(atTopOfList ? .default : nil, value: clipboardItems.first?.objectID)
-                            
-                        }                        
+                SearchBarView(searchText: $searchText)
+                    .padding(.trailing, 4)
+                    .focused($isFocused)
+                
+                ScrollView {
+                    GeometryReader { geometry in
+                        Color.clear.onChange(of: geometry.frame(in: .named("ScrollViewArea")).minY) { oldValue, newValue in
+                            atTopOfList = newValue >= 0
+                            // print(atTopOfList)
+                        }
                     }
-                    .padding(.top, -10)
-                    .onChange(of: clipboardManager.selectedItem, initial: false) {
-                        if let selectedItem = clipboardManager.selectedItem, let index = clipboardItems.firstIndex(of: selectedItem) {
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                scrollView.scrollTo(clipboardItems[index].objectID)
+                    .frame(height: 0)
+                    
+                    ScrollViewReader { scrollView in
+                        LazyVStack(spacing: 0) {
+                            ForEach(clipboardItems, id: \.self) { item in
+                                ClipboardItemView(item: item, isSelected: Binding(
+                                    get: { self.clipboardManager.selectedItem == item },
+                                    set: { newItem in
+                                        self.clipboardManager.selectedItem = newItem ? item : nil
+                                        isFocused = false
+                                    }))
+                                .id(item.objectID)
+                                
+                                //                            .animation(atTopOfList ? .default : nil, value: clipboardItems.first?.objectID)
+                                
                             }
+                        }
+                        .padding(.top, -10)
+                        .onChange(of: clipboardManager.selectedItem, initial: false) {
+                            if let selectedItem = clipboardManager.selectedItem, let index = clipboardItems.firstIndex(of: selectedItem) {
+                                withAnimation(.easeInOut(duration: 0.5)) {
+                                    scrollView.scrollTo(clipboardItems[index].objectID)
+                                }
+//                                isFocused = false
+                            }
+//                            else {
+//                                isFocused = true
+//                            }
                         }
                     }
                 }
-            }
-            .coordinateSpace(name: "ScrollViewArea")
-            Spacer()
-            Button {
-                showingClearAlert = true
-            } label: {
-                
-                Text("Clear All")
-                    .frame(maxWidth: 90)
+                .coordinateSpace(name: "ScrollViewArea")
+                Spacer()
+                Button {
+                    showingClearAlert = true
+                } label: {
                     
+                    Text("Clear All")
+                        .frame(maxWidth: 90)
+                    
+                }
+                .buttonStyle(.bordered)
+                .tint(.gray)
+                .padding(.bottom, 10)
+                .alert(isPresented: $showingClearAlert) {
+                    Alert(
+                        title: Text("Confirm Clear"),
+                        message: Text("Are you sure you want to clear all clipboard items?"),
+                        primaryButton: .destructive(Text("Clear")) {
+                            clearClipboardItems()
+                        },
+                        secondaryButton: .cancel()
+                    )
+                }
             }
-            .buttonStyle(.bordered)
-            .tint(.gray)
-            .padding(.bottom, 10)
-            
-            
-            .alert(isPresented: $showingClearAlert) {
-                Alert(
-                    title: Text("Confirm Clear"),
-                    message: Text("Are you sure you want to clear all clipboard items?"),
-                    primaryButton: .destructive(Text("Clear")) {
-                        clearClipboardItems()
-                    },
-                    secondaryButton: .cancel()
-                )
+            .onAppear {
+                clipboardManager.selectedItem = clipboardItems.first
+                setUpKeyboardHandling()
             }
-        }
-        .onAppear {
-            clipboardManager.selectedItem = clipboardItems.first
-            setUpKeyboardHandling()
         }
     }
     
@@ -169,7 +185,7 @@ struct ClipboardItemView: View {
     
     @Binding var isSelected: Bool
     @State private var selectedContent:  String?
-        
+            
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
