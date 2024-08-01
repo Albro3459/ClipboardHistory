@@ -26,6 +26,8 @@ struct SearchBarView: View {
                     .padding(.trailing, searchText.isEmpty ? 10 : 0)
 
                 if !searchText.isEmpty {
+//                    search(searchText: searchText)
+                    
                     Button(action: {
                         searchText = ""
                         isTextFieldFocused = false
@@ -73,9 +75,4 @@ struct SearchBarView: View {
         }
     }
 
-}
-
-
-private func search() {
-    
 }

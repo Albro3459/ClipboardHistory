@@ -15,7 +15,7 @@ struct ContentView: View {
         entity: ClipboardItem.entity(),
         sortDescriptors: [NSSortDescriptor(keyPath: \ClipboardItem.timestamp, ascending: false)],
         animation: nil)
-    private var clipboardItems: FetchedResults<ClipboardItem>
+    private var fetchedClipboardItems: FetchedResults<ClipboardItem>
     
     @EnvironmentObject var clipboardManager: ClipboardManager
     
@@ -26,6 +26,18 @@ struct ContentView: View {
     
     @State private var searchText = ""
     @FocusState private var isFocused: Bool
+    
+    private var clipboardItems: [ClipboardItem] {
+        if searchText.isEmpty {
+            return Array(fetchedClipboardItems)
+        }
+        else {
+            return fetchedClipboardItems.filter {
+                ($0.content?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+                ($0.type?.localizedCaseInsensitiveContains(searchText) ?? false)
+            }
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -60,8 +72,7 @@ struct ContentView: View {
                                         isFocused = false
                                     }))
                                 .id(item.objectID)
-                                
-                                //                            .animation(atTopOfList ? .default : nil, value: clipboardItems.first?.objectID)
+                                .animation(atTopOfList ? .default : nil, value: clipboardItems.first?.objectID)
                                 
                             }
                         }
@@ -71,11 +82,11 @@ struct ContentView: View {
                                 withAnimation(.easeInOut(duration: 0.5)) {
                                     scrollView.scrollTo(clipboardItems[index].objectID)
                                 }
-//                                isFocused = false
+                                //                                isFocused = false
                             }
-//                            else {
-//                                isFocused = true
-//                            }
+                            //                            else {
+                            //                                isFocused = true
+                            //                            }
                         }
                     }
                 }
@@ -102,9 +113,13 @@ struct ContentView: View {
                         secondaryButton: .cancel()
                     )
                 }
+                .onAppear {
+                    clipboardManager.selectedItem = clipboardItems.first
+                }
+                
             }
             .onAppear {
-                clipboardManager.selectedItem = clipboardItems.first
+//                clipboardManager.selectedItem = clipboardItems.first
                 setUpKeyboardHandling()
             }
         }
@@ -172,8 +187,6 @@ struct ContentView: View {
     }
     
 }
-
-
 
 
 struct ClipboardItemView: View {
