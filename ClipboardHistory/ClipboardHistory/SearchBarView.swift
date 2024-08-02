@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AppKit
+import Foundation
 
 struct SearchBarView: View {
     @Binding var searchText: String
@@ -16,7 +17,7 @@ struct SearchBarView: View {
         ZStack(alignment: .leading) {
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white)
                     .padding(.leading, 8)
                     .onTapGesture {
                         isTextFieldFocused = false
@@ -30,14 +31,12 @@ struct SearchBarView: View {
                     
 
                 if !searchText.isEmpty {
-//                    search(searchText: searchText)
-                    
                     Button(action: {
                         searchText = ""
                         isTextFieldFocused = false
                     }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white)
                             .padding(.trailing, -2)
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -45,72 +44,10 @@ struct SearchBarView: View {
             }
         }
         .onAppear {
-            setUpKeyboardHandling()
             DispatchQueue.main.async {
                 isTextFieldFocused = false
             }
         }
-    }
-    private func setUpKeyboardHandling() {
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            
-            if event.type == .keyDown {
-                switch event.keyCode {
-                case 3:
-                    if event.modifierFlags.contains(.command) {
-                        // Handle Command + F
-                        DispatchQueue.main.async {
-                            isTextFieldFocused = true
-                        }
-                        return nil // no more beeps
-                    }
-                case 53:
-                    // escape key
-                    DispatchQueue.main.async {
-                        isTextFieldFocused = false
-                    }
-                    return nil
-                default:
-                    break
-                }
-            }
-            return event
-        }
-    }
-
-}
-
-struct ClipboardType: Identifiable {
-    let id = UUID()
-    let name: String
-}
-
-struct TypeDropDownMenu: View {
-    
-    let types = [
-        ClipboardType(name: "text"),
-        ClipboardType(name: "image"),
-        ClipboardType(name: "file/folder")
-    ]
-    
-//    @State private var selectedType: String = "any"
-    @Binding var multiSelection: Set<UUID>
-
-    var body: some View {
-        VStack {
-//            Picker("", selection: $selectedType) {
-//                ForEach(types, id: \.self) { type in
-//                    Text(type)
-//                }
-//            }
-            List(types, id: \.id, selection: $multiSelection) { type in
-                Text(type.name)
-                    .tag(type.id)
-            }
-        }
-//        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-//        .background(Color(.lightGray).opacity(0.4))
-
     }
 }
 
@@ -120,13 +57,13 @@ struct ClearTextField: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSTextField {
         let textField = NSTextField()
-        textField.isBordered = false // Removes border
-        textField.drawsBackground = false // Ensures the background is clear
-        textField.placeholderString = placeholder // Sets the placeholder text
-        textField.delegate = context.coordinator // Assigns delegate
+        textField.isBordered = false
+        textField.drawsBackground = false
+        textField.placeholderString = placeholder
+        textField.delegate = context.coordinator
+        
         textField.font = NSFont.systemFont(ofSize: 14)
-        textField.focusRingType = .none // Disables the focus ring
-
+        textField.focusRingType = .none
 
         return textField
     }
@@ -150,6 +87,77 @@ struct ClearTextField: NSViewRepresentable {
             if let textField = notification.object as? NSTextField {
                 self.parent.text = textField.stringValue
             }
+        }
+    }
+}
+
+struct ClipboardType: Identifiable {
+    let id: UUID
+    let name: String
+    
+    init(id: UUID, name: String) {
+        self.id = id
+        self.name = name
+    }
+    
+    static func getTypeName(by id: UUID) -> String {
+        switch id {
+        case ClipboardType.text.id:
+            return "text"
+        case ClipboardType.image.id:
+            return "image"
+        case ClipboardType.fileFolder.id:
+            return "fileFolder"
+        default:
+            return ""
+        }
+    }
+    
+    static let text = ClipboardType(id: UUID(), name: "text")
+    static let image = ClipboardType(id: UUID(), name: "image")
+    static let fileFolder = ClipboardType(id: UUID(), name: "file / folder")
+}
+
+struct TypeDropDownMenu: View {
+    let types = [
+        ClipboardType.text,
+        ClipboardType.image,
+        ClipboardType.fileFolder
+    ]
+    
+    @Binding var multiSelection: Set<UUID>
+    
+    var body: some View {
+        ZStack(alignment: .top){
+            ZStack {
+                Rectangle()
+                    .fill(.background)
+                    .frame(height: 26)
+                    .zIndex(1)
+                Text("Filter by type: ")
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                    .padding(.top, 2)
+                    .zIndex(2)
+            }
+            .frame(maxWidth: .infinity)
+            .zIndex(2)
+            
+            List(types, id: \.id, selection: $multiSelection) { type in
+                Text(type.name)
+                    .foregroundColor(.white)
+                    .listRowBackground(Color.gray.opacity(0.25))
+                    .onTapGesture {
+                        if multiSelection.contains(type.id) {
+                            multiSelection.remove(type.id)
+                        } else {
+                            multiSelection.insert(type.id)
+                        }
+                    }
+            }
+            .scrollDisabled(true)
+            .padding(.top, 16)
+            .zIndex(0)
         }
     }
 }

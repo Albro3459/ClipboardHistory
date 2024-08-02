@@ -18,7 +18,7 @@ import CoreData
 
 class ClipboardManager: ObservableObject {
     @Published var selectedItem: ClipboardItem?
-
+    
     func copySelectedItem() {
         guard let item = selectedItem else {
             print("No item selected")
@@ -45,20 +45,4 @@ class ClipboardManager: ObservableObject {
             break
         }
     }
-    
-//    func selectNextItem(keyNum: Int) {
-//        switch keyNum {
-//            case 126:
-//                selectedItem
-//                
-//            case 125:
-//            
-//            
-//            default:
-//                break
-//            }
-//        }
-//            
-//        
-//    }
 }

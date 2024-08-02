@@ -27,23 +27,50 @@ struct ContentView: View {
     @State private var activeAlert: ActiveAlert = .clear
 
     @State private var atTopOfList = true
-        
-//    @State private var selectedItem: ClipboardItem?
-    
+            
     @State private var searchText = ""
     @FocusState private var isFocused: Bool
     
-    @State private var multiSelection = Set<UUID>()
     @State private var isSelectingCategory: Bool = false
+    @State private var selectedTypes: Set<UUID> = []
     
     private var clipboardItems: [ClipboardItem] {
-        if searchText.isEmpty {
-            return Array(fetchedClipboardItems)
+        
+        let selectedTypeNames: [String] = selectedTypes.map { id in
+            ClipboardType.getTypeName(by: id)
         }
-        else {
-            return fetchedClipboardItems.filter {
-                ($0.content?.localizedCaseInsensitiveContains(searchText) ?? false) ||
-                ($0.type?.localizedCaseInsensitiveContains(searchText) ?? false)
+        
+        return fetchedClipboardItems.filter { item in
+            let typeMatch: Bool
+            if selectedTypes.isEmpty || selectedTypes.count == 3 {
+                typeMatch = true // No filtering by type when none or all are selected.
+            } else {
+                typeMatch = selectedTypeNames.contains { typeName in
+                    if typeName == "fileFolder" {
+                        item.type?.localizedCaseInsensitiveContains("file") ?? false ||
+                        item.type?.localizedCaseInsensitiveContains("folder") ?? false ||
+                        item.type?.localizedCaseInsensitiveContains("image") ?? false
+                    }
+                    else {
+                        item.type?.localizedCaseInsensitiveContains(typeName) ?? false
+                    }
+                }
+            }
+
+            if searchText.isEmpty {
+                return typeMatch
+            } else {
+                // Further filter by searchText if it is not empty.
+                var searchTextMatch = false
+                if searchText.contains("file".lowercased()) {
+                    searchTextMatch = item.content?.localizedCaseInsensitiveContains(searchText) ?? false ||
+                    item.type?.localizedCaseInsensitiveContains(searchText) ?? false || item.type?.localizedCaseInsensitiveContains("image") ?? false
+                }
+                else {
+                    searchTextMatch = item.content?.localizedCaseInsensitiveContains(searchText) ?? false ||
+                    item.type?.localizedCaseInsensitiveContains(searchText) ?? false
+                }
+                return searchTextMatch && typeMatch
             }
         }
     }
@@ -59,27 +86,27 @@ struct ContentView: View {
             VStack {
                 HStack {
                     SearchBarView(searchText: $searchText)
-//                        .padding(.trailing, 4)
                         .focused($isFocused)
                     
-                    Image(systemName: "line.horizontal.3.decrease.circle")
-                        .foregroundColor(.gray)
-                        .padding(.trailing, 6)
-                        .onTapGesture {
-                            isSelectingCategory.toggle()
-//                            isTextFieldFocused = false
-                        }
+                    Button(action: {
+                        isSelectingCategory.toggle()
+                        isFocused = false
+                    }) {
+                        Image(systemName: "line.horizontal.3.decrease.circle")
+                            .foregroundColor(.white)
+                            .padding(.trailing, 6)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .popover(isPresented: $isSelectingCategory) {
+                           TypeDropDownMenu(multiSelection: $selectedTypes)
+                               .frame(width: 140, height: 99) 
+                       }
+                       .zIndex(1)
                     
                 }
                 .padding(.top, 2)
                 .padding(.bottom, -8)
-                
-//                .overlay( // Adds a thin line at the bottom
-//                    Rectangle().frame(height: 0.5).foregroundColor(.black.opacity(0.5)), alignment: .bottom
-//                )
-//                .padding(0)
-
-                
+                    
                 ScrollView {
                     GeometryReader { geometry in
                         Color.clear.onChange(of: geometry.frame(in: .named("ScrollViewArea")).minY) { oldValue, newValue in
@@ -89,15 +116,6 @@ struct ContentView: View {
                     }
                     .frame(height: 0)
                     .padding(0)
-                    
-//                    if isSelectingCategory {
-//                        TypeDropDownMenu(multiSelection: $multiSelection)
-//                            .frame(width: 200, height: 150) // Adjust size as necessary
-////                            .popover(isPresented: $isSelectingCategory, attachmentAnchor: .point(.bottom), arrowEdge: .top) {
-////                                TypeDropDownMenu(multiSelection: $multiSelection)
-////                                    .frame(width: 200, height: 150) // Adjust size as necessary
-////                            }
-//                    }
                     
                     ScrollViewReader { scrollView in
                         LazyVStack(spacing: 0) {
@@ -121,16 +139,12 @@ struct ContentView: View {
                                 withAnimation(.easeInOut(duration: 0.5)) {
                                     scrollView.scrollTo(clipboardItems[index].objectID)
                                 }
-                                //                                isFocused = false
                             }
-                            //                            else {
-                            //                                isFocused = true
-                            //                            }
                         }
                     }
                 }
                 .coordinateSpace(name: "ScrollViewArea")
-                .overlay( // Adds a thin line at the bottom
+                .overlay( // Adds a thin line at the top and bottom
                     Rectangle().frame(height: 0.5).foregroundColor(.black.opacity(0.5)), alignment: .top
                 )
                 .overlay(
@@ -172,7 +186,7 @@ struct ContentView: View {
                 .onAppear {
                     clipboardManager.selectedItem = clipboardItems.first
                 }
-                
+
             }
             .onAppear {
 //                clipboardManager.selectedItem = clipboardItems.first
@@ -226,31 +240,43 @@ struct ContentView: View {
                         return nil // no more beeps
                     }
                 case 51:
+                    // Handle Command + Del
                     if event.modifierFlags.contains(.command) {
                         DispatchQueue.main.async {
-                            self.showingAlert = true // Trigger the alert
+                            self.showingAlert = true
                             activeAlert = .delete
                         }
                         return nil
                     }
+                case 3:
+                    if event.modifierFlags.contains(.command) {
+                        // Handle Command + F
+                        DispatchQueue.main.async {
+                            isFocused = true
+                        }
+                        return nil // no more beeps
+                    }
+                case 53:
+                    // Escape key
+                    DispatchQueue.main.async {
+                        isSelectingCategory = false
+                        isFocused = false
+                    }
+                    return nil
                 case 126:
                     // Handle up arrow
+                    isFocused = false
                     if currentIndex != nil && currentIndex! > 0 {
                         clipboardManager.selectedItem = clipboardItems[currentIndex!-1]
                     }
                     return nil //no more beeps
                 case 125:
                     // Handle down arrow
+                    isFocused = false
                     if currentIndex != nil && currentIndex! < clipboardItems.count - 1 {
                         clipboardManager.selectedItem = clipboardItems[currentIndex!+1]
                     }
                     return nil // no more beeps
-//                case 53:
-//                    DispatchQueue.main.async {
-//                        self.isSearchBarFocused = false
-//                    }
-//                    print("here")
-//                    return nil
                 default:
                     break
                 }
@@ -347,9 +373,7 @@ struct ClipboardItemView: View {
         .padding(.leading, 15)
         .padding(.trailing, 15)
         .padding(.bottom, 2)
-//        .overlay( // Adds a thin line at the bottom
-//            Rectangle().frame(height: 1).foregroundColor(.gray), alignment: .bottom
-//        )
+        
         .background(RoundedRectangle(cornerRadius: 8)
             .fill(!isSelected ? Color(.darkGray).opacity(0.5) : Color(.darkGray))
             .padding(.horizontal, 10)

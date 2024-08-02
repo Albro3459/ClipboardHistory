@@ -30,11 +30,6 @@ struct ClipboardHistoryApp: App {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(appDelegate.clipboardManager)
-//                .toolbar {
-//                    ToolbarItem(placement: .automatic) {
-//                        SearchBarView()
-//                    }
-//                }
         }
         
     }
@@ -58,18 +53,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     override init() {
         super.init()
         setupGlobalHotKey()
-//        observeSpaceSwitch()
     }
-    
-//    func observeSpaceSwitch() {
-//        NSWorkspace.shared.notificationCenter.addObserver(
-//            self,
-//            selector: #selector(spaceDidChange),
-//            name: NSWorkspace.activeSpaceDidChangeNotification,
-//            object: nil
-//        )
-//    }
-    
+
     @objc func spaceDidChange() {
         isSwitchingSpaces = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -103,7 +88,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         self.lastToggleTime = now
         
         DispatchQueue.main.async {
-//            self.isSwitchingSpaces = false
             NSApplication.shared.activate(ignoringOtherApps: true)
             if let window = self.window {
                 if !window.isKeyWindow {
@@ -145,7 +129,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.collectionBehavior = .canJoinAllSpaces
         NSApplication.shared.activate(ignoringOtherApps: true)
 
-//        window.delegate = self
         
 //        window.standardWindowButton(.closeButton)?.isHidden = true
 //        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
@@ -181,17 +164,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
     
-//    func windowDidResignKey(_ notification: Notification) {
-//        if let window = notification.object as? NSWindow, window == self.window {
-//            if !isSwitchingSpaces {
-//                window.orderOut(nil)
-//            }
-//            else {
-//                window.makeKeyAndOrderFront(nil)
-//                NSApplication.shared.activate(ignoringOtherApps: true)
-//            }
-//        }
-//    }
     
     public func pasteNoFormatting() {
         let pasteboard = NSPasteboard.general

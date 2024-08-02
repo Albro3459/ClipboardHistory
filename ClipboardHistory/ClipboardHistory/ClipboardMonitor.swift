@@ -87,7 +87,6 @@ class ClipboardMonitor: ObservableObject {
             
             let context = PersistenceController.shared.container.viewContext
             
-            // Wrap database operations within a perform block for atomic execution
             context.perform {
                 let newClipboardItem = ClipboardItem(context: context)
                 newClipboardItem.content = content
@@ -117,13 +116,13 @@ class ClipboardMonitor: ObservableObject {
         
         let context = PersistenceController.shared.container.viewContext
         let fetchRequest: NSFetchRequest<NSFetchRequestResult> = ClipboardItem.fetchRequest()
-        fetchRequest.fetchLimit = 30
+        fetchRequest.fetchLimit = 30 // 30 because list is in reverse order, so we need the last one
         fetchRequest.propertiesToFetch = ["content", "type", "imageData"]
         fetchRequest.resultType = .dictionaryResultType
         
         
         do {
-            let results = try context.fetch(fetchRequest) as? [[String: Any]] // Cast directly to an array of dictionaries
+            let results = try context.fetch(fetchRequest) as? [[String: Any]]
             
             if results?.last == nil {
                 shouldSave = true
