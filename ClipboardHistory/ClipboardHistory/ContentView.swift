@@ -9,6 +9,10 @@ import SwiftUI
 import CoreData
 import KeyboardShortcuts
 
+enum ActiveAlert {
+    case clear, delete
+}
+
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @FetchRequest(
@@ -19,13 +23,18 @@ struct ContentView: View {
     
     @EnvironmentObject var clipboardManager: ClipboardManager
     
-    @State private var showingClearAlert = false
+    @State private var showingAlert = false
+    @State private var activeAlert: ActiveAlert = .clear
+
     @State private var atTopOfList = true
         
 //    @State private var selectedItem: ClipboardItem?
     
     @State private var searchText = ""
     @FocusState private var isFocused: Bool
+    
+    @State private var multiSelection = Set<UUID>()
+    @State private var isSelectingCategory: Bool = false
     
     private var clipboardItems: [ClipboardItem] {
         if searchText.isEmpty {
@@ -48,10 +57,28 @@ struct ContentView: View {
                     isFocused = false
                 }
             VStack {
+                HStack {
+                    SearchBarView(searchText: $searchText)
+//                        .padding(.trailing, 4)
+                        .focused($isFocused)
+                    
+                    Image(systemName: "line.horizontal.3.decrease.circle")
+                        .foregroundColor(.gray)
+                        .padding(.trailing, 6)
+                        .onTapGesture {
+                            isSelectingCategory.toggle()
+//                            isTextFieldFocused = false
+                        }
+                    
+                }
+                .padding(.top, 2)
+                .padding(.bottom, -8)
                 
-                SearchBarView(searchText: $searchText)
-                    .padding(.trailing, 4)
-                    .focused($isFocused)
+//                .overlay( // Adds a thin line at the bottom
+//                    Rectangle().frame(height: 0.5).foregroundColor(.black.opacity(0.5)), alignment: .bottom
+//                )
+//                .padding(0)
+
                 
                 ScrollView {
                     GeometryReader { geometry in
@@ -61,6 +88,16 @@ struct ContentView: View {
                         }
                     }
                     .frame(height: 0)
+                    .padding(0)
+                    
+//                    if isSelectingCategory {
+//                        TypeDropDownMenu(multiSelection: $multiSelection)
+//                            .frame(width: 200, height: 150) // Adjust size as necessary
+////                            .popover(isPresented: $isSelectingCategory, attachmentAnchor: .point(.bottom), arrowEdge: .top) {
+////                                TypeDropDownMenu(multiSelection: $multiSelection)
+////                                    .frame(width: 200, height: 150) // Adjust size as necessary
+////                            }
+//                    }
                     
                     ScrollViewReader { scrollView in
                         LazyVStack(spacing: 0) {
@@ -75,6 +112,8 @@ struct ContentView: View {
                                 .animation(atTopOfList ? .default : nil, value: clipboardItems.first?.objectID)
                                 
                             }
+                            .padding(.top, 5)
+                            .padding(.bottom, -5)
                         }
                         .padding(.top, -10)
                         .onChange(of: clipboardManager.selectedItem, initial: false) {
@@ -91,27 +130,44 @@ struct ContentView: View {
                     }
                 }
                 .coordinateSpace(name: "ScrollViewArea")
+                .overlay( // Adds a thin line at the bottom
+                    Rectangle().frame(height: 0.5).foregroundColor(.black.opacity(0.5)), alignment: .top
+                )
+                .overlay(
+                    Rectangle().frame(height: 0.5).foregroundColor(.black.opacity(0.5)), alignment: .bottom
+                )
                 Spacer()
                 Button {
-                    showingClearAlert = true
+                    showingAlert = true
+                    activeAlert = .clear
                 } label: {
-                    
                     Text("Clear All")
                         .frame(maxWidth: 90)
-                    
                 }
                 .buttonStyle(.bordered)
-                .tint(.gray)
-                .padding(.bottom, 10)
-                .alert(isPresented: $showingClearAlert) {
-                    Alert(
-                        title: Text("Confirm Clear"),
-                        message: Text("Are you sure you want to clear all clipboard items?"),
-                        primaryButton: .destructive(Text("Clear")) {
-                            clearClipboardItems()
-                        },
-                        secondaryButton: .cancel()
-                    )
+                .tint(Color(.darkGray))
+                .padding(.bottom, 8)
+                .alert(isPresented: $showingAlert) {
+                    if activeAlert == .clear {
+                        Alert(
+                            title: Text("Confirm Clear"),
+                            message: Text("Are you sure you want to clear all clipboard items?"),
+                            primaryButton: .destructive(Text("Clear")) {
+                                clearClipboardItems()
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
+                    else {
+                        Alert(
+                            title: Text("Confirm Delete"),
+                            message: Text("Are you sure you want to delete this clipboard item?"),
+                            primaryButton: .destructive(Text("Delete")) {
+                                self.deleteItem(item: clipboardManager.selectedItem!)
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
                 }
                 .onAppear {
                     clipboardManager.selectedItem = clipboardItems.first
@@ -132,6 +188,15 @@ struct ContentView: View {
         do {
             try viewContext.save()
         } catch let error {
+            print("Error saving managed object context: \(error)")
+        }
+    }
+    
+    private func deleteItem(item: ClipboardItem) {
+        viewContext.delete(item)
+        do {
+            try viewContext.save()
+        } catch {
             print("Error saving managed object context: \(error)")
         }
     }
@@ -159,6 +224,14 @@ struct ContentView: View {
                         // Handle Command + C
                         clipboardManager.copySelectedItem()
                         return nil // no more beeps
+                    }
+                case 51:
+                    if event.modifierFlags.contains(.command) {
+                        DispatchQueue.main.async {
+                            self.showingAlert = true // Trigger the alert
+                            activeAlert = .delete
+                        }
+                        return nil
                     }
                 case 126:
                     // Handle up arrow
@@ -194,7 +267,9 @@ struct ClipboardItemView: View {
     
     @Environment(\.managedObjectContext) private var viewContext
     
-    @State private var showingClearAlert = false
+    @EnvironmentObject var clipboardManager: ClipboardManager
+    
+    @State private var showingDeleteAlert = false
     
     @Binding var isSelected: Bool
     @State private var selectedContent:  String?
@@ -206,7 +281,7 @@ struct ClipboardItemView: View {
                     if item.type == "text" {
                         Text(content)
                             .font(.headline)
-                            .frame(minHeight: 35)
+                            .frame(minHeight: 33)
                             .lineLimit(3)
                     }
                 }
@@ -247,7 +322,9 @@ struct ClipboardItemView: View {
             .buttonStyle(BorderlessButtonStyle())
             
             Button(action: {
-                showingClearAlert = true
+                isSelected = true
+                clipboardManager.selectedItem = item
+                showingDeleteAlert = true
             }) {
                 Image(systemName: "trash")
                     .foregroundColor(.white)
@@ -255,12 +332,12 @@ struct ClipboardItemView: View {
             .buttonStyle(BorderlessButtonStyle())
             .padding(.leading, 5)
             .padding(.trailing, 10)
-            .alert(isPresented: $showingClearAlert) {
+            .alert(isPresented: $showingDeleteAlert) {
                 Alert(
                     title: Text("Confirm Delete"),
                     message: Text("Are you sure you want to delete this clipboard item?"),
                     primaryButton: .destructive(Text("Delete")) {
-                        self.deleteItem(item: self.item)
+                        self.deleteItem(item: clipboardManager.selectedItem!)
                     },
                     secondaryButton: .cancel()
                 )
@@ -273,7 +350,7 @@ struct ClipboardItemView: View {
 //        .overlay( // Adds a thin line at the bottom
 //            Rectangle().frame(height: 1).foregroundColor(.gray), alignment: .bottom
 //        )
-        .background(RoundedRectangle(cornerRadius: 10)
+        .background(RoundedRectangle(cornerRadius: 8)
             .fill(!isSelected ? Color(.darkGray).opacity(0.5) : Color(.darkGray))
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
@@ -315,6 +392,7 @@ struct ClipboardItemView: View {
             print("Error saving managed object context: \(error)")
         }
     }
+    
 }
 
 

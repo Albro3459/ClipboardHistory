@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 struct SearchBarView: View {
     @Binding var searchText: String
@@ -21,9 +22,12 @@ struct SearchBarView: View {
                         isTextFieldFocused = false
                     }
 
-                TextField("Search", text: $searchText)
+                ClearTextField(placeholder: "Search", text: $searchText)
                     .focused($isTextFieldFocused)
-                    .padding(.trailing, searchText.isEmpty ? 10 : 0)
+                    .padding(.top, 2)
+                    .padding(.bottom, 4)
+                    .padding(.trailing, searchText.isEmpty ? 21 : 0)
+                    
 
                 if !searchText.isEmpty {
 //                    search(searchText: searchText)
@@ -34,13 +38,12 @@ struct SearchBarView: View {
                     }) {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(.gray)
-                            .padding(.trailing, 10)
+                            .padding(.trailing, -2)
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
             }
         }
-        .padding(.top, 3)
         .onAppear {
             setUpKeyboardHandling()
             DispatchQueue.main.async {
@@ -75,4 +78,78 @@ struct SearchBarView: View {
         }
     }
 
+}
+
+struct ClipboardType: Identifiable {
+    let id = UUID()
+    let name: String
+}
+
+struct TypeDropDownMenu: View {
+    
+    let types = [
+        ClipboardType(name: "text"),
+        ClipboardType(name: "image"),
+        ClipboardType(name: "file/folder")
+    ]
+    
+//    @State private var selectedType: String = "any"
+    @Binding var multiSelection: Set<UUID>
+
+    var body: some View {
+        VStack {
+//            Picker("", selection: $selectedType) {
+//                ForEach(types, id: \.self) { type in
+//                    Text(type)
+//                }
+//            }
+            List(types, id: \.id, selection: $multiSelection) { type in
+                Text(type.name)
+                    .tag(type.id)
+            }
+        }
+//        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+//        .background(Color(.lightGray).opacity(0.4))
+
+    }
+}
+
+struct ClearTextField: NSViewRepresentable {
+    var placeholder: String
+    @Binding var text: String
+
+    func makeNSView(context: Context) -> NSTextField {
+        let textField = NSTextField()
+        textField.isBordered = false // Removes border
+        textField.drawsBackground = false // Ensures the background is clear
+        textField.placeholderString = placeholder // Sets the placeholder text
+        textField.delegate = context.coordinator // Assigns delegate
+        textField.font = NSFont.systemFont(ofSize: 14)
+        textField.focusRingType = .none // Disables the focus ring
+
+
+        return textField
+    }
+
+    func updateNSView(_ nsView: NSTextField, context: Context) {
+        nsView.stringValue = text
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: ClearTextField
+
+        init(_ parent: ClearTextField) {
+            self.parent = parent
+        }
+
+        func controlTextDidChange(_ notification: Notification) {
+            if let textField = notification.object as? NSTextField {
+                self.parent.text = textField.stringValue
+            }
+        }
+    }
 }
