@@ -111,7 +111,7 @@ struct ContentView: View {
                     GeometryReader { geometry in
                         Color.clear.onChange(of: geometry.frame(in: .named("ScrollViewArea")).minY) { oldValue, newValue in
                             atTopOfList = newValue >= 0
-                            // print(atTopOfList)
+//                             print(atTopOfList)
                         }
                     }
                     .frame(height: 0)
@@ -130,10 +130,9 @@ struct ContentView: View {
                                 .animation(atTopOfList ? .default : nil, value: clipboardItems.first?.objectID)
                                 
                             }
-                            .padding(.top, 5)
-                            .padding(.bottom, -5)
+//                            .padding(.top, 5)
+//                            .padding(.bottom, -5)
                         }
-                        .padding(.top, -10)
                         .onChange(of: clipboardManager.selectedItem, initial: false) {
                             if let selectedItem = clipboardManager.selectedItem, let index = clipboardItems.firstIndex(of: selectedItem) {
                                 withAnimation(.easeInOut(duration: 0.5)) {
@@ -142,6 +141,7 @@ struct ContentView: View {
                             }
                         }
                     }
+                    .padding(.top, -4)
                 }
                 .coordinateSpace(name: "ScrollViewArea")
                 .overlay( // Adds a thin line at the top and bottom
@@ -231,7 +231,7 @@ struct ContentView: View {
                 }
             }
             
-            if event.type == .keyDown {
+            if event.type == .keyDown && !self.showingAlert {
                 switch event.keyCode {
                 case 8:
                     if event.modifierFlags.contains(.command) {
@@ -239,6 +239,10 @@ struct ContentView: View {
                         clipboardManager.copySelectedItem()
                         return nil // no more beeps
                     }
+                case 36, 76:
+                    // Handle Enter or Return
+                    clipboardManager.copySelectedItem()
+                    return nil // no more beeps
                 case 51:
                     // Handle Command + Del
                     if event.modifierFlags.contains(.command) {
@@ -307,7 +311,7 @@ struct ClipboardItemView: View {
                     if item.type == "text" {
                         Text(content)
                             .font(.headline)
-                            .frame(minHeight: 33)
+                            .frame(minHeight: 31)
                             .lineLimit(3)
                     }
                 }
@@ -372,7 +376,7 @@ struct ClipboardItemView: View {
         .padding(.top, 4)
         .padding(.leading, 15)
         .padding(.trailing, 15)
-        .padding(.bottom, 2)
+        .padding(.bottom, 3)
         
         .background(RoundedRectangle(cornerRadius: 8)
             .fill(!isSelected ? Color(.darkGray).opacity(0.5) : Color(.darkGray))
