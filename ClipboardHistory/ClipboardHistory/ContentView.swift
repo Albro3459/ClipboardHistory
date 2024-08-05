@@ -23,6 +23,8 @@ struct ContentView: View {
     
     @EnvironmentObject var clipboardManager: ClipboardManager
     
+//    @State private var isCopied = false
+    
     @State private var showingAlert = false
     @State private var activeAlert: ActiveAlert = .clear
 
@@ -33,7 +35,7 @@ struct ContentView: View {
     
     @State private var isSelectingCategory: Bool = false
     @State private var selectedTypes: Set<UUID> = []
-    
+        
     private var clipboardItems: [ClipboardItem] {
         
         let selectedTypeNames: [String] = selectedTypes.map { id in
@@ -77,13 +79,45 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
+            
             Rectangle()
                 .foregroundColor(.clear)
                 .contentShape(Rectangle())
                 .onTapGesture {
                     isFocused = false
                 }
+            
+            if clipboardManager.isCopied {
+                ZStack(alignment: .center) {
+                    
+                    ZStack(alignment: .top) {
+                        Rectangle()
+                            .foregroundColor(Color(.darkGray))
+                            .cornerRadius(8)
+                        Rectangle()
+                            .foregroundColor(Color(.darkGray))
+                            .frame(height: 10)
+                            .zIndex(1)
+                    }
+                    Text("Copied!")
+                        .font(.subheadline)
+                        .bold()
+                        
+                        .cornerRadius(8)
+                        .frame(alignment: .center)
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.easeInOut, value: clipboardManager.isCopied)
+                .position(x: 50, y: -211)
+                .frame(width: 90, height: 24)
+                .zIndex(5)
+            
+                
+                Color.white.opacity(0.3).blink(duration: 0.3)
+            }
+            
             VStack {
+                
                 HStack {
                     SearchBarView(searchText: $searchText)
                         .focused($isFocused)
@@ -241,8 +275,10 @@ struct ContentView: View {
                     }
                 case 36, 76:
                     // Handle Enter or Return
-                    clipboardManager.copySelectedItem()
-                    return nil // no more beeps
+                    if !isFocused {
+                        clipboardManager.copySelectedItem()
+                        return nil // no more beeps
+                    }
                 case 51:
                     // Handle Command + Del
                     if event.modifierFlags.contains(.command) {
@@ -298,7 +334,7 @@ struct ClipboardItemView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
     @EnvironmentObject var clipboardManager: ClipboardManager
-    
+        
     @State private var showingDeleteAlert = false
     
     @Binding var isSelected: Bool
@@ -344,7 +380,9 @@ struct ClipboardItemView: View {
            
             Spacer()
             Button(action: {
-                self.copyToClipboard(item: item)
+                clipboardManager.selectedItem = item
+//                self.copyToClipboard(item: item)
+                clipboardManager.copySelectedItem()
             }) {
                 Image(systemName: "doc.on.doc")
                     .foregroundColor(.white)
@@ -389,28 +427,28 @@ struct ClipboardItemView: View {
         }
     }
     
-    private func copyToClipboard(item: ClipboardItem) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        
-        switch item.type {
-        case "text":
-            if let content = item.content {
-                pasteboard.setString(content, forType: .string)
-            }
-        case "imageData":
-            if let imageData = item.imageData {
-                pasteboard.setData(imageData, forType: .tiff)
-            }
-        case "image", "file", "folder", "alias":
-            if let fileName = item.fileName {
-                let url = URL(fileURLWithPath: fileName)
-                pasteboard.writeObjects([url as NSURL])
-            }
-        default:
-            break
-        }
-    }
+//    private func copyToClipboard(item: ClipboardItem) {
+//        let pasteboard = NSPasteboard.general
+//        pasteboard.clearContents()
+//        
+//        switch item.type {
+//        case "text":
+//            if let content = item.content {
+//                pasteboard.setString(content, forType: .string)
+//            }
+//        case "imageData":
+//            if let imageData = item.imageData {
+//                pasteboard.setData(imageData, forType: .tiff)
+//            }
+//        case "image", "file", "folder", "alias":
+//            if let fileName = item.fileName {
+//                let url = URL(fileURLWithPath: fileName)
+//                pasteboard.writeObjects([url as NSURL])
+//            }
+//        default:
+//            break
+//        }
+//    }
     
     private func deleteItem(item: ClipboardItem) {
         viewContext.delete(item)
@@ -423,6 +461,28 @@ struct ClipboardItemView: View {
     
 }
 
+struct BlinkViewModifier: ViewModifier {
+    
+    let duration: Double
+    @State private var blink: Bool = false
+    
+    func body(content: Content) -> some View {
+        content
+            .opacity(blink ? 0 : 1)
+            .animation(.easeOut(duration: duration)/*.repeatForever()*/, value: blink)
+            .onAppear {
+                withAnimation {
+                    blink = true
+                }
+            }
+    }
+}
+
+extension View {
+    func blink(duration: Double = 0.75) -> some View {
+        modifier(BlinkViewModifier(duration: duration))
+    }
+}
 
 private let itemFormatter: DateFormatter = {
     let formatter = DateFormatter()

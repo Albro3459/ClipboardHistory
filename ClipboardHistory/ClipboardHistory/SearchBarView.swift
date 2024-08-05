@@ -36,7 +36,7 @@ struct SearchBarView: View {
                         isTextFieldFocused = false
                     }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.white)
+//                            .foregroundColor(.white)
                             .padding(.trailing, -2)
                     }
                     .buttonStyle(PlainButtonStyle())

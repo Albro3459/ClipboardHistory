@@ -111,7 +111,7 @@ class ClipboardMonitor: ObservableObject {
         }
     }
     
-    private func checkLast(content: String?, type: String, imageData: Data?, fileName: String?) -> Bool {
+    func checkLast(content: String?, type: String, imageData: Data?, fileName: String?) -> Bool {
         var shouldSave = false
         
         let context = PersistenceController.shared.container.viewContext
