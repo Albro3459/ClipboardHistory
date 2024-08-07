@@ -17,7 +17,7 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @FetchRequest(
         entity: ClipboardItem.entity(),
-        sortDescriptors: [NSSortDescriptor(keyPath: \ClipboardItem.timestamp, ascending: false)],
+        sortDescriptors: [NSSortDescriptor(keyPath: \ClipboardItem.timeStamp, ascending: false)],
         animation: nil)
     private var fetchedClipboardItems: FetchedResults<ClipboardItem>
     
@@ -35,6 +35,10 @@ struct ContentView: View {
     
     @State private var isSelectingCategory: Bool = false
     @State private var selectedTypes: Set<UUID> = []
+    
+    @State private var scrollToTop: Bool = false
+    @State private var scrollToBottom: Bool = false
+
         
     private var clipboardItems: [ClipboardItem] {
         
@@ -113,7 +117,7 @@ struct ContentView: View {
                 .zIndex(5)
             
                 
-                Color.white.opacity(0.3).blink(duration: 0.3)
+                Color.white.opacity(0.1).flash(duration: 0.3)
             }
             
             VStack {
@@ -128,7 +132,7 @@ struct ContentView: View {
                     }) {
                         Image(systemName: "line.horizontal.3.decrease.circle")
                             .foregroundColor(.white)
-                            .padding(.trailing, 6)
+                            .padding(.trailing, -2)
                     }
                     .buttonStyle(PlainButtonStyle())
                     .popover(isPresented: $isSelectingCategory) {
@@ -136,6 +140,22 @@ struct ContentView: View {
                                .frame(width: 140, height: 99) 
                        }
                        .zIndex(1)
+                       .help("Filter Items by Type")
+                    
+                    Button(action: {
+                        if !atTopOfList {
+                            scrollToTop = true
+                        }
+                        else {
+                            scrollToBottom = true
+                        }
+                    }) {
+                        Image(systemName: !atTopOfList ? "arrow.up.circle" : "arrow.down.circle")
+                            .foregroundColor(.white)
+                            .padding(.trailing, 1)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .help(!atTopOfList ? "Scroll to Top" : "Scroll to Bottom")
                     
                 }
                 .padding(.top, 2)
@@ -164,14 +184,27 @@ struct ContentView: View {
                                 .animation(atTopOfList ? .default : nil, value: clipboardItems.first?.objectID)
                                 
                             }
-//                            .padding(.top, 5)
-//                            .padding(.bottom, -5)
-                        }
+                        } //scrolls when using the arrow keys
                         .onChange(of: clipboardManager.selectedItem, initial: false) {
                             if let selectedItem = clipboardManager.selectedItem, let index = clipboardItems.firstIndex(of: selectedItem) {
                                 withAnimation(.easeInOut(duration: 0.5)) {
                                     scrollView.scrollTo(clipboardItems[index].objectID)
                                 }
+                            }
+                        }
+                        .onChange(of: scrollToTop, initial: false) {
+                            withAnimation() {
+                                scrollView.scrollTo(clipboardItems.first?.objectID, anchor: .top)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+//                                    scrollView.scrollTo(firstItem.objectID, anchor: .top)
+                                }
+                                scrollToTop = false
+                            }
+                        }
+                        .onChange(of: scrollToBottom, initial: false) {
+                            withAnimation() {
+                                scrollView.scrollTo(clipboardItems.last?.objectID)
+                                scrollToBottom = false
                             }
                         }
                     }
@@ -181,9 +214,9 @@ struct ContentView: View {
                 .overlay( // Adds a thin line at the top and bottom
                     Rectangle().frame(height: 0.5).foregroundColor(.black.opacity(0.5)), alignment: .top
                 )
-                .overlay(
-                    Rectangle().frame(height: 0.5).foregroundColor(.black.opacity(0.5)), alignment: .bottom
-                )
+//                .overlay(
+//                    Rectangle().frame(height: 0.5).foregroundColor(.black.opacity(0.5)), alignment: .bottom
+//                )
                 Spacer()
                 Button {
                     showingAlert = true
@@ -192,6 +225,7 @@ struct ContentView: View {
                     Text("Clear All")
                         .frame(maxWidth: 90)
                 }
+                .help("Clear All Items")
                 .buttonStyle(.bordered)
                 .tint(Color(.darkGray))
                 .padding(.bottom, 8)
@@ -231,6 +265,9 @@ struct ContentView: View {
     
     private func clearClipboardItems() {
         for item in clipboardItems {
+            if let filePath = item.filePath, !filePath.isEmpty {
+                clipboardManager.clipboardMonitor?.deleteTmpImage(filePath: filePath)
+            }
             viewContext.delete(item)
         }
         do {
@@ -241,7 +278,20 @@ struct ContentView: View {
     }
     
     private func deleteItem(item: ClipboardItem) {
+
+        if let imageHash = item.imageHash, let filePath = item.filePath, !filePath.isEmpty {
+            
+            let items = clipboardManager.clipboardMonitor?.findItems(content: nil, type: nil, imageHash: imageHash, filePath: filePath)
+            
+            // only want to delete file if its the only copy left
+            if items!.count < 2 {
+                print(items!.count)
+                clipboardManager.clipboardMonitor?.deleteTmpImage(filePath: filePath)
+            }
+        }
+        
         viewContext.delete(item)
+            
         do {
             try viewContext.save()
         } catch {
@@ -341,7 +391,7 @@ struct ClipboardItemView: View {
     @State private var selectedContent:  String?
             
     var body: some View {
-        HStack {
+        HStack() {
             VStack(alignment: .leading) {
                 if item.type == "text", let content = item.content {
                     if item.type == "text" {
@@ -388,6 +438,7 @@ struct ClipboardItemView: View {
                     .foregroundColor(.white)
             }
             .buttonStyle(BorderlessButtonStyle())
+            .help("Copy Item")
             
             Button(action: {
                 isSelected = true
@@ -397,6 +448,7 @@ struct ClipboardItemView: View {
                 Image(systemName: "trash")
                     .foregroundColor(.white)
             }
+            .help("Delete Item")
             .buttonStyle(BorderlessButtonStyle())
             .padding(.leading, 5)
             .padding(.trailing, 10)
@@ -411,10 +463,10 @@ struct ClipboardItemView: View {
                 )
             }
         }
-        .padding(.top, 4)
+        .padding(.top, 3)
         .padding(.leading, 15)
         .padding(.trailing, 15)
-        .padding(.bottom, 3)
+        .padding(.bottom, 4)
         
         .background(RoundedRectangle(cornerRadius: 8)
             .fill(!isSelected ? Color(.darkGray).opacity(0.5) : Color(.darkGray))
@@ -422,36 +474,30 @@ struct ClipboardItemView: View {
             .padding(.vertical, 4)
         )
         .contentShape(Rectangle()) // Makes the entire area tappable
-        .onTapGesture {
+        .onTapGesture(count: 2) {
+            isSelected = true
+            clipboardManager.copySelectedItem()
+        }
+        .onTapGesture(count: 1) {
             isSelected = true
         }
     }
     
-//    private func copyToClipboard(item: ClipboardItem) {
-//        let pasteboard = NSPasteboard.general
-//        pasteboard.clearContents()
-//        
-//        switch item.type {
-//        case "text":
-//            if let content = item.content {
-//                pasteboard.setString(content, forType: .string)
-//            }
-//        case "imageData":
-//            if let imageData = item.imageData {
-//                pasteboard.setData(imageData, forType: .tiff)
-//            }
-//        case "image", "file", "folder", "alias":
-//            if let fileName = item.fileName {
-//                let url = URL(fileURLWithPath: fileName)
-//                pasteboard.writeObjects([url as NSURL])
-//            }
-//        default:
-//            break
-//        }
-//    }
-    
     private func deleteItem(item: ClipboardItem) {
+
+        if let imageHash = item.imageHash, let filePath = item.filePath, !filePath.isEmpty {
+            
+            let items = clipboardManager.clipboardMonitor?.findItems(content: nil, type: nil, imageHash: imageHash, filePath: filePath)
+            
+            // only want to delete file if its the only copy left
+            if items!.count < 2 {
+                print(items!.count)
+                clipboardManager.clipboardMonitor?.deleteTmpImage(filePath: filePath)
+            }
+        }
+        
         viewContext.delete(item)
+            
         do {
             try viewContext.save()
         } catch {
@@ -461,26 +507,26 @@ struct ClipboardItemView: View {
     
 }
 
-struct BlinkViewModifier: ViewModifier {
+struct FlashViewModifier: ViewModifier {
     
     let duration: Double
-    @State private var blink: Bool = false
+    @State private var flash: Bool = false
     
     func body(content: Content) -> some View {
         content
-            .opacity(blink ? 0 : 1)
-            .animation(.easeOut(duration: duration)/*.repeatForever()*/, value: blink)
+            .opacity(flash ? 0 : 1)
+            .animation(.easeOut(duration: duration)/*.repeatForever()*/, value: flash)
             .onAppear {
                 withAnimation {
-                    blink = true
+                    flash = true
                 }
             }
     }
 }
 
 extension View {
-    func blink(duration: Double = 0.75) -> some View {
-        modifier(BlinkViewModifier(duration: duration))
+    func flash(duration: Double = 0.75) -> some View {
+        modifier(FlashViewModifier(duration: duration))
     }
 }
 

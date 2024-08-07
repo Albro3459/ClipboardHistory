@@ -17,7 +17,10 @@ struct PersistenceController {
             let newItem = ClipboardItem(context: viewContext)
             newItem.content = "Sample content"
             newItem.type = "text"
-            newItem.timestamp = Date()
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd h.mm.ss bb"
+            newItem.timeStamp = formatter.date(from: formatter.string(from: Date()))
+//            newItem.timeStamp = Date()
         }
         do {
             try viewContext.save()

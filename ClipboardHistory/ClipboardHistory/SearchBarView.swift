@@ -28,6 +28,7 @@ struct SearchBarView: View {
                     .padding(.top, 2)
                     .padding(.bottom, 4)
                     .padding(.trailing, searchText.isEmpty ? 21 : 0)
+                    .help("Search Bar")
                     
 
                 if !searchText.isEmpty {
@@ -40,6 +41,7 @@ struct SearchBarView: View {
                             .padding(.trailing, -2)
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .help("Clear Search Text")
                 }
             }
         }

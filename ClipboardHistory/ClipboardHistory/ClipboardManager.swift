@@ -42,12 +42,24 @@ class ClipboardManager: ObservableObject {
             }
         case "imageData":
             if let imageData = item.imageData {
-                pasteboard.setData(imageData, forType: .tiff)
-                copied()
+                // this is called when I copy from an imageData item that is already in the db
+                if clipboardMonitor?.createImageFile(item: item, imageData: item.imageData, filePath: item.filePath, timeStamp: item.timeStamp) != nil {
+                    
+                    // if createImageFile succeeds, this item should have a filePath now
+                    if let filePath = selectedItem?.filePath {
+                        let url = URL(fileURLWithPath: filePath)
+                        pasteboard.writeObjects([url as NSURL])
+                        copied()
+                    }
+                }
+                else {
+                    pasteboard.setData(imageData, forType: .tiff)
+                    copied()
+                }
             }
         case "image", "file", "folder", "alias":
-            if let fileName = item.fileName {
-                let url = URL(fileURLWithPath: fileName)
+            if let filePath = item.filePath {
+                let url = URL(fileURLWithPath: filePath)
                 pasteboard.writeObjects([url as NSURL])
                 copied()
             }
@@ -59,12 +71,12 @@ class ClipboardManager: ObservableObject {
     func copied() {
         guard let item = selectedItem,
               let itemType = item.type,
-              item.content != nil || item.imageData != nil || item.fileName != nil else {
+              item.content != nil || item.imageData != nil || item.filePath != nil else {
 //            print("Selected item or required properties are nil")
             return
         }
 
-        if clipboardMonitor?.checkLast(content: item.content, type: itemType, imageData: item.imageData, fileName: item.fileName) == true {
+        if clipboardMonitor?.checkLast(item: selectedItem, content: item.content, type: itemType, imageData: item.imageData, filePath: item.filePath, imageHash: item.imageHash) == true {
             DispatchQueue.main.async {
                 self.isCopied = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -72,5 +84,5 @@ class ClipboardManager: ObservableObject {
                 }
             }
         }
-    }
+    }    
 }
