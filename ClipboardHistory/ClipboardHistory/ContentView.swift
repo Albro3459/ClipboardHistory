@@ -264,17 +264,23 @@ struct ContentView: View {
     }
     
     private func clearClipboardItems() {
-        for item in clipboardItems {
-            if let filePath = item.filePath, !filePath.isEmpty {
-                
-                let fileManager = FileManager.default
-                
-                let folderPath = fileManager.temporaryDirectory
-                
-                if filePath.contains(folderPath.path()) {
-                    clipboardManager.clipboardMonitor?.deleteTmpImage(filePath: filePath)
+        let fileManager = FileManager.default
+        let folderPath = fileManager.temporaryDirectory
+        
+        // Clear all .png files from the temp directory
+        do {
+            let items = try fileManager.contentsOfDirectory(atPath: folderPath.path)
+            for item in items {
+                let itemURL = URL(fileURLWithPath: item, relativeTo: fileManager.temporaryDirectory)
+                if itemURL.pathExtension == "png" {
+                    try fileManager.removeItem(at: itemURL)
                 }
             }
+        } catch let error {
+            print("Failed to clear .png files from temp directory: \(error)")
+        }
+        
+        for item in clipboardItems {
             viewContext.delete(item)
         }
         do {
@@ -414,14 +420,14 @@ struct ClipboardItemView: View {
                             .lineLimit(3)
                     }
                 }
-                else if item.type == "imageData" || item.type == "image" || item.type == "file", 
+                else if /*item.type == "imageData" ||*/ item.type == "image" || item.type == "file", 
                                 let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
                     Image(nsImage: nsImage)
                         .resizable()
                         .scaledToFit()
                         .frame(height: 70)
                     
-                    if item.type != "imageData", let content = item.content {
+                    if /*item.type != "imageData", */let content = item.content {
                         Text(content)
                             .font(.subheadline)
                             .bold()

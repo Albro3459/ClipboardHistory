@@ -40,24 +40,23 @@ class ClipboardManager: ObservableObject {
                 pasteboard.setString(content, forType: .string)
                 copied()
             }
-        case "imageData":
-            if let imageData = item.imageData {
-                if let filePath = selectedItem?.filePath {
-                    let url = URL(fileURLWithPath: filePath)
-                    pasteboard.writeObjects([url as NSURL])
-//                    print(url.path())
-                    copied()
-                }
-                else {
-                    pasteboard.setData(imageData, forType: .tiff)
-                    copied()
-                }
-            }
+//        case "imageData":
+//            if let imageData = item.imageData {
+//                if let filePath = selectedItem?.filePath {
+//                    let url = URL(fileURLWithPath: filePath)
+//                    pasteboard.writeObjects([url as NSURL])
+////                    print(url.path())
+//                    copied()
+//                }
+//                else {
+//                    pasteboard.setData(imageData, forType: .tiff)
+//                    copied()
+//                }
+//            }
         case "image", "file", "folder", "alias":
             if let filePath = item.filePath {
                 let url = URL(fileURLWithPath: filePath)
                 pasteboard.writeObjects([url as NSURL])
-//                print(url.path())
                 copied()
             }
         default:
