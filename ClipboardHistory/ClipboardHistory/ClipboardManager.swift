@@ -42,15 +42,11 @@ class ClipboardManager: ObservableObject {
             }
         case "imageData":
             if let imageData = item.imageData {
-                // this is called when I copy from an imageData item that is already in the db
-                if clipboardMonitor?.createImageFile(item: item, imageData: item.imageData, filePath: item.filePath, timeStamp: item.timeStamp) != nil {
-                    
-                    // if createImageFile succeeds, this item should have a filePath now
-                    if let filePath = selectedItem?.filePath {
-                        let url = URL(fileURLWithPath: filePath)
-                        pasteboard.writeObjects([url as NSURL])
-                        copied()
-                    }
+                if let filePath = selectedItem?.filePath {
+                    let url = URL(fileURLWithPath: filePath)
+                    pasteboard.writeObjects([url as NSURL])
+//                    print(url.path())
+                    copied()
                 }
                 else {
                     pasteboard.setData(imageData, forType: .tiff)
@@ -61,6 +57,7 @@ class ClipboardManager: ObservableObject {
             if let filePath = item.filePath {
                 let url = URL(fileURLWithPath: filePath)
                 pasteboard.writeObjects([url as NSURL])
+//                print(url.path())
                 copied()
             }
         default:

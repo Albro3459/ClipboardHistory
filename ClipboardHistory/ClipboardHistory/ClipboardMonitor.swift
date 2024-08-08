@@ -17,7 +17,7 @@ class ClipboardMonitor: ObservableObject {
     private var checkTimer: Timer?
     private var lastChangeCount: Int = NSPasteboard.general.changeCount
     
-    private var maxItemCount: Int = 30
+    private var maxItemCount: Int = 5
     
     func startMonitoring() {
         checkTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(checkClipboard), userInfo: nil, repeats: true)
@@ -223,6 +223,7 @@ class ClipboardMonitor: ObservableObject {
                 let lastType = lastItem["type"] as? String
 //                let lastImageData = lastItem["imageData"] as? Data
                 let lastImageHash = lastItem["imageHash"] as? String
+                let lastPath = lastItem["filePath"] as? String
                 
                 if let newImageHash = imageHash,
                    (type == "imageData" || type == "image") && (lastType == "imageData" || lastType == "image") {
@@ -230,8 +231,28 @@ class ClipboardMonitor: ObservableObject {
                     if lastImageHash != newImageHash {
                         shouldSave = true
                     }
+                    // on new copy
+                    else if let lastFileType = lastType, (lastFileType == "image" || lastFileType == "imageData") && (type == "image" || type == "imageData") {
+                        // same image, update tmp filePath to new file path
+                        let fileManager = FileManager.default
+                        let folderPath = fileManager.temporaryDirectory
+                        // if the file is a tmp image in the tmp directory {
+                        if let lastFilePath = lastPath, let newFilePath = filePath, lastFilePath.contains(folderPath.path()) && lastFilePath != newFilePath {
+                            let items = self.findItems(content: lastContent, type: lastFileType, imageHash: lastImageHash, filePath: lastFilePath)
+                            
+                            if !items.isEmpty, let item = items.first {
+                                item.filePath = newFilePath
+                            }
+                        }
+                    }
                 } else {
                     if let newContent = content, newContent != lastContent {
+                        if lastType == type {
+                            if let lastFilePath = lastPath, let newFilePath = filePath, lastFilePath != newFilePath {
+                                // both files, but different file paths
+                                shouldSave = true
+                            }
+                        }
                         shouldSave = true  // Save if types do not match or no hash exists
                     }
                 }
@@ -308,8 +329,6 @@ class ClipboardMonitor: ObservableObject {
             
             try imageData.write(to: fileURL, options: .atomic)
             
-//            self.lastTmpImagePath = fileURL.path as String
-
             print("File saved: \(fileURL.path)")
         } catch {
             print("Error saving file: \(error)")
