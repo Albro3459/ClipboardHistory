@@ -57,6 +57,7 @@ class ClipboardManager: ObservableObject {
             if let filePath = item.filePath {
                 let url = URL(fileURLWithPath: filePath)
                 pasteboard.writeObjects([url as NSURL])
+                print(url.path)
                 copied()
             }
         default:

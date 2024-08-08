@@ -226,6 +226,21 @@ class ClipboardMonitor: ObservableObject {
             
             if results?.last == nil {
                 shouldSave = true
+                let fileManager = FileManager.default
+                let folderPath = fileManager.temporaryDirectory
+                
+                // Clear all .png files from the temp directory
+                do {
+                    let items = try fileManager.contentsOfDirectory(atPath: folderPath.path)
+                    for item in items {
+                        let itemURL = URL(fileURLWithPath: item, relativeTo: fileManager.temporaryDirectory)
+                        if itemURL.pathExtension == "png" {
+                            try fileManager.removeItem(at: itemURL)
+                        }
+                    }
+                } catch let error {
+                    print("Failed to clear .png files from temp directory: \(error)")
+                }
             }
             else if let lastItem = results?.last {
                 let lastContent = lastItem["content"] as? String
@@ -239,12 +254,7 @@ class ClipboardMonitor: ObservableObject {
                 if let newImageHash = imageHash,
                     type == "image" && lastType == "image" {
                     
-                    // diff photo
-                    if lastImageHash != newImageHash {
-                        shouldSave = true
-                    }
-                    // same photo, different title
-                    else if lastImageHash == newImageHash &&  lastContent != content {
+                    if (lastImageHash != newImageHash) || (lastImageHash == newImageHash &&  lastContent != content) {
                         shouldSave = true
                     }
                     
@@ -252,6 +262,7 @@ class ClipboardMonitor: ObservableObject {
 //                    else if let lastFileType = lastType, (lastFileType == "image" || lastFileType == "imageData") && (type == "image" || type == "imageData") {
                     else if let lastFileType = lastType, lastFileType == "image" && type == "image"  {
                         // same image, update tmp filePath to new file path
+                        print("here")
                         let fileManager = FileManager.default
                         let folderPath = fileManager.temporaryDirectory
                         // if the file is a tmp image in the tmp directory {
