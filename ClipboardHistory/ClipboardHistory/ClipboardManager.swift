@@ -18,6 +18,8 @@ import CoreData
 
 class ClipboardManager: ObservableObject {
     @Published var selectedItem: ClipboardItem?
+    @Published var selectedGroup: ClipboardGroup?
+    
     @Published var isCopied: Bool = false
     
     var clipboardMonitor: ClipboardMonitor?
@@ -73,7 +75,7 @@ class ClipboardManager: ObservableObject {
             return
         }
 
-        if clipboardMonitor?.checkLast(item: selectedItem, content: item.content, type: itemType, imageData: item.imageData, filePath: item.filePath, imageHash: item.imageHash) == true {
+        if clipboardMonitor?.checkLast(group: selectedGroup!, context: nil) == true {
             DispatchQueue.main.async {
                 self.isCopied = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {

@@ -264,21 +264,8 @@ struct ContentView: View {
     }
     
     private func clearClipboardItems() {
-        let fileManager = FileManager.default
-        let folderPath = fileManager.temporaryDirectory
         
-        // Clear all .png files from the temp directory
-        do {
-            let items = try fileManager.contentsOfDirectory(atPath: folderPath.path)
-            for item in items {
-                let itemURL = URL(fileURLWithPath: item, relativeTo: fileManager.temporaryDirectory)
-                if itemURL.pathExtension == "png" {
-                    try fileManager.removeItem(at: itemURL)
-                }
-            }
-        } catch let error {
-            print("Failed to clear .png files from temp directory: \(error)")
-        }
+        clipboardManager.clipboardMonitor?.clearTmpImages()
         
         for item in clipboardItems {
             viewContext.delete(item)
@@ -295,11 +282,11 @@ struct ContentView: View {
         if let imageHash = item.imageHash, let filePath = item.filePath, !filePath.isEmpty {
             let fileManager = FileManager.default
             
-            let folderPath = fileManager.temporaryDirectory
+            let folderPath = clipboardManager.clipboardMonitor?.tmpFolderPath
             
-            if filePath.contains(folderPath.path()) {
+            if filePath.contains(folderPath!.path()) {
                 
-                let items = clipboardManager.clipboardMonitor?.findItems(content: nil, type: nil, imageHash: imageHash, filePath: filePath)
+                let items = clipboardManager.clipboardMonitor?.findItems(content: nil, type: nil, imageHash: imageHash, filePath: filePath, context: nil)
                 
                 // only want to delete file if its the only copy left
                 if items!.count < 2 {
@@ -506,13 +493,13 @@ struct ClipboardItemView: View {
 
         if let imageHash = item.imageHash, let filePath = item.filePath, !filePath.isEmpty {
             
-            let fileManager = FileManager.default
+//            let fileManager = FileManager.default
             
-            let folderPath = fileManager.temporaryDirectory
+            let folderPath = clipboardManager.clipboardMonitor?.tmpFolderPath
             
-            if filePath.contains(folderPath.path()) {
+            if filePath.contains(folderPath!.path()) {
                 
-                let items = clipboardManager.clipboardMonitor?.findItems(content: nil, type: nil, imageHash: imageHash, filePath: filePath)
+                let items = clipboardManager.clipboardMonitor?.findItems(content: nil, type: nil, imageHash: imageHash, filePath: filePath, context: nil)
                 
                 // only want to delete file if its the only copy left
                 if items!.count < 2 {
