@@ -67,11 +67,13 @@ class ClipboardMonitor: ObservableObject {
                         item.filePath = nil
                         item.imageData = nil
                         item.imageHash = nil
+                        item.group = group
                         group.addToItems(item)
                     }
                     counter += 1
                 }
                 self.saveClipboardGroup(context: context)
+//                print(group.count)
             }
         }
     }
@@ -84,6 +86,7 @@ class ClipboardMonitor: ObservableObject {
         let item = ClipboardItem(context: context)
         item.content = fileUrl.lastPathComponent
         item.filePath = fileUrl.path
+        item.group = group
         
         if imageExtensions.contains(fileExtension) {
             if let image = NSImage(contentsOf: fileUrl) {
@@ -143,6 +146,7 @@ class ClipboardMonitor: ObservableObject {
                 item.type = "image"
                 item.imageData = image.tiffRepresentation
                 item.imageHash = imageHash
+                item.group = group
                 group.addToItems(item)
                 
 //                saveClipboard(content: imageFileURL.lastPathComponent, type: "image", imageData: image.tiffRepresentation, filePath: imageFileURL.path, imageHash: imageHash)
@@ -273,7 +277,6 @@ class ClipboardMonitor: ObservableObject {
                     groups.removeFirst()
                 }
             }
-                    
             try context.save()
         } catch {
         print("Failed to save and update groups: \(error)")
@@ -463,7 +466,7 @@ class ClipboardMonitor: ObservableObject {
         }
     }
     
-    private func deleteGroupAndItems(_ group: ClipboardGroup, context: NSManagedObjectContext) {
+    func deleteGroupAndItems(_ group: ClipboardGroup, context: NSManagedObjectContext) {
         if let items = group.items as? Set<ClipboardItem> {
             for item in items {
                 deleteItem(item, context: context)
@@ -472,7 +475,7 @@ class ClipboardMonitor: ObservableObject {
         context.delete(group)
     }
     
-    private func deleteItem(_ item: ClipboardItem, context: NSManagedObjectContext) {
+    func deleteItem(_ item: ClipboardItem, context: NSManagedObjectContext) {
         let folderPath = tmpFolderPath
         if let filePath = item.filePath, filePath.contains(folderPath.path) {
             // if the file is not still in the clipboard history

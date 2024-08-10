@@ -68,12 +68,12 @@ class ClipboardManager: ObservableObject {
     }
     
     func copied() {
-        guard let item = selectedItem,
-              let itemType = item.type,
-              item.content != nil || item.imageData != nil || item.filePath != nil else {
-//            print("Selected item or required properties are nil")
-            return
-        }
+//        guard let item = selectedItem,
+//              let itemType = item.type,
+//              item.content != nil || item.imageData != nil || item.filePath != nil else {
+////            print("Selected item or required properties are nil")
+//            return
+//        }
 
         if clipboardMonitor?.checkLast(group: selectedGroup!, context: nil) == true {
             DispatchQueue.main.async {
