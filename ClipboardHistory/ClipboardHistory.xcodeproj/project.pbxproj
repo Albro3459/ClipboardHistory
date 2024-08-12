@@ -24,6 +24,7 @@
 		60F263912C645E0C00E5FC7B /* ClipboardItem+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60F2638D2C645E0C00E5FC7B /* ClipboardItem+CoreDataProperties.swift */; };
 		60F263922C645E0C00E5FC7B /* ClipboardGroup+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60F2638E2C645E0C00E5FC7B /* ClipboardGroup+CoreDataClass.swift */; };
 		60F263932C645E0C00E5FC7B /* ClipboardGroup+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60F2638F2C645E0C00E5FC7B /* ClipboardGroup+CoreDataProperties.swift */; };
+		60F263952C6735BC00E5FC7B /* SelectedGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60F263942C6735BC00E5FC7B /* SelectedGroup.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +65,7 @@
 		60F2638D2C645E0C00E5FC7B /* ClipboardItem+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipboardItem+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		60F2638E2C645E0C00E5FC7B /* ClipboardGroup+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipboardGroup+CoreDataClass.swift"; sourceTree = "<group>"; };
 		60F2638F2C645E0C00E5FC7B /* ClipboardGroup+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipboardGroup+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		60F263942C6735BC00E5FC7B /* SelectedGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedGroup.swift; sourceTree = "<group>"; };
 		60FCB8722BF80BB700221509 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -128,6 +130,7 @@
 				6072ABEE2BF7D6CF0091E218 /* ClipboardMonitor.swift */,
 				60639F1B2C5440280031CBE2 /* ClipboardManager.swift */,
 				60038DDE2BFCD04C00AC3CA8 /* SearchBarView.swift */,
+				60F263942C6735BC00E5FC7B /* SelectedGroup.swift */,
 			);
 			path = ClipboardHistory;
 			sourceTree = "<group>";
@@ -304,6 +307,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				60F263952C6735BC00E5FC7B /* SelectedGroup.swift in Sources */,
 				60F263902C645E0C00E5FC7B /* ClipboardItem+CoreDataClass.swift in Sources */,
 				60F263912C645E0C00E5FC7B /* ClipboardItem+CoreDataProperties.swift in Sources */,
 				60F263922C645E0C00E5FC7B /* ClipboardGroup+CoreDataClass.swift in Sources */,

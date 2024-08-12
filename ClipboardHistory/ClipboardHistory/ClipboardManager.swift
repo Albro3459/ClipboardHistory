@@ -18,7 +18,8 @@ import CoreData
 
 class ClipboardManager: ObservableObject {
     @Published var selectedItem: ClipboardItem?
-    @Published var selectedGroup: ClipboardGroup?
+//    @Published var selectedGroup: ClipboardGroup?
+    @Published var selectedGroup: SelectedGroup?
     
     @Published var isCopied: Bool = false
     
@@ -75,13 +76,13 @@ class ClipboardManager: ObservableObject {
 //            return
 //        }
 
-        if clipboardMonitor?.checkLast(group: selectedGroup!, context: nil) == true {
-            DispatchQueue.main.async {
-                self.isCopied = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                    self.isCopied = false
-                }
-            }
-        }
+//        if clipboardMonitor?.checkLast(group: selectedGroup!, context: nil) == true {
+//            DispatchQueue.main.async {
+//                self.isCopied = true
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+//                    self.isCopied = false
+//                }
+//            }
+//        }
     }    
 }

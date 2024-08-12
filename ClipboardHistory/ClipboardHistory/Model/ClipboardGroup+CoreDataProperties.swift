@@ -19,7 +19,7 @@ extension ClipboardGroup {
     @NSManaged public var timeStamp: Date?
     @NSManaged public var count: Int16
     @NSManaged public var items: NSSet?
-    
+
     public var itemsArray: [ClipboardItem] {
         // Convert NSSet to Set<ClipboardItem>
         let set = items as? Set<ClipboardItem> ?? []
@@ -45,6 +45,23 @@ extension ClipboardGroup {
                 return typeOrder1 < typeOrder2
             }
             return contentOrder == .orderedAscending
+        }
+    }
+    
+    func GetSelecGroupObj(_ group: ClipboardGroup?, list: [SelectedGroup]) -> SelectedGroup? {
+        if let group = group {
+            
+            for selection in list {
+                if selection.group == group {
+                    return selection
+                }
+            }
+            
+            return SelectedGroup(group: group, selectedItem: nil)
+
+        }
+        else {
+            return nil
         }
     }
 }
