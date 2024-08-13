@@ -72,11 +72,13 @@ struct ContentView: View {
     
     @State private var imageSizeMultiple: CGFloat = 1
     
-    var selectList: [SelectedGroup] {
-        clipboardGroups.map { group in
-            SelectedGroup(group: group, selectedItem: nil)
-        }
-    }
+//    var selectList: [SelectedGroup] {
+//        clipboardGroups.map { group in
+//            SelectedGroup(group: group, selectedItem: nil)
+//        }
+//    }
+    @State private var selectList: [SelectedGroup] = []
+
 
         
 //    private var clipboardItems: [ClipboardItem] {
@@ -161,44 +163,44 @@ struct ContentView: View {
             
             VStack {
                 
-//                HStack {
-//                    SearchBarView(searchText: $searchText)
-//                        .focused($isFocused)
-//                    
-//                    Button(action: {
-//                        isSelectingCategory.toggle()
-//                        isFocused = false
-//                    }) {
-//                        Image(systemName: "line.horizontal.3.decrease.circle")
-//                            .foregroundColor(.white)
-//                            .padding(.trailing, -2)
-//                    }
-//                    .buttonStyle(PlainButtonStyle())
-//                    .popover(isPresented: $isSelectingCategory) {
-//                           TypeDropDownMenu(multiSelection: $selectedTypes)
-//                               .frame(width: 140, height: 99) 
-//                       }
-//                       .zIndex(1)
-//                       .help("Filter Items by Type")
-//                    
-//                    Button(action: {
-//                        if !atTopOfList {
-//                            scrollToTop = true
-//                        }
-//                        else {
-//                            scrollToBottom = true
-//                        }
-//                    }) {
-//                        Image(systemName: !atTopOfList ? "arrow.up.circle" : "arrow.down.circle")
-//                            .foregroundColor(.white)
-//                            .padding(.trailing, 1)
-//                    }
-//                    .buttonStyle(PlainButtonStyle())
-//                    .help(!atTopOfList ? "Scroll to Top" : "Scroll to Bottom")
-//                    
-//                }
-//                .padding(.top, 2)
-//                .padding(.bottom, -8)
+                HStack {
+                    SearchBarView(searchText: $searchText)
+                        .focused($isFocused)
+                    
+                    Button(action: {
+                        isSelectingCategory.toggle()
+                        isFocused = false
+                    }) {
+                        Image(systemName: "line.horizontal.3.decrease.circle")
+                            .foregroundColor(.white)
+                            .padding(.trailing, -2)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .popover(isPresented: $isSelectingCategory) {
+                           TypeDropDownMenu(multiSelection: $selectedTypes)
+                               .frame(width: 140, height: 99) 
+                       }
+                       .zIndex(1)
+                       .help("Filter Items by Type")
+                    
+                    Button(action: {
+                        if !atTopOfList {
+                            scrollToTop = true
+                        }
+                        else {
+                            scrollToBottom = true
+                        }
+                    }) {
+                        Image(systemName: !atTopOfList ? "arrow.up.circle" : "arrow.down.circle")
+                            .foregroundColor(.white)
+                            .padding(.trailing, 1)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .help(!atTopOfList ? "Scroll to Top" : "Scroll to Bottom")
+                    
+                }
+                .padding(.top, 2)
+                .padding(.bottom, -8)
                     
                 ScrollView(showsIndicators: false) {
                     GeometryReader { geometry in
@@ -212,14 +214,26 @@ struct ContentView: View {
                     
                     ScrollViewReader { scrollView in
                         LazyVStack(spacing: 0) {
-                            ForEach(clipboardGroups, id: \.self) { group in
-                                ClipboardGroupView(group: group, selectList: selectList, isGroupSelected: Binding(
-                                    get: { self.clipboardManager.selectedGroup == group.GetSelecGroupObj(group, list: selectList) },
-                                    set: { newGroup in
-                                        self.clipboardManager.selectedGroup = newGroup ? group.GetSelecGroupObj(group, list: selectList) : nil
+//                            ForEach(clipboardGroups, id: \.self) { group in
+//                                ClipboardGroupView(group: group, selectList: selectList,
+//                                   isGroupSelected: Binding(
+//                                        get: { self.clipboardManager.selectedGroup == group.GetSelecGroupObj(group, list: selectList) },
+//                                        set: { isSelected in
+//                                            self.clipboardManager.selectedGroup = isSelected ? group.GetSelecGroupObj(group, list: selectList) : nil
+//                                            isFocused = false
+//                                        }))
+//                                .id(group.GetSelecGroupObj(group, list: selectList)?.group.objectID)
+//                            }
+                            
+                            ForEach(selectList.indices, id: \.self) { index in
+                                ClipboardGroupView(group: $selectList[index].group,
+                                   isGroupSelected: Binding(
+                                    get: { self.clipboardManager.selectedGroup == selectList[index] },
+                                    set: { isSelected in
+                                        self.clipboardManager.selectedGroup = isSelected ? selectList[index] : nil
                                         isFocused = false
                                     }))
-                                .id(group.GetSelecGroupObj(group, list: selectList)?.group.objectID)
+                                .id(selectList[index].group.objectID)
                             }
                         } //scrolls when using the arrow keys
                         .onChange(of: clipboardManager.selectedGroup, initial: false) {
@@ -227,7 +241,7 @@ struct ContentView: View {
                                 withAnimation(.easeInOut(duration: 0.5)) {
                                     scrollView.scrollTo(selectList[index].group.objectID)
                                 }
-                                print("\(index) ***")
+//                                print("\(index) ***")
 //                                if selectedGroup.group.count == 1 {
 //                                    clipboardManager.selectedItem = selectedGroup.group.itemsArray.first
 //                                    clipboardManager.selectedGroup?.selectedItem = clipboardManager.selectedItem
@@ -240,18 +254,18 @@ struct ContentView: View {
 //                            }
 //                         }
                         
-//                        .onChange(of: scrollToTop, initial: false) {
-//                            withAnimation() {
-//                                scrollView.scrollTo(selectList.first?.group.objectID, anchor: .top)
-//                                scrollToTop = false
-//                            }
-//                        }
-//                        .onChange(of: scrollToBottom, initial: false) {
-//                            withAnimation() {
-//                                scrollView.scrollTo(selectList.last?.group.objectID)
-//                                scrollToBottom = false
-//                            }
-//                        }
+                        .onChange(of: scrollToTop, initial: false) {
+                            withAnimation() {
+                                scrollView.scrollTo(selectList.first?.group.objectID, anchor: .top)
+                                scrollToTop = false
+                            }
+                        }
+                        .onChange(of: scrollToBottom, initial: false) {
+                            withAnimation() {
+                                scrollView.scrollTo(selectList.last?.group.objectID)
+                                scrollToBottom = false
+                            }
+                        }
                     }
                     .padding(.top, -4)
                 }
@@ -263,48 +277,59 @@ struct ContentView: View {
 //                    Rectangle().frame(height: 0.5).foregroundColor(.black.opacity(0.5)), alignment: .bottom
 //                )
                 Spacer()
-//                Button {
-//                    showingAlert = true
-//                    activeAlert = .clear
-//                } label: {
-//                    Text("Clear All")
-//                        .frame(maxWidth: 90)
-//                }
-//                .help("Clear All Items")
-//                .buttonStyle(.bordered)
-//                .tint(Color(.darkGray))
-//                .padding(.bottom, 8)
-//                .alert(isPresented: $showingAlert) {
-//                    if activeAlert == .clear {
-//                        Alert(
-//                            title: Text("Confirm Clear"),
-//                            message: Text("Are you sure you want to clear all clipboard items?"),
-//                            primaryButton: .destructive(Text("Clear")) {
-//                                clearClipboardItems()
-//                            },
-//                            secondaryButton: .cancel()
-//                        )
-//                    }
-//                    else {
-//                        Alert(
-//                            title: Text("Confirm Delete"),
-//                            message: Text("Are you sure you want to delete this clipboard item?"),
-//                            primaryButton: .destructive(Text("Delete")) {
-//                                self.deleteItem(item: clipboardManager.selectedItem!)
-//                            },
-//                            secondaryButton: .cancel()
-//                        )
-//                    }
-//                }
+                Button {
+                    showingAlert = true
+                    activeAlert = .clear
+                } label: {
+                    Text("Clear All")
+                        .frame(maxWidth: 90)
+                }
+                .help("Clear All Items")
+                .buttonStyle(.bordered)
+                .tint(Color(.darkGray))
+                .padding(.bottom, 8)
+                .alert(isPresented: $showingAlert) {
+                    if activeAlert == .clear {
+                        Alert(
+                            title: Text("Confirm Clear"),
+                            message: Text("Are you sure you want to clear all clipboard items?"),
+                            primaryButton: .destructive(Text("Clear")) {
+                                clearClipboardItems()
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
+                    else {
+                        Alert(
+                            title: Text("Confirm Delete"),
+                            message: Text("Are you sure you want to delete this clipboard item?"),
+                            primaryButton: .destructive(Text("Delete")) {
+                                self.deleteItem(item: clipboardManager.selectedItem!)
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
+                }
                 .onAppear {
-//                    clipboardManager.selectedGroup = selectList.first
+                    clipboardManager.selectedGroup = selectList.first
                 }
 
             }
             .onAppear {
 //                clipboardManager.selectedGroup = selectList.first
                 setUpKeyboardHandling()
+                self.selectList = clipboardGroups.map { SelectedGroup(group: $0, selectedItem: nil) }
             }
+            .onChange(of: clipboardGroups.count) { oldValue, newValue in
+                if clipboardGroups.count == 1 {
+                    clipboardManager.selectedGroup = selectList.first
+                }
+            }
+//            .onChange(of: clipboardManager.selectedGroup?.isExpanded) { oldValue, newValue in
+//                if let selectGroup = clipboardManager.selectedGroup, let index = selectList.firstIndex(where: { $0.group === selectGroup.group }) {
+//                    selectList[index].isExpanded = selectGroup.isExpanded
+//                }
+//            }
         }
     }
     
@@ -354,7 +379,7 @@ struct ContentView: View {
             var currentIndex: Int?
             if let group = clipboardManager.selectedGroup {
                 currentIndex = selectList.firstIndex(of: group)
-                print("\(currentIndex)\n")
+//                print("\(currentIndex)\n")
             }
             if currentIndex == nil {
                 if !selectList.isEmpty {
@@ -376,13 +401,18 @@ struct ContentView: View {
                     if event.modifierFlags.contains(.command) {
                         // Handle Command + C
 //                        clipboardManager.copySelectedItem()
-                        return nil // no more beeps
+                         return nil // no more beeps
                     }
                 case 36, 76:
                     // Handle Enter or Return
+                    for group in selectList {
+                        print(group.isExpanded)
+                    }
+                    print("\n")
+                    
                     if !isFocused {
 //                        clipboardManager.copySelectedItem()
-                        return nil // no more beeps
+                         return nil // no more beeps
                     }
                 case 51:
                     // Handle Command + Del
@@ -391,7 +421,7 @@ struct ContentView: View {
                             self.showingAlert = true
                             activeAlert = .delete
                         }
-                        return nil
+                         return nil
                     }
                 case 3:
                     if event.modifierFlags.contains(.command) {
@@ -399,7 +429,7 @@ struct ContentView: View {
                         DispatchQueue.main.async {
                             isFocused = true
                         }
-                        return nil // no more beeps
+                         return nil // no more beeps
                     }
                 case 53:
                     // Escape key
@@ -407,26 +437,49 @@ struct ContentView: View {
                         isSelectingCategory = false
                         isFocused = false
                     }
-                    return nil
+                     return nil
                 case 126:
                     // Handle up arrow
                     isFocused = false
 //                    print(currentIndex)
-                    if currentIndex != nil && currentIndex! > 0 {
-                        clipboardManager.selectedGroup = selectList[currentIndex!-1]
-//                        print( clipboardManager.selectedGroup == nil)
+                    if let currIndex = currentIndex, currentIndex! > 0 {
+                        var nextIndex = currIndex - 1
+                        while nextIndex >= 0 && selectList[nextIndex].isExpanded {
+                            nextIndex -= 1
+                        }
+                        if nextIndex >= 0 {
+                            clipboardManager.selectedGroup = selectList[nextIndex]
+                            //                        print( clipboardManager.selectedGroup == nil)
+                        }
                     }
-                    return nil //no more beeps
+                     return nil //no more beeps
                 case 125:
                     // Handle down arrow
                     isFocused = false
 //                    print(currentIndex)
 
-                    if currentIndex != nil && currentIndex! < selectList.count - 1 {
-                        clipboardManager.selectedGroup = selectList[currentIndex!+1]
-//                        print(selectList.firstIndex(of: clipboardManager.selectedGroup!))
+                    if let currIndex = currentIndex, currentIndex! < selectList.count - 1 {
+                        var nextIndex = currIndex + 1
+                        while nextIndex < selectList.count && selectList[nextIndex].isExpanded {
+                            print("wut")
+
+//                            nextIndex += 1
+                            let group = selectList[nextIndex].group
+                            var groupIndex = 0
+                            while groupIndex < group.count && group.count > 1 {
+                                print("here")
+                                clipboardManager.selectedItem = selectList[nextIndex].group.itemsArray[groupIndex]
+                                groupIndex += 1
+                            }
+                            
+                            nextIndex += 1
+                        }
+                        if nextIndex < selectList.count {
+                            print(selectList[nextIndex].isExpanded)
+                            clipboardManager.selectedGroup = selectList[nextIndex]
+                        }
                     }
-                    return nil // no more beeps
+                     return nil // no more beeps
                 default:
                     break
                 }
@@ -438,14 +491,13 @@ struct ContentView: View {
 }
 
 struct ClipboardGroupView: View {
-    var group: ClipboardGroup
-    var selectList: [SelectedGroup]
+    @Binding var group: ClipboardGroup
+//    var selectList: [SelectedGroup]
+    @Binding var isGroupSelected: Bool
     
     @Environment(\.managedObjectContext) private var viewContext
     
     @EnvironmentObject var clipboardManager: ClipboardManager
-    
-    @Binding var isGroupSelected: Bool
     
     @State private var imageSizeMultiple: CGFloat = 0.7
         
@@ -459,14 +511,14 @@ struct ClipboardGroupView: View {
     var body: some View {
         
         if group.count == 1, let item = group.itemsArray.first {
-            ClipboardItemView(item: item, selectList: selectList, imageSizeMultiple: $imageSizeMultiple, isSelected: Binding(
+            ClipboardItemView(item: item, imageSizeMultiple: $imageSizeMultiple, isSelected: Binding(
                 get: { self.clipboardManager.selectedItem == item },
                 set: { newItem in
                     self.clipboardManager.selectedItem = newItem ? item : nil
-                    self.clipboardManager.selectedGroup = newItem ? group.GetSelecGroupObj(group, list: selectList) : nil
-                    if let selectGroup = self.clipboardManager.selectedGroup {
-                        self.clipboardManager.selectedGroup?.selectedItem = newItem ? item : nil
-                    }
+//                    self.clipboardManager.selectedGroup = newItem ? group.GetSelecGroupObj(group, list: selectList) : nil
+//                    if let _ = self.clipboardManager.selectedGroup {
+//                        self.clipboardManager.selectedGroup?.selectedItem = newItem ? item : nil
+//                    }
                     isGroupSelected = true
                 }))
             .id(item.objectID)
@@ -494,8 +546,9 @@ struct ClipboardGroupView: View {
                     HStack {
                         
                         Button(action: {
-                            isGroupExpanded.toggle()
                             isGroupSelected = true
+                            isGroupExpanded.toggle()
+                            //                            clipboardManager.selectedGroup?.isGroupExpanded.toggle()
                         }) {
                             Image(systemName: isGroupExpanded ? "chevron.down.circle" : "chevron.right.circle")
                                 .foregroundColor(.white)
@@ -570,6 +623,7 @@ struct ClipboardGroupView: View {
                     .onTapGesture(count: 2) {
                         isGroupSelected = true
                         isGroupExpanded.toggle()
+                        //                        clipboardManager.selectedGroup?.isGroupExpanded.toggle()
                     }
                     .onTapGesture(count: 1) {
                         isGroupSelected = true
@@ -580,14 +634,14 @@ struct ClipboardGroupView: View {
                         ScrollViewReader { scrollView in
                             LazyVStack(spacing: 0) {
                                 ForEach(group.itemsArray, id: \.self) { item in
-                                    ClipboardItemView(item: item, selectList: selectList, imageSizeMultiple: $imageSizeMultiple, isSelected: Binding(
+                                    ClipboardItemView(item: item, imageSizeMultiple: $imageSizeMultiple, isSelected: Binding(
                                         get: { self.clipboardManager.selectedItem == item
-//                                            self.clipboardManager.selectedGroup?.selectedItem == item
+                                            //                                            self.clipboardManager.selectedGroup?.selectedItem == item
                                         },
                                         set: { newItem in
                                             self.clipboardManager.selectedItem = newItem ? item : nil
-//                                            self.clipboardManager.selectedGroup = newItem.group ? item.group : nil
-//                                            self.clipboardManager.selectedGroup?.selectedItem = newItem ? item : nil
+                                            //                                            self.clipboardManager.selectedGroup = newItem.group ? item.group : nil
+                                            //                                            self.clipboardManager.selectedGroup?.selectedItem = newItem ? item : nil
                                             
                                         }))
                                     .id(item.objectID)
@@ -598,6 +652,13 @@ struct ClipboardGroupView: View {
                         .padding(.trailing, 15)
                         .padding(.top, -8)
                     }
+                }
+                .onChange(of: isGroupExpanded) {
+                    isGroupExpanded = isGroupExpanded
+                    clipboardManager.selectedGroup?.isExpanded = isGroupExpanded
+//                    if let index = selectList.firstIndex(where: { $0.group === clipboardManager.selectedGroup?.group }) {
+//                        selectList[index].isGroupExpanded = isGroupExpanded
+//                    }
                 }
             }
         }
@@ -693,7 +754,7 @@ struct ClipboardGroupView: View {
 
 struct ClipboardItemView: View {
     var item: ClipboardItem
-    var selectList: [SelectedGroup]
+//    var selectList: [SelectedGroup]
     
     @Environment(\.managedObjectContext) private var viewContext
     
