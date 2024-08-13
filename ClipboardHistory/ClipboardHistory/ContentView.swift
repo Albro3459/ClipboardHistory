@@ -324,6 +324,7 @@ struct ContentView: View {
                 if clipboardGroups.count == 1 {
                     clipboardManager.selectedGroup = selectList.first
                 }
+                self.selectList = clipboardGroups.map { SelectedGroup(group: $0, selectedItem: nil) }
             }
 //            .onChange(of: clipboardManager.selectedGroup?.isExpanded) { oldValue, newValue in
 //                if let selectGroup = clipboardManager.selectedGroup, let index = selectList.firstIndex(where: { $0.group === selectGroup.group }) {
