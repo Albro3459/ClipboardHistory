@@ -260,6 +260,11 @@ struct ContentView: View {
 //                clipboardManager.selectedItem = clipboardItems.first
                 setUpKeyboardHandling()
             }
+            .onChange(of: clipboardItems.count) { oldValue, newValue in
+                if clipboardItems.count == 1 {
+                    clipboardManager.selectedItem = clipboardItems.first
+                }
+            }
         }
     }
     
