@@ -20,9 +20,10 @@ class SelectedGroup: Equatable, Hashable {
     }
     
     static func == (groupA: SelectedGroup, groupB: SelectedGroup) -> Bool {
-        return groupA.group == groupB.group && 
+        return groupA.group == groupB.group &&
                 groupA.selectedItem == groupB.selectedItem &&
-                groupA.isExpanded == groupB.isExpanded
+                groupA.group.count == groupB.group.count
+//            && groupA.isExpanded == groupB.isExpanded
     }
     
     func hash(into hasher: inout Hasher) {
