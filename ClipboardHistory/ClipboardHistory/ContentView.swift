@@ -452,35 +452,80 @@ struct ContentView: View {
                     // Handle up arrow
                     isFocused = false
 //                    print(currentIndex)
+                    
+                    print("****START group: \(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "nil") | item: \(clipboardManager.selectedItem?.content ?? "nil")")
+
                     if let currIndex = currentIndex, currIndex - 1 >= 0 {
-                        let aboveGroup = selectList[currIndex - 1]
                         
-                        if aboveGroup.isExpanded {
+//                        let currGroup = selectList[currIndex]
+//                        if currGroup.isExpanded {
+//                            if let selectedItem = clipboardManager.selectedItem {
+//                                if let itemIndex = currGroup.group.itemsArray.firstIndex(where: { $0 == selectedItem }),
+//                                   itemIndex - 1 >= 0 {
+//                                    clipboardManager.selectedItem = aboveGroup.group.itemsArray[itemIndex - 1]
+//                                } else {
+//                                    if currIndex - 1 >= 0 {
+//                                        clipboardManager.selectedGroup = selectList[currIndex - 1]
+//                                        clipboardManager.selectedItem = nil
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        
+                        
+                        let aboveGroup = selectList[currIndex - 1]
+                        let currGroup = selectList[currIndex]
+                        
+                        
+                        if currGroup.isExpanded {
                             if let selectedItem = clipboardManager.selectedItem {
-                                if let itemIndex = aboveGroup.group.itemsArray.firstIndex(where: { $0 == selectedItem }),
-                                   itemIndex - 1 >= 0 {
-                                    clipboardManager.selectedItem = aboveGroup.group.itemsArray[itemIndex - 1]
-                                } else {
-                                    if currIndex - 1 >= 0 {
-                                        clipboardManager.selectedGroup = selectList[currIndex - 1]
+                                if let itemIndex = currGroup.group.itemsArray.firstIndex(where: { $0 == selectedItem }) {
+                                    if itemIndex == 0 {
                                         clipboardManager.selectedItem = nil
+                                        clipboardManager.selectedGroup = currGroup
                                     }
+                                    else if itemIndex - 1 >= 0 {
+                                        clipboardManager.selectedItem = currGroup.group.itemsArray[itemIndex - 1]
+                                    }
+                                } else {
+                                    print("*** idk ***")
+//                                    if currIndex - 1 >= 0 {
+//                                        clipboardManager.selectedGroup = selectList[currIndex - 1]
+//                                        clipboardManager.selectedItem = nil
+//                                    }
                                 }
-                            } else {
-                                clipboardManager.selectedItem = aboveGroup.group.itemsArray.last
-                                clipboardManager.selectedGroup = aboveGroup
                             }
-                        } else {
-                            if currIndex - 1 >= 0 {
-                                clipboardManager.selectedGroup = selectList[currIndex - 1]
+                            // group is expanded, but at the top of the current group
+                            else {
+                                clipboardManager.selectedGroup = aboveGroup
+                                if aboveGroup.isExpanded {
+                                    clipboardManager.selectedItem = aboveGroup.group.itemsArray.last
+                                }
+                                else {
+                                    clipboardManager.selectedItem = nil
+                                }
+                            }
+                        }
+                        // current group isnt expanded, so lets go to the next group up, but how? ...
+                        else {
+                            clipboardManager.selectedGroup = aboveGroup
+                            
+                            if !aboveGroup.isExpanded {
+                                print("not group")
+                                //                            clipboardManager.selectedGroup = aboveGroup
                                 clipboardManager.selectedItem = nil
+                            }
+                            else if aboveGroup.isExpanded {
+                                clipboardManager.selectedItem = aboveGroup.group.itemsArray.last
                             }
                         }
                     }
-                     return nil //no more beeps
+                    print("group: \(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "nil") | item: \(clipboardManager.selectedItem?.content ?? "nil")\n")
+                    return nil //no more beeps
                 case 125:
                     // Handle down arrow
                     isFocused = false
+                    print("****START group: \(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "nil") | item: \(clipboardManager.selectedItem?.content ?? "nil")")
                     
                     if let currIndex = currentIndex, currIndex < selectList.count - 1 {
                         
@@ -493,12 +538,12 @@ struct ContentView: View {
                                 } else {
                                     if currIndex + 1 < selectList.count {
                                         clipboardManager.selectedGroup = selectList[currIndex + 1]
-                                        clipboardManager.selectedItem = nil // Clear selected item when moving to new group
+                                        clipboardManager.selectedItem = nil
                                     }
                                 }
                             } else {
                                 clipboardManager.selectedItem = currGroup.group.itemsArray.first
-                                clipboardManager.selectedGroup = currGroup
+//                                clipboardManager.selectedGroup = currGroup
                             }
                         } else {
                             if currIndex + 1 < selectList.count {
@@ -507,22 +552,18 @@ struct ContentView: View {
                             }
                         }
                     }
-                     return nil // no more beeps
-//                case 124:
-////                    print("right arrow")
-//                    DispatchQueue.main.async {
-//                        if let group = clipboardManager.selectedGroup {
-//                            group.isExpanded = true
-//                        }
-//                    }
-//                    return nil
+                    print("group: \(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "nil") | item: \(clipboardManager.selectedItem?.content ?? "nil")\n")
+                    return nil
 //                case 123:
-////                    print("left arrow")
-//                    DispatchQueue.main.async {
-//                        if let group = clipboardManager.selectedGroup {
-//                            group.isExpanded = false
-//                        }
+//                    isFocused = false
+//
+//                    print("left arrow")
+//                    if let currIndex = currentIndex, currIndex < selectList.count - 1 {
+//
+//                        let currGroup = selectList[currIndex]
+//                        clipboardManager.selectedGroup = currGroup
 //                    }
+//
 //                    return nil
                 default:
                     break
@@ -547,16 +588,14 @@ struct ClipboardGroupView: View {
     
 //    var selectList: [SelectedGroup]
     @Binding var isGroupSelected: Bool
-    
-    @State private var isThisGroupSelected: Bool = false
-    
+        
     @State private var imageSizeMultiple: CGFloat = 0.7
         
     @State private var showingDeleteAlert = false
-    
-    @State private var selectedItem: ClipboardItem?
-    
+        
     @State private var isGroupExpanded: Bool = false
+    
+    @State private var shouldSelectGroup: Bool = true
     
     
     var body: some View {
@@ -565,16 +604,17 @@ struct ClipboardGroupView: View {
             ClipboardItemView(item: item, isPartOfGroup: false, imageSizeMultiple: $imageSizeMultiple, isSelected: Binding(
                 get: { self.clipboardManager.selectedItem == item },
                 set: { newItem in
-                    self.clipboardManager.selectedItem = newItem ? item : nil
+//                    self.clipboardManager.selectedItem = newItem ? item : nil
                     //                    self.clipboardManager.selectedGroup = newItem ? group.GetSelecGroupObj(group, list: selectList) : nil
                     //                    if let _ = self.clipboardManager.selectedGroup {
                     //                        self.clipboardManager.selectedGroup?.selectedItem = newItem ? item : nil
                     //                    }
                     isGroupSelected = true
+                    self.clipboardManager.selectedGroup = selectGroup
                 }))
             .id(item.objectID)
             .background(RoundedRectangle(cornerRadius: 8)
-                .fill(isGroupSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5))
+                .fill(shouldSelectGroup ? isGroupSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5) : Color(.darkGray).opacity(0.5))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
             )
@@ -599,7 +639,8 @@ struct ClipboardGroupView: View {
                         Button(action: {
                             isGroupSelected = true
                             isGroupExpanded.toggle()
-                            //                            clipboardManager.selectedGroup?.isGroupExpanded.toggle()
+                            clipboardManager.selectedGroup = selectGroup
+                            clipboardManager.selectedGroup?.isExpanded.toggle()
                         }) {
                             Image(systemName: isGroupExpanded ? "chevron.down.circle" : "chevron.right.circle")
                                 .foregroundColor(.white)
@@ -663,7 +704,7 @@ struct ClipboardGroupView: View {
                     .padding(.bottom, 4)
                     
                     .background(RoundedRectangle(cornerRadius: 8)
-                        .fill(isGroupSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5))
+                        .fill(shouldSelectGroup ? isGroupSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5) : Color(.darkGray).opacity(0.5))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
                     )
@@ -678,7 +719,7 @@ struct ClipboardGroupView: View {
                     }
                     
                     
-                    if isGroupExpanded {
+                    if let currSelectGroup = clipboardManager.selectedGroup, currSelectGroup.isExpanded || isGroupExpanded {
 //                    if let selectedGroup = clipboardManager.selectedGroup {
 //                        if group == selectedGroup.group && selectedGroup.isExpanded {
                             ScrollViewReader { scrollView in
@@ -708,19 +749,29 @@ struct ClipboardGroupView: View {
 //                }
             }
             .onAppear {
-                setUpKeyboardHandling(selectGroup: selectGroup)
+                setUpKeyboardHandling()
             }
-            .onChange(of: clipboardManager.selectedGroup?.isExpanded) {
-                if let someSelectGroup = clipboardManager.selectedGroup, someSelectGroup.group == group {
-//                                    DispatchQueue.main.async {
-                    isGroupExpanded = someSelectGroup.isExpanded
-                    selectGroup.isExpanded = true
-//                                    }
-//                    print(isGroupExpanded)
-//                    print(someSelectGroup.isExpanded)
-                }
-            }
-            
+//            .onChange(of: clipboardManager.selectedGroup?.isExpanded) {
+//                if let someSelectGroup = clipboardManager.selectedGroup, someSelectGroup.group == group {
+////                                    DispatchQueue.main.async {
+//                    isGroupExpanded = someSelectGroup.isExpanded
+//                    selectGroup.isExpanded = true
+////                                    }
+////                    print(isGroupExpanded)
+////                    print(someSelectGroup.isExpanded)
+//                }
+//            }
+            // *** visually unselects the group when selecting its items ***
+//            .onChange(of: clipboardManager.selectedItem) {
+//                if let itemGroup = clipboardManager.selectedItem?.group, let group = clipboardManager.selectedGroup?.group,
+//                   itemGroup == group {
+//                    shouldSelectGroup = false
+//                }
+//                else {
+//                    shouldSelectGroup = true
+//                }
+//            }
+//            
             
         }
         
@@ -812,38 +863,35 @@ struct ClipboardGroupView: View {
         }
     }
     
-    private func setUpKeyboardHandling(selectGroup: SelectedGroup) {
+    private func setUpKeyboardHandling() {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-//            var currentIndex: Int?
-            if clipboardManager.selectedGroup != nil {
-//                currentIndex = selectList.firstIndex(of: group)
-//                print("\(currentIndex)\n")
-            }
-            
-//            print(isGroupExpanded)
             
             if event.type == .keyDown && !parentShowingAlert {
                 switch event.keyCode {
                 case 124:
-//                    print("right arrow")
-                    DispatchQueue.main.async {
-//                        if let group = clipboardManager.selectedGroup {
-//                            group.isExpanded = true
-                            selectGroup.isExpanded = true
+                    print("right arrow")
+//                    DispatchQueue.main.async {
+                        if let group = clipboardManager.selectedGroup, group == selectGroup {
+                            group.isExpanded = true
+//                            selectGroup.isExpanded = true
                             isGroupExpanded = true
 
-//                        }
-                    }
+                        }
+//                    }
+                    print("group: \(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "nil") | item: \(clipboardManager.selectedItem?.content ?? "nil")")
+//                    print("group: \(selectGroup.group.itemsArray.first?.content ?? "nil")\n")
                     return nil
                 case 123:
-//                    print("left arrow")
-                    DispatchQueue.main.async {
-//                        if let group = clipboardManager.selectedGroup {
-//                            group.isExpanded = false
-                            selectGroup.isExpanded = false
+                    print("left arrow")
+//                    DispatchQueue.main.async {
+                        if let group = clipboardManager.selectedGroup, group == selectGroup {
+                            group.isExpanded = false
+//                            selectGroup.isExpanded = false
                             isGroupExpanded = false
-//                        }
-                    }
+                        }
+//                    }
+                    print("group: \(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "nil") | item: \(clipboardManager.selectedItem?.content ?? "nil")")
+//                    print("group: \(selectGroup.group.itemsArray.first?.content ?? "nil")\n")
                     return nil
                 default:
                     break

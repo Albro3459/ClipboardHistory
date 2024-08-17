@@ -20,9 +20,10 @@ class SelectedGroup: Equatable, Hashable {
     }
     
     static func == (groupA: SelectedGroup, groupB: SelectedGroup) -> Bool {
-        return groupA.group == groupB.group &&
-                groupA.selectedItem == groupB.selectedItem &&
-                groupA.group.count == groupB.group.count
+        return groupA.group.objectID == groupB.group.objectID &&
+        groupA.selectedItem?.content == groupB.selectedItem?.content &&
+                groupA.group.count == groupB.group.count &&
+        groupA.group.timeStamp == groupB.group.timeStamp
 //            && groupA.isExpanded == groupB.isExpanded
     }
     
