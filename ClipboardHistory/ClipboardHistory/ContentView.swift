@@ -601,7 +601,7 @@ struct ClipboardGroupView: View {
     var body: some View {
         let group = selectGroup.group
         if group.count == 1, let item = group.itemsArray.first {
-            ClipboardItemView(item: item, isPartOfGroup: false, imageSizeMultiple: $imageSizeMultiple, isSelected: Binding(
+            ClipboardItemView(item: item, selectGroup: selectGroup, isPartOfGroup: false, imageSizeMultiple: $imageSizeMultiple, isSelected: Binding(
                 get: { self.clipboardManager.selectedItem == item },
                 set: { newItem in
 //                    self.clipboardManager.selectedItem = newItem ? item : nil
@@ -711,21 +711,24 @@ struct ClipboardGroupView: View {
                     .contentShape(Rectangle()) // Makes the entire area tappable
                     .onTapGesture(count: 2) {
                         isGroupSelected = true
+                        clipboardManager.selectedGroup = selectGroup
+                        
                         isGroupExpanded.toggle()
-                        //                        clipboardManager.selectedGroup?.isGroupExpanded.toggle()
+                        clipboardManager.selectedGroup?.isExpanded.toggle()
                     }
                     .onTapGesture(count: 1) {
                         isGroupSelected = true
+                        clipboardManager.selectedGroup = selectGroup
                     }
                     
                     
-                    if let currSelectGroup = clipboardManager.selectedGroup, currSelectGroup.isExpanded || isGroupExpanded {
+                    if /*let currSelectGroup = clipboardManager.selectedGroup, currSelectGroup.isExpanded ||*/ isGroupExpanded {
 //                    if let selectedGroup = clipboardManager.selectedGroup {
 //                        if group == selectedGroup.group && selectedGroup.isExpanded {
                             ScrollViewReader { scrollView in
                                 LazyVStack(spacing: 0) {
                                     ForEach(group.itemsArray, id: \.self) { item in
-                                        ClipboardItemView(item: item, isPartOfGroup: true, imageSizeMultiple: $imageSizeMultiple, isSelected: Binding(
+                                        ClipboardItemView(item: item, selectGroup: selectGroup, isPartOfGroup: true, imageSizeMultiple: $imageSizeMultiple, isSelected: Binding(
                                             get: { self.clipboardManager.selectedItem == item
                                             },
                                             set: { newItem in
@@ -873,7 +876,7 @@ struct ClipboardGroupView: View {
 //                    DispatchQueue.main.async {
                         if let group = clipboardManager.selectedGroup, group == selectGroup {
                             group.isExpanded = true
-//                            selectGroup.isExpanded = true
+                            selectGroup.isExpanded = true
                             isGroupExpanded = true
 
                         }
@@ -886,7 +889,7 @@ struct ClipboardGroupView: View {
 //                    DispatchQueue.main.async {
                         if let group = clipboardManager.selectedGroup, group == selectGroup {
                             group.isExpanded = false
-//                            selectGroup.isExpanded = false
+                            selectGroup.isExpanded = false
                             isGroupExpanded = false
                         }
 //                    }
@@ -911,6 +914,8 @@ struct ClipboardItemView: View {
     @EnvironmentObject var clipboardManager: ClipboardManager
     
     var item: ClipboardItem
+    
+    var selectGroup: SelectedGroup
     
     var isPartOfGroup: Bool
     
@@ -1012,13 +1017,18 @@ struct ClipboardItemView: View {
         .contentShape(Rectangle()) // Makes the entire area tappable
         .onTapGesture(count: 2) {
 //            if isPartOfGroup {
-                isSelected = true
+            isSelected = true
+            clipboardManager.selectedItem = item
+            clipboardManager.selectedGroup = selectGroup
+
                 //            clipboardManager.copySelectedItem()
 //            }
         }
         .onTapGesture(count: 1) {
 //            if isPartOfGroup {
-                isSelected = true
+            isSelected = true
+            clipboardManager.selectedItem = item
+            clipboardManager.selectedGroup = selectGroup
 //            }
         }
     }
