@@ -18,7 +18,6 @@ import CoreData
 
 class ClipboardManager: ObservableObject {
     @Published var selectedItem: ClipboardItem?
-//    @Published var selectedGroup: ClipboardGroup?
     @Published var selectedGroup: SelectedGroup?
     
     @Published var isCopied: Bool = false
@@ -68,6 +67,15 @@ class ClipboardManager: ObservableObject {
         }
     }
     
+    func copySelectedGroup() {
+        if let items = selectedGroup?.group.itemsArray {
+            var array: [ClipboardItem] = []
+            for item in items {
+                array.append(item)
+            }
+        }
+    }
+    
     func copied() {
 //        guard let item = selectedItem,
 //              let itemType = item.type,
@@ -84,5 +92,33 @@ class ClipboardManager: ObservableObject {
 //                }
 //            }
 //        }
-    }    
+    }
+    
+
+    func toggleExpansion(for group: SelectedGroup) {
+        if let currentGroup = selectedGroup, currentGroup == group {
+            currentGroup.isExpanded.toggle()
+            print("toggling")
+
+            objectWillChange.send()
+        }
+    }
+    
+    func expand(for group: SelectedGroup) {
+        if let currentGroup = selectedGroup, currentGroup == group {
+            currentGroup.isExpanded = true
+            print("expanding")
+
+            objectWillChange.send()
+        }
+    }
+    
+    func contract(for group: SelectedGroup) {
+        if let currentGroup = selectedGroup, currentGroup == group {
+            currentGroup.isExpanded = false
+            print("contracting")
+
+            objectWillChange.send()
+        }
+    }
 }

@@ -7,11 +7,11 @@
 
 import Foundation
 
-class SelectedGroup: Equatable, Hashable {
+class SelectedGroup: ObservableObject, Equatable, Hashable {
     
     var group: ClipboardGroup
-    var selectedItem: ClipboardItem?
-    var isExpanded: Bool
+    @Published var selectedItem: ClipboardItem?
+    @Published var isExpanded: Bool
     
     init(group: ClipboardGroup, selectedItem: ClipboardItem? = nil, isExpanded: Bool = false) {
         self.group = group
