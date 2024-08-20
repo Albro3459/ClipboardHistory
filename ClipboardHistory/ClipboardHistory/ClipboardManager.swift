@@ -27,9 +27,41 @@ class ClipboardManager: ObservableObject {
     init() {
         self.clipboardMonitor = ClipboardMonitor()
     }
-            
-    func copySelectedItem() {
-        guard let item = selectedItem else {
+    
+    // copying a group with just 1 item
+    func copySingleGroup() {
+        guard let items = selectedGroup?.group.itemsArray, let item = items.first else {
+            print("No item to copy")
+            return
+        }
+        
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        
+        switch item.type {
+        case "text":
+            if let content = item.content {
+                pasteboard.setString(content, forType: .string)
+                copied()
+
+            }
+        case "image", "file", "folder", "alias":
+            if let filePath = item.filePath {
+                let url = URL(fileURLWithPath: filePath)
+                pasteboard.writeObjects([url as NSURL])
+                print(url.path)
+                copied()
+
+            }
+        default:
+            print("unsupported item for copying: \(item.type ?? "nil type")")
+        }
+       
+    }
+           
+    // copying an item out of a group
+    func copySelectedItemInGroup() {
+        guard let item = selectedItem, let group = selectedGroup, item.group == group.group else {
             print("No item selected")
             return
         }
@@ -42,19 +74,6 @@ class ClipboardManager: ObservableObject {
                 pasteboard.setString(content, forType: .string)
                 copied()
             }
-//        case "imageData":
-//            if let imageData = item.imageData {
-//                if let filePath = selectedItem?.filePath {
-//                    let url = URL(fileURLWithPath: filePath)
-//                    pasteboard.writeObjects([url as NSURL])
-////                    print(url.path())
-//                    copied()
-//                }
-//                else {
-//                    pasteboard.setData(imageData, forType: .tiff)
-//                    copied()
-//                }
-//            }
         case "image", "file", "folder", "alias":
             if let filePath = item.filePath {
                 let url = URL(fileURLWithPath: filePath)
@@ -63,19 +82,56 @@ class ClipboardManager: ObservableObject {
                 copied()
             }
         default:
-            break
+            print("unsupported group item for copying: \(item.type ?? "nil type")")
         }
     }
     
+    // copying a whole group
     func copySelectedGroup() {
-        if let items = selectedGroup?.group.itemsArray {
-            var array: [ClipboardItem] = []
-            for item in items {
-                array.append(item)
+        guard let items = selectedGroup?.group.itemsArray, !items.isEmpty else {
+            print("No items to copy or selected group is nil")
+            return
+        }
+        if items.count == 1, selectedItem != nil {
+            copySingleGroup()
+            return
+        }
+        
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        
+        var array: [NSPasteboardWriting] = []
+        
+        for item in items {
+            
+            switch item.type {
+            case "text":
+                if let content = item.content {
+//                    pasteboard.setString(content, forType: .string)
+                    array.append(content as NSString)
+                }
+            case "image", "file", "folder", "alias":
+                if let filePath = item.filePath {
+                    let url = URL(fileURLWithPath: filePath)
+//                    pasteboard.writeObjects([url as NSURL])
+                    print(url.path)
+                    array.append(url as NSURL)
+                }
+            default:
+                print("unsupported item in this group for copying: \(item.type ?? "nil type")")
             }
         }
+        
+        if pasteboard.writeObjects(array as [NSPasteboardWriting]) {
+            copied()
+        }
+        else {
+            print("Failed to write objects to pasteboard.")
+
+        }
+        
     }
-    
+            
     func copied() {
 //        guard let item = selectedItem,
 //              let itemType = item.type,
