@@ -28,6 +28,10 @@ class ClipboardManager: ObservableObject {
         self.clipboardMonitor = ClipboardMonitor()
     }
     
+    func selectThisGroup(group: SelectedGroup) {
+        selectedGroup = group
+    }
+    
     // copying a group with just 1 item
     func copySingleGroup() {
         guard let items = selectedGroup?.group.itemsArray, let item = items.first else {
@@ -92,10 +96,11 @@ class ClipboardManager: ObservableObject {
             print("No items to copy or selected group is nil")
             return
         }
-        if items.count == 1, selectedItem != nil {
+        if items.count == 1, selectedItem == nil {
             copySingleGroup()
             return
         }
+
         
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
