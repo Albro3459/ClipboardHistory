@@ -53,16 +53,22 @@ extension ClipboardGroup {
             
             for selection in list {
                 if selection.group == group {
+                    print("ohh")
                     return selection
                 }
             }
-            
-            return SelectedGroup(group: group, selectedItem: nil)
+            print("yo")
+            return SelectedGroup(group: group, selectedItem: nil, isExpanded: findExpandedState(for: group, selectList: list))
 
         }
         else {
             return nil
         }
+    }
+    
+    private func findExpandedState(for inputGroup: ClipboardGroup, selectList: [SelectedGroup]) -> Bool {
+        // if this group was already in selectList, return its isExpanded
+        return selectList.first(where: { $0.group == inputGroup })?.isExpanded ?? false
     }
 }
 

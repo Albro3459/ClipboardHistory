@@ -270,9 +270,6 @@ struct ContentView: View {
                 .overlay( // Adds a thin line at the top and bottom
                     Rectangle().frame(height: 0.5).foregroundColor(.black.opacity(0.5)), alignment: .top
                 )
-//                .overlay(
-//                    Rectangle().frame(height: 0.5).foregroundColor(.black.opacity(0.5)), alignment: .bottom
-//                )
                 Spacer()
                 Button {
                     showingAlert = true
@@ -320,32 +317,40 @@ struct ContentView: View {
             .onAppear {
                 clipboardManager.selectedGroup = selectList.first
                 setUpKeyboardHandling()
-                self.selectList = clipboardGroups.map { SelectedGroup(group: $0, selectedItem: nil) }
+//                self.selectList = clipboardGroups.map { SelectedGroup(group: $0) }
+                initializeSelectList()
             }
             .onChange(of: clipboardGroups.count) { oldValue, newValue in
                 if clipboardGroups.count == 1 {
                     clipboardManager.selectedGroup = selectList.first
                 }
-                self.selectList = clipboardGroups.map { SelectedGroup(group: $0, selectedItem: nil) }
+//                self.selectList = clipboardGroups.map { SelectedGroup(group: $0) }
+                initializeSelectList()
             }
             .onChange(of: clipboardGroups.first) { oldValue, newValue in
                 // when last item gets deleted and so the count doesnt change
                 if clipboardGroups.count == 1 {
                     clipboardManager.selectedGroup = selectList.first
                 }
-                self.selectList = clipboardGroups.map { SelectedGroup(group: $0, selectedItem: nil) }
-            }
-            .onChange(of: clipboardManager.updateSelectList) {
-                // when last item gets deleted and so the count doesnt change
-                if clipboardManager.updateSelectList {
-                    print("updated list")
-                    self.selectList = clipboardGroups.map { SelectedGroup(group: $0, selectedItem: nil) }
-                }
+//                self.selectList = clipboardGroups.map { SelectedGroup(group: $0) }
+                initializeSelectList()
             }
             .onChange(of: isFocused) {
                 isSearchFocused = isFocused
             }
         }
+    }
+    
+    func initializeSelectList() {
+        self.selectList = clipboardGroups.map { clipboardGroup in
+            let isExpanded = self.findExpandedState(for: clipboardGroup)
+            return SelectedGroup(group: clipboardGroup, isExpanded: isExpanded)
+        }
+    }
+    
+    func findExpandedState(for inputGroup: ClipboardGroup) -> Bool {
+        // if this group was already in selectList, return its isExpanded
+        return selectList.first(where: { $0.group == inputGroup })?.isExpanded ?? false
     }
     
     private func clearClipboardItems() {
@@ -524,7 +529,7 @@ struct ContentView: View {
                 case 125:
                     // Handle down arrow
                     isFocused = false
-                    
+                    print( )
                     if let currIndex = currentIndex, currIndex < selectList.count - 1 {
                         print("a")
                         
@@ -584,7 +589,7 @@ struct ContentView: View {
                             }
                         }
                     }
-                    print("\n")
+                    print( )
                     return nil
 //                case 123:
 //                    isFocused = false
@@ -653,16 +658,12 @@ struct ClipboardGroupView: View {
 //                clipboardManager.selectedGroup = selectGroup
 //                clipboardManager.copySingleGroup()
 //            }
-//            .onTapGesture(count: 1) {
-//                print("Single Group tap:")
+            .onTapGesture(count: 1) {
+                print("Single Group tap:")
+                print("shouldSelectGroup: \(shouldSelectGroup)")
 //                isGroupSelected = true
 //                clipboardManager.selectedGroup = selectGroup
-//            }
-//            .onChange(of: clipboardManager.updateSelectList) {
-//                if clipboardManager.updateSelectList {
-//                    selectGroup.isExpanded = false
-//                }
-//            }
+            }
         }
         else if group.count > 1 {
             
@@ -760,6 +761,7 @@ struct ClipboardGroupView: View {
                     }
                     .onTapGesture(count: 1) {
                         print("Group Top Tapp:")
+                        print("shouldSelectGroup: \(shouldSelectGroup)")
                         isGroupSelected = true
                         clipboardManager.selectedGroup = selectGroup
                         clipboardManager.selectedItem = nil
@@ -970,8 +972,6 @@ struct ClipboardItemView: View {
                 else {
                     clipboardManager.copySingleGroup()
                 }
-//                self.copyToClipboard(item: item)
-//                clipboardManager.copySelectedItem()
             }) {
                 Image(systemName: "doc.on.doc")
                     .foregroundColor(.white)
@@ -984,7 +984,6 @@ struct ClipboardItemView: View {
                 if isPartOfGroup {
                     clipboardManager.selectedItem = item
                 }
-//                clipboardManager.selectedItem = item
                 clipboardManager.selectedGroup = selectGroup
                 showingDeleteAlert = true
             }) {
@@ -1001,11 +1000,9 @@ struct ClipboardItemView: View {
                     message: Text("Are you sure you want to delete this clipboard item?"),
                     primaryButton: .destructive(Text("Delete")) {
                         if let item = clipboardManager.selectedItem {
-//                            self.deleteItem(item: item)
                             clipboardManager.deleteItem(item: item, viewContext: viewContext, isCalledByGroup: false)
                         }
                         else {
-//                            self.deleteGroup(group: clipboardManager.selectedGroup?.group)
                             clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectList, viewContext: viewContext)
                         }
                     },
@@ -1040,8 +1037,10 @@ struct ClipboardItemView: View {
             isSelected = true
             clipboardManager.selectedGroup = selectGroup
             print("Item View tapp:")
+            print("isPartOfGroup: \(isPartOfGroup)")
             print(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "nullll")
             print(clipboardManager.selectedItem?.content ?? "nulllll")
+            print( )
             
             if isPartOfGroup {
                 clipboardManager.selectedItem = item

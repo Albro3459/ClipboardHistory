@@ -21,17 +21,11 @@ class ClipboardManager: ObservableObject {
     @Published var selectedGroup: SelectedGroup?
     
     @Published var isCopied: Bool = false
-    
-    @Published var updateSelectList: Bool = false
-    
+        
     var clipboardMonitor: ClipboardMonitor?
 
     init() {
         self.clipboardMonitor = ClipboardMonitor()
-    }
-    
-    func selectThisGroup(group: SelectedGroup) {
-        selectedGroup = group
     }
     
     // copying a group with just 1 item
@@ -186,18 +180,9 @@ class ClipboardManager: ObservableObject {
                 }
             }
             else if selectList.count <= 1 {
-                print("in da group***")
+                // when I deleted the last group
                 self.selectedGroup = nil
                 self.selectedItem = nil
-//                self.selectedGroup?.showAfterDelete = true
-//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-//                    self.selectedGroup?.showAfterDelete = false
-//                }
-                
-//                self.updateSelectList = true
-//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-//                    self.updateSelectList = false
-//                }
             }
             
             do {
@@ -209,47 +194,70 @@ class ClipboardManager: ObservableObject {
     }
     
     func deleteItem(item: ClipboardItem, viewContext: NSManagedObjectContext, isCalledByGroup: Bool) {
-
-        if let imageHash = item.imageHash, let filePath = item.filePath, !filePath.isEmpty {
-            
-            let folderPath = clipboardMonitor?.tmpFolderPath
-            
-            if filePath.contains(folderPath!.path()) {
+        
+        if let selectGroup = self.selectedGroup, item.group == selectGroup.group {
+            //cleaning up tmp image files first
+            if let imageHash = item.imageHash, let filePath = item.filePath, !filePath.isEmpty {
                 
-                let items = clipboardMonitor?.findItems(content: nil, type: nil, imageHash: imageHash, filePath: filePath, context: nil)
+                let folderPath = clipboardMonitor?.tmpFolderPath
                 
-                // only want to delete file if its the only copy left
-                if items!.count < 2 {
-                    print(items!.count)
-                    clipboardMonitor?.deleteTmpImage(filePath: filePath)
+                if filePath.contains(folderPath!.path()) {
+                    
+                    let items = clipboardMonitor?.findItems(content: nil, type: nil, imageHash: imageHash, filePath: filePath, context: nil)
+                    
+                    // only want to delete file if its the only copy left
+                    if items!.count < 2 {
+                        print(items!.count)
+                        clipboardMonitor?.deleteTmpImage(filePath: filePath)
+                    }
+                }
+            }
+            
+            
+            // when we delete an item inside a group
+            // we need to maintain the right selection
+            print("***in itemm")
+            selectGroup.group.count -= 1
+            
+            let groupCount = selectGroup.group.count
+            if selectGroup.group.count == 1 {
+                selectGroup.isExpanded = false
+            }
+            
+            // selecting the next index after deleting
+            if groupCount <= 1 {
+                // if there is one item, it is no longer a group view, so no selectedItem
+                self.selectedItem = nil
+            }
+//            else if groupCount == 1 {
+//                self.selectedItem = selectGroup.group.itemsArray[0]
+//            }
+            else if groupCount >= 2 {
+                let itemIndex = GetItemIndexInGroup(item: item)
+                if var index = itemIndex {
+                    if index == groupCount {
+                        // if its the last item, select the next last item
+                        self.selectedItem = selectGroup.group.itemsArray[index - 1]
+                    }
+                    else if index == 0 || index < groupCount {
+                        self.selectedItem = selectGroup.group.itemsArray[index + 1]
+                    }
+                }
+            }
+            
+            
+            viewContext.delete(item)
+            
+            if !isCalledByGroup {
+                do {
+                    try viewContext.save()
+                } catch {
+                    print("Error saving managed object context: \(error)")
                 }
             }
         }
-        
-        if let selectGroup = self.selectedGroup {
-            print("***in itemm")
-            selectGroup.group.count -= 1
-            selectGroup.isExpanded = false
-            self.selectedItem = nil
-//            self.selectedGroup?.showAfterDelete = true
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-//                self.selectedGroup?.showAfterDelete = false
-//            }
-
-//            self.updateSelectList = true
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-//                self.updateSelectList = false
-//            }
-        }
-        
-        viewContext.delete(item)
-           
-        if !isCalledByGroup {
-            do {
-                try viewContext.save()
-            } catch {
-                print("Error saving managed object context: \(error)")
-            }
+        else {
+            print("Error deleting item, not in the selected group")
         }
     }
     
@@ -268,6 +276,18 @@ class ClipboardManager: ObservableObject {
                 }
             }
             return currentIndex
+        }
+        return nil
+    }
+    
+    private func GetItemIndexInGroup(item: ClipboardItem) -> Int? {
+        if let group = selectedGroup?.group {
+            if let currentIndex = group.itemsArray.firstIndex(of: item) {
+                return currentIndex
+            }
+            else {
+                return nil
+            }
         }
         return nil
     }
