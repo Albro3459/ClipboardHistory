@@ -1,5 +1,5 @@
 //
-//  ClipboardManager.swift
+//  swift
 //  ClipboardHistory
 //
 //  Created by Alex Brodsky on 7/26/24.
@@ -21,6 +21,8 @@ class ClipboardManager: ObservableObject {
     @Published var selectedGroup: SelectedGroup?
     
     @Published var isCopied: Bool = false
+    
+    @Published var updateSelectList: Bool = false
     
     var clipboardMonitor: ClipboardMonitor?
 
@@ -153,6 +155,121 @@ class ClipboardManager: ObservableObject {
 //                }
 //            }
 //        }
+    }
+    
+    func deleteGroup(group: ClipboardGroup?, selectList: [SelectedGroup], viewContext: NSManagedObjectContext) {
+        
+        if let group = group {
+            let selectedGroup = group.GetSelecGroupObj(group, list: selectList)
+            let index = GetGroupIndex(group: selectedGroup, selectList: selectList)
+            
+            for item in group.itemsArray {
+                deleteItem(item: item, viewContext: viewContext, isCalledByGroup: true)
+            }
+            
+            viewContext.delete(group)
+            
+            if selectList.count > 1 {
+                if selectList.count == 2 {
+                    self.selectedGroup = selectList[0]
+                }
+                else if selectList.count > 2, let index = index {
+                    if index == selectList.count - 1 {
+                        let nextIndex = index - 1
+                        self.selectedGroup = selectList[nextIndex]
+                    }
+                    else if index <= selectList.count - 2 {
+                        let nextIndex = index + 1
+                        self.selectedGroup = selectList[nextIndex]
+                    }
+                    
+                }
+            }
+            else if selectList.count <= 1 {
+                print("in da group***")
+                self.selectedGroup = nil
+                self.selectedItem = nil
+//                self.selectedGroup?.showAfterDelete = true
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+//                    self.selectedGroup?.showAfterDelete = false
+//                }
+                
+//                self.updateSelectList = true
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+//                    self.updateSelectList = false
+//                }
+            }
+            
+            do {
+                try viewContext.save()
+            } catch {
+                print("Error saving managed object context: \(error)")
+            }
+        }
+    }
+    
+    func deleteItem(item: ClipboardItem, viewContext: NSManagedObjectContext, isCalledByGroup: Bool) {
+
+        if let imageHash = item.imageHash, let filePath = item.filePath, !filePath.isEmpty {
+            
+            let folderPath = clipboardMonitor?.tmpFolderPath
+            
+            if filePath.contains(folderPath!.path()) {
+                
+                let items = clipboardMonitor?.findItems(content: nil, type: nil, imageHash: imageHash, filePath: filePath, context: nil)
+                
+                // only want to delete file if its the only copy left
+                if items!.count < 2 {
+                    print(items!.count)
+                    clipboardMonitor?.deleteTmpImage(filePath: filePath)
+                }
+            }
+        }
+        
+        if let selectGroup = self.selectedGroup {
+            print("***in itemm")
+            selectGroup.group.count -= 1
+            selectGroup.isExpanded = false
+            self.selectedItem = nil
+//            self.selectedGroup?.showAfterDelete = true
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+//                self.selectedGroup?.showAfterDelete = false
+//            }
+
+//            self.updateSelectList = true
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+//                self.updateSelectList = false
+//            }
+        }
+        
+        viewContext.delete(item)
+           
+        if !isCalledByGroup {
+            do {
+                try viewContext.save()
+            } catch {
+                print("Error saving managed object context: \(error)")
+            }
+        }
+    }
+    
+    private func GetGroupIndex(group: SelectedGroup?, selectList: [SelectedGroup]) -> Int? {
+        if let group = group {
+            var currentIndex: Int?
+            currentIndex = selectList.firstIndex(of: group)
+            if currentIndex == nil {
+                if !selectList.isEmpty {
+                    selectedGroup = selectList[0]
+                    if let group = selectedGroup?.group, group.count == 1 {
+                        //                        print("here")
+                        selectedGroup?.selectedItem = selectedGroup?.group.itemsArray.first
+                    }
+                    currentIndex = 0
+                }
+            }
+            return currentIndex
+        }
+        return nil
     }
     
 

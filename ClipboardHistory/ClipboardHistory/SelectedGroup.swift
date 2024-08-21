@@ -12,11 +12,13 @@ class SelectedGroup: ObservableObject, Equatable, Hashable {
     var group: ClipboardGroup
     @Published var selectedItem: ClipboardItem?
     @Published var isExpanded: Bool
+//    @Published var showAfterDelete: Bool
     
-    init(group: ClipboardGroup, selectedItem: ClipboardItem? = nil, isExpanded: Bool = false) {
+    init(group: ClipboardGroup, selectedItem: ClipboardItem? = nil, isExpanded: Bool = false/*, showAfterDelete: Bool = false*/) {
         self.group = group
         self.selectedItem = selectedItem
         self.isExpanded = isExpanded
+//        self.showAfterDelete = showAfterDelete
     }
     
     static func == (groupA: SelectedGroup, groupB: SelectedGroup) -> Bool {
