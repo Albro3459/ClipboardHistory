@@ -26,6 +26,22 @@ extension ClipboardItem {
 
 }
 
+extension ClipboardItem {
+    static func isEqual(itemA: ClipboardItem, itemB: ClipboardItem) -> Bool {
+//        print("inside")
+//        print(itemA.content)
+//        print(itemB.content)
+////        print(itemA.content == itemB.content &&
+////              itemA.filePath == itemB.filePath &&
+////              itemA.imageHash == itemB.imageHash)
+//        print( )
+        return itemA.content == itemB.content &&
+               itemA.filePath == itemB.filePath &&
+               itemA.imageHash == itemB.imageHash &&
+               itemA.type == itemB.type
+    }
+}
+
 extension ClipboardItem : Identifiable {
 
 }

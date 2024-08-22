@@ -73,11 +73,6 @@ struct ContentView: View {
     
     @State private var imageSizeMultiple: CGFloat = 1
     
-//    var selectList: [SelectedGroup] {
-//        clipboardGroups.map { group in
-//            SelectedGroup(group: group, selectedItem: nil)
-//        }
-//    }
     @State private var selectList: [SelectedGroup] = []
 
         
@@ -678,12 +673,12 @@ struct ClipboardGroupView: View {
 //                clipboardManager.selectedGroup = selectGroup
 //                clipboardManager.copySingleGroup()
 //            }
-            .onTapGesture(count: 1) {
-                print("Single Group tap:")
-                print("shouldSelectGroup: \(shouldSelectGroup)")
+//            .onTapGesture(count: 1) {
+//                print("Single Group tap:")
+//                print("shouldSelectGroup: \(shouldSelectGroup)")
 //                isGroupSelected = true
 //                clipboardManager.selectedGroup = selectGroup
-            }
+//            }
         }
         else if group.count > 1 {
             
@@ -780,8 +775,8 @@ struct ClipboardGroupView: View {
                         clipboardManager.copySelectedGroup()
                     }
                     .onTapGesture(count: 1) {
-                        print("Group Top Tapp:")
-                        print("shouldSelectGroup: \(shouldSelectGroup)")
+//                        print("Group Top Tapp:")
+//                        print("shouldSelectGroup: \(shouldSelectGroup)")
                         isGroupSelected = true
                         clipboardManager.selectedGroup = selectGroup
                         clipboardManager.selectedItem = nil
@@ -1164,11 +1159,11 @@ struct ClipboardItemView: View {
         .onTapGesture(count: 1) {
             isSelected = true
             clipboardManager.selectedGroup = selectGroup
-            print("Item View tapp:")
-            print("isPartOfGroup: \(isPartOfGroup)")
-            print(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "nullll")
-            print(clipboardManager.selectedItem?.content ?? "nulllll")
-            print( )
+//            print("Item View tapp:")
+//            print("isPartOfGroup: \(isPartOfGroup)")
+//            print(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "nullll")
+//            print(clipboardManager.selectedItem?.content ?? "nulllll")
+//            print( )
             
             if isPartOfGroup {
                 clipboardManager.selectedItem = item

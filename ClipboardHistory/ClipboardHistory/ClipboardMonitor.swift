@@ -40,10 +40,13 @@ class ClipboardMonitor: ObservableObject {
         
         DispatchQueue.main.async {
             let pasteboard = NSPasteboard.general
-            let context = PersistenceController.shared.container.viewContext
+            let childContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+//            let context = PersistenceController.shared.container.viewContext
+            childContext.parent = PersistenceController.shared.container.viewContext
+
             
             if let items = pasteboard.pasteboardItems, !items.isEmpty {
-                let group = ClipboardGroup(context: context)
+                let group = ClipboardGroup(context: childContext)
                 group.timeStamp = Date()
                 group.count = Int16(min(items.count, self.maxItemCount))
                 
@@ -54,13 +57,13 @@ class ClipboardMonitor: ObservableObject {
                     }
                     // Check for file URLs first
                     if let urlString = item.string(forType: .fileURL), let fileUrl = URL(string: urlString) {
-                        self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: context)
+                        self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext)
                     }
                     else if let imageData = pasteboard.data(forType: .tiff), let image = NSImage(data: imageData) {
-                        self.processImageData(image: image, inGroup: group, context: context)
+                        self.processImageData(image: image, inGroup: group, context: childContext)
                     }
                     else if let content = pasteboard.string(forType: .string) {
-                        let item = ClipboardItem(context: context)
+                        let item = ClipboardItem(context: childContext)
                         item.content = content
                         item.type = "text"
                         item.filePath = nil
@@ -71,7 +74,7 @@ class ClipboardMonitor: ObservableObject {
                     }
                     counter += 1
                 }
-                self.saveClipboardGroup(context: context)
+                self.saveClipboardGroup(childContext: childContext)
             }
         }
     }
@@ -151,7 +154,7 @@ class ClipboardMonitor: ObservableObject {
         group.addToItems(item)
     }
     
-    // try to determine file type alias points to
+    // determine file path that alias points to
     private func resolveAlias(fileUrl: URL) -> URL? {
         do {
             let resourceValues = try fileUrl.resourceValues(forKeys: [.isAliasFileKey])
@@ -285,8 +288,9 @@ class ClipboardMonitor: ObservableObject {
 //        }
 //    }
     
-    private func saveClipboardGroup(context: NSManagedObjectContext) {
-        if !checkLast(context: context) {
+    private func saveClipboardGroup(childContext: NSManagedObjectContext) {
+        if !checkLast(childContext: childContext) {
+            print("Check Last Failed")
             return
         }
                         
@@ -294,24 +298,28 @@ class ClipboardMonitor: ObservableObject {
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
         
         do {
-            var groups = try context.fetch(fetchRequest)
+            var groups = try childContext.fetch(fetchRequest)
             // includes newly created group and its items, even though it wasnt saved yet
             
-            cleanUp(context: context, inputGroups: groups)
+            cleanUp(childContext: childContext, inputGroups: groups)
 
             var groupCount = groups.count
             
             while groupCount > self.maxGroupCount {
                 
                 if let oldestGroup = groups.last {
-                    deleteGroupAndItems(oldestGroup, context: context)
+                    deleteGroupAndItems(oldestGroup, childContext: childContext)
                     groupCount -= 1
                     groups.removeFirst()
                 }
             }
-            try context.save()
+            try childContext.save()
+            try childContext.parent?.save()
+            
+            return
         } catch {
-        print("Failed to save and update groups: \(error)")
+            print("Failed to save and update groups: \(error)")
+            return
         }
     }
     
@@ -396,30 +404,33 @@ class ClipboardMonitor: ObservableObject {
 //        return shouldSave
 //    }
 
-    func checkLast(context: NSManagedObjectContext?) -> Bool {
+    func checkLast(childContext: NSManagedObjectContext) -> Bool {
         var shouldSave = false
         
-        let context = context ?? PersistenceController.shared.container.viewContext
+//        let context = childContext ?? PersistenceController.shared.container.viewContext
         let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
-        fetchRequest.fetchLimit = 2
+        fetchRequest.fetchLimit = 2 // 2 because new item and last item
         
         do {
-            let results = try context.fetch(fetchRequest)
+            let results = try childContext.fetch(fetchRequest)
             
-            if results.count < 2 {
+            if results.count < 2 { // less than 2 means there wasnt anything copied before, so save it
+//                print("shouldnt be here")
                 shouldSave = true
                 clearTmpImages()
             }
             else if let newGroup = results.last, let lastGroup = results.dropLast().last {
-                if lastGroup.count != newGroup.count {
+//                print("here")
+                let lastItems = lastGroup.itemsArray
+                let newItems = newGroup.itemsArray
+                
+                if lastItems.count != newItems.count {
+                    // Different number of items, definitely save
                     shouldSave = true
-                }
-                else {
-                    let lastItems = Set(lastGroup.items?.allObjects as? [ClipboardItem] ?? [])
-                    let newItems = Set(newGroup.items?.allObjects as? [ClipboardItem] ?? [])
-                    
-                    if lastItems != newItems { shouldSave = true }
+                } else {
+                    // Compare the sorted arrays element by element
+                    shouldSave = !zip(lastItems, newItems).allSatisfy { ClipboardItem.isEqual(itemA: $0, itemB: $1) }
                 }
             }
         } catch {
@@ -430,6 +441,7 @@ class ClipboardMonitor: ObservableObject {
     }
     
     func checkLast(group: ClipboardGroup, context: NSManagedObjectContext?) -> Bool {
+       // !!! Not UPDATED
         var shouldSave = false
                 
         let context = context ?? PersistenceController.shared.container.viewContext
@@ -465,7 +477,7 @@ class ClipboardMonitor: ObservableObject {
         return shouldSave
     }
     
-    private func cleanUp(context: NSManagedObjectContext, inputGroups: [ClipboardGroup]?) {
+    private func cleanUp(childContext: NSManagedObjectContext, inputGroups: [ClipboardGroup]?) {
         var groups: [ClipboardGroup]
             
         if let existingGroups = inputGroups {
@@ -474,7 +486,7 @@ class ClipboardMonitor: ObservableObject {
             let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
             fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
             do {
-                groups = try context.fetch(fetchRequest)
+                groups = try childContext.fetch(fetchRequest)
             } catch {
                 print("Failed to fetch groups for cleanup: \(error.localizedDescription)")
                 return
@@ -487,38 +499,38 @@ class ClipboardMonitor: ObservableObject {
             while totalItems > self.maxItemCount {
                 if let oldestGroup = groups.last {
                     let itemCount = oldestGroup.items?.count ?? 0
-                    deleteGroupAndItems(oldestGroup, context: context)
+                    deleteGroupAndItems(oldestGroup, childContext: childContext)
                     groups.removeLast()
                     totalItems -= itemCount
                 }
             }
-            try context.save()
+            try childContext.save()
         } catch {
             print("Failed to clean up groups: \(error.localizedDescription)")
         }
     }
     
-    func deleteGroupAndItems(_ group: ClipboardGroup, context: NSManagedObjectContext) {
+    func deleteGroupAndItems(_ group: ClipboardGroup, childContext: NSManagedObjectContext) {
         if let items = group.items as? Set<ClipboardItem> {
             for item in items {
-                deleteItem(item, context: context)
+                deleteItem(item, childContext: childContext)
             }
         }
-        context.delete(group)
+        childContext.delete(group)
     }
     
-    func deleteItem(_ item: ClipboardItem, context: NSManagedObjectContext) {
+    func deleteItem(_ item: ClipboardItem, childContext: NSManagedObjectContext) {
         let folderPath = tmpFolderPath
         if let filePath = item.filePath, filePath.contains(folderPath.path) {
             // if the file is not still in the clipboard history
-            let items = self.findItems(content: nil, type: nil, imageHash: item.imageHash, filePath: filePath, context: context)
+            let items = self.findItems(content: nil, type: nil, imageHash: item.imageHash, filePath: filePath, context: childContext)
             
             // only want to delete file if its the only copy left
             if items.count < 2 {
                 self.deleteTmpImage(filePath: filePath)
             }
         }
-        context.delete(item)
+        childContext.delete(item)
     }
     
     private func generateThumbnail(for filePath: String?, completion: @escaping (NSImage?) -> Void) {

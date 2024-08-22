@@ -130,7 +130,6 @@
 				6072ABEE2BF7D6CF0091E218 /* ClipboardMonitor.swift */,
 				60639F1B2C5440280031CBE2 /* ClipboardManager.swift */,
 				60038DDE2BFCD04C00AC3CA8 /* SearchBarView.swift */,
-				60F263942C6735BC00E5FC7B /* SelectedGroup.swift */,
 			);
 			path = ClipboardHistory;
 			sourceTree = "<group>";
@@ -163,6 +162,7 @@
 		6072ABF02BF7DD4A0091E218 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				60F263942C6735BC00E5FC7B /* SelectedGroup.swift */,
 				60F2638C2C645E0C00E5FC7B /* ClipboardItem+CoreDataClass.swift */,
 				60F2638D2C645E0C00E5FC7B /* ClipboardItem+CoreDataProperties.swift */,
 				60F2638E2C645E0C00E5FC7B /* ClipboardGroup+CoreDataClass.swift */,

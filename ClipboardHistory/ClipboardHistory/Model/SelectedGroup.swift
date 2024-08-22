@@ -26,6 +26,10 @@ class SelectedGroup: ObservableObject, Equatable, Hashable {
                 groupA.group.timeStamp == groupB.group.timeStamp
     }
     
+    static func != (groupA: SelectedGroup, groupB: SelectedGroup) -> Bool {
+        return !(groupA == groupB)
+    }
+    
     func hash(into hasher: inout Hasher) {
         hasher.combine(ObjectIdentifier(group))
         if let item = selectedItem {
