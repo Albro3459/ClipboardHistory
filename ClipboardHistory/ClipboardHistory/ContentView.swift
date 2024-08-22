@@ -614,6 +614,14 @@ struct ContentView: View {
 //                    }
 //
 //                    return nil
+                case 115, 116:
+                    // Handle Home or Page Up Key action
+                    scrollToTop = true
+                    return nil
+                case 119, 121:
+                    // Handle End or Page Down Key action
+                    scrollToBottom = true
+                    return nil
                 default:
                     break
                 }
