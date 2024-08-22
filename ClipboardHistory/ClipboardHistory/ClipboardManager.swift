@@ -234,7 +234,7 @@ class ClipboardManager: ObservableObject {
             
             // when we delete an item inside a group
             // we need to maintain the right selection
-            print("***in itemm")
+//            print("***in itemm")
             selectGroup.group.count -= 1
             
             let groupCount = selectGroup.group.count
@@ -247,9 +247,6 @@ class ClipboardManager: ObservableObject {
                 // if there is one item, it is no longer a group view, so no selectedItem
                 self.selectedItem = nil
             }
-//            else if groupCount == 1 {
-//                self.selectedItem = selectGroup.group.itemsArray[0]
-//            }
             else if groupCount >= 2 {
                 let itemIndex = GetItemIndexInGroup(item: item)
                 if let index = itemIndex {

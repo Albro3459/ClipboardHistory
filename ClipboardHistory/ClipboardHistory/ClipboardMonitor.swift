@@ -40,6 +40,9 @@ class ClipboardMonitor: ObservableObject {
         
         DispatchQueue.main.async {
             let pasteboard = NSPasteboard.general
+            
+            // making a child context because I need to be able to create Items for the group and checkLast before saving,
+            // parent context is available to the content view even without saving, so I need them seperate
             let childContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
 //            let context = PersistenceController.shared.container.viewContext
             childContext.parent = PersistenceController.shared.container.viewContext
@@ -227,70 +230,8 @@ class ClipboardMonitor: ObservableObject {
         }
     }
     
-//    private func saveClipboard(content: String?, type: String, imageData: Data?, filePath: String?, imageHash: String?, completion: ((Bool) -> Void)? = nil) {
-//        if !checkLast(item: nil, content: content, type: type, imageData: imageData, filePath: filePath, imageHash: imageHash) {
-//            completion?(false)
-//            return
-//        }
-//            
-//        DispatchQueue.main.async {
-//            
-//            let context = PersistenceController.shared.container.viewContext
-//            
-//            context.perform {
-//                let formatter = DateFormatter()
-//                // 2024-08-05 at 12.39.38 PM
-//                formatter.dateFormat = "yyyy-MM-dd h.mm.ss bb"
-//                
-//                let newClipboardItem = ClipboardItem(context: context)
-//                newClipboardItem.content = content
-//                newClipboardItem.timeStamp = formatter.date(from: formatter.string(from: Date()))
-////                newClipboardItem.timeStamp = Date()
-//                newClipboardItem.type = type
-//                newClipboardItem.imageData = imageData
-//                newClipboardItem.filePath = filePath
-//                newClipboardItem.imageHash = imageHash
-//                
-//                
-//                let fetchRequest: NSFetchRequest<ClipboardItem> = ClipboardItem.fetchRequest()
-//                fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: true)]
-//                
-//                if let items = try? context.fetch(fetchRequest), items.count > self.maxItemCount {
-//                    let folderPath = tmpFolderPath
-//
-//                    // if the file is a tmp image in the tmp directory
-//                    if let item = items.first {
-//                        if let itemToDeletePath = item.filePath, itemToDeletePath.contains(folderPath.path()) {
-//                            // if the file is not still in the clipboard history
-//                            let items = self.findItems(content: nil, type: nil, imageHash: item.imageHash, filePath: item.filePath)
-//                            
-//                            // only want to delete file if its the only copy left
-//                            if items.count < 2 {
-//                                self.deleteTmpImage(filePath: itemToDeletePath)
-//                            }
-//                        }
-//                    }
-//                    context.delete(items.first!) // Delete the oldest item
-//                }
-//                do {
-//                    try context.save()
-//                    DispatchQueue.main.async {
-//                        completion?(true)
-//                    }
-//                } catch {
-//                    print("Failed to save context after updating clipboard items: \(error)")
-//                    DispatchQueue.main.async {
-//                        completion?(false)
-//                    }
-//                }
-//            }
-//            
-//        }
-//    }
-    
     private func saveClipboardGroup(childContext: NSManagedObjectContext) {
         if !checkLast(childContext: childContext) {
-            print("Check Last Failed")
             return
         }
                         
@@ -299,7 +240,6 @@ class ClipboardMonitor: ObservableObject {
         
         do {
             var groups = try childContext.fetch(fetchRequest)
-            // includes newly created group and its items, even though it wasnt saved yet
             
             cleanUp(childContext: childContext, inputGroups: groups)
 
@@ -322,87 +262,6 @@ class ClipboardMonitor: ObservableObject {
             return
         }
     }
-    
-//    func checkLast(item: ClipboardItem?, content: String?, type: String, imageData: Data?, filePath: String?, imageHash: String?) -> Bool {
-//        var shouldSave = false
-//        
-//        let context = PersistenceController.shared.container.viewContext
-//        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = ClipboardItem.fetchRequest()
-//        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
-//        //fetchRequest.fetchLimit = self.maxItemCount // list is in reverse order, so we need the last one
-//        fetchRequest.fetchLimit = 1
-//       // fetchRequest.propertiesToFetch = ["content", "type", "imageData", "filePath", "imageHash"]
-//        fetchRequest.resultType = .dictionaryResultType
-//        
-//        
-//        do {
-//            let results = try context.fetch(fetchRequest) as? [[String: Any]]
-//            
-//            if results?.first == nil {
-//                shouldSave = true
-//                let fileManager = FileManager.default
-//                let folderPath = tmpFolderPath
-//                
-//                // Clear all .png files from the temp directory
-//                do {
-//                    let items = try fileManager.contentsOfDirectory(atPath: folderPath.path)
-//                    for item in items {
-//                        let itemURL = URL(fileURLWithPath: item, relativeTo: fileManager.temporaryDirectory)
-//                        if itemURL.pathExtension == "png" {
-//                            try fileManager.removeItem(at: itemURL)
-//                        }
-//                    }
-//                } catch let error {
-//                    print("Failed to clear .png files from temp directory: \(error)")
-//                }
-//            }
-//            else if let lastItem = results?.first {
-//                let lastContent = lastItem["content"] as? String
-//                let lastType = lastItem["type"] as? String
-////                let lastImageData = lastItem["imageData"] as? Data
-//                let lastImageHash = lastItem["imageHash"] as? String
-//                let lastPath = lastItem["filePath"] as? String
-//                
-////                if let newImageHash = imageHash,
-////                   (type == "imageData" || type == "image") && (lastType == "imageData" || lastType == "image") {
-//                if let newImageHash = imageHash,
-//                    type == "image" && lastType == "image" {
-//                    
-//                    if (lastImageHash != newImageHash) || (lastImageHash == newImageHash &&  lastContent != content) {
-//                        shouldSave = true
-//                    }
-//                    
-//                    // on new copy
-////                    else if let lastFileType = lastType, (lastFileType == "image" || lastFileType == "imageData") && (type == "image" || type == "imageData") {
-//                    else if let lastFileType = lastType, lastFileType == "image" && type == "image"  {
-//                        // same image, update tmp filePath to new file path
-//                        let folderPath = tmpFolderPath
-//                        // if the file is a tmp image in the tmp directory {
-//                        if let lastFilePath = lastPath, let newFilePath = filePath, lastFilePath.contains(folderPath.path()) && lastFilePath != newFilePath {
-//                            let items = self.findItems(content: lastContent, type: lastFileType, imageHash: lastImageHash, filePath: lastFilePath, context: nil)
-//                            
-//                            if !items.isEmpty, let item = items.first {
-//                                item.filePath = newFilePath
-//                            }
-//                        }
-//                    }
-//                } else {
-//                    if let newContent = content, newContent != lastContent {
-//                        if lastType == type {
-//                            if let lastFilePath = lastPath, let newFilePath = filePath, lastFilePath != newFilePath {
-//                                // both files, but different file paths
-//                                shouldSave = true
-//                            }
-//                        }
-//                        shouldSave = true  // Save if types do not match or no hash exists
-//                    }
-//                }
-//            }
-//        } catch {
-//            print("Fetch failed: \(error.localizedDescription)")
-//        }
-//        return shouldSave
-//    }
 
     func checkLast(childContext: NSManagedObjectContext) -> Bool {
         var shouldSave = false
@@ -439,7 +298,6 @@ class ClipboardMonitor: ObservableObject {
     }
     
     func checkLast(group: ClipboardGroup?, item: ClipboardItem?, context: NSManagedObjectContext?) -> Bool {
-       // !!! Not UPDATED
         if (group == nil && item == nil) || (group != nil && item != nil) {
             return false
         }

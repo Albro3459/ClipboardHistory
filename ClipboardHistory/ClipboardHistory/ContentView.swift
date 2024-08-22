@@ -85,6 +85,46 @@ struct ContentView: View {
 //            }
 //        }
 //    }
+//    private var clipboardGroups: [ClipboardGroup] {
+//        
+//        let selectedTypeNames: [String] = selectedTypes.map { id in
+//            ClipboardType.getTypeName(by: id)
+//        }
+//        
+//        return fetchedClipboardItems.filter { item in
+//            let typeMatch: Bool
+//            if selectedTypes.isEmpty || selectedTypes.count == 3 {
+//                typeMatch = true // No filtering by type when none or all are selected.
+//            } else {
+//                typeMatch = selectedTypeNames.contains { typeName in
+//                    if typeName == "fileFolder" {
+//                        item.type?.localizedCaseInsensitiveContains("file") ?? false ||
+//                        item.type?.localizedCaseInsensitiveContains("folder") ?? false ||
+//                        item.type?.localizedCaseInsensitiveContains("image") ?? false
+//                    }
+//                    else {
+//                        item.type?.localizedCaseInsensitiveContains(typeName) ?? false
+//                    }
+//                }
+//            }
+//
+//            if searchText.isEmpty {
+//                return typeMatch
+//            } else {
+//                // Further filter by searchText if it is not empty.
+//                var searchTextMatch = false
+//                if searchText.contains("file".lowercased()) {
+//                    searchTextMatch = item.content?.localizedCaseInsensitiveContains(searchText) ?? false ||
+//                    item.type?.localizedCaseInsensitiveContains(searchText) ?? false || item.type?.localizedCaseInsensitiveContains("image") ?? false
+//                }
+//                else {
+//                    searchTextMatch = item.content?.localizedCaseInsensitiveContains(searchText) ?? false ||
+//                    item.type?.localizedCaseInsensitiveContains(searchText) ?? false
+//                }
+//                return searchTextMatch && typeMatch
+//            }
+//        }
+//    }
     
     var body: some View {
         ZStack {
@@ -142,7 +182,8 @@ struct ContentView: View {
                     .buttonStyle(PlainButtonStyle())
                     .popover(isPresented: $isSelectingCategory) {
                            TypeDropDownMenu(multiSelection: $selectedTypes)
-                               .frame(width: 140, height: 99) 
+                            .frame(width: 140, height: 165)
+                            .padding(.bottom, -11)
                        }
                        .zIndex(1)
                        .help("Filter Items by Type")
@@ -233,7 +274,7 @@ struct ContentView: View {
                     .padding(.top, -4)
                 }
                 .coordinateSpace(name: "ScrollViewArea")
-                .overlay( // Adds a thin line at the top and bottom
+                .overlay( // Adds a thin line at the top or bottom
                     Rectangle().frame(height: 0.5).foregroundColor(.black.opacity(0.5)), alignment: .top
                 )
                 Spacer()
@@ -567,17 +608,27 @@ struct ContentView: View {
                         // print( )
                     }
                     return nil
-//                case 123:
-//                    isFocused = false
-//
+                case 123:
+                    isFocused = false
+
 //                    print("left arrow")
+                    
+                    if clipboardManager.selectedGroup?.isExpanded == true {
+                        if clipboardManager.selectedItem != nil {
+                            clipboardManager.selectedItem = nil
+                            return nil
+                        }
+                        else if let selectedGroup = clipboardManager.selectedGroup {
+                            clipboardManager.contract(for: selectedGroup)
+                            return nil
+                        }
+                    }
 //                    if let currIndex = currentIndex, currIndex < selectList.count - 1 {
 //
 //                        let currGroup = selectList[currIndex]
 //                        clipboardManager.selectedGroup = currGroup
 //                    }
-//
-//                    return nil
+
                 case 115, 116:
                     // Handle Home or Page Up Key action
                     scrollToTop = true
@@ -759,8 +810,6 @@ struct ClipboardGroupView: View {
                         }
                     }
                     
-                    
-//                    if /*let currSelectGroup = clipboardManager.selectedGroup, currSelectGroup.isExpanded ||*/ isGroupExpanded {
                     if selectGroup.isExpanded {
                         ScrollViewReader { scrollView in
                             LazyVStack(spacing: 0) {
@@ -784,7 +833,7 @@ struct ClipboardGroupView: View {
             .onAppear {
                 setUpKeyboardHandling()
             }
-            // *** visually unselects the group when selecting its items ***
+            // NOT NEEDED ANYMORE *** visually unselects the group when selecting its items ***
 //            .onChange(of: clipboardManager.selectedItem) {
 //                if let item = clipboardManager.selectedItem, let itemGroup = item.group, let group = clipboardManager.selectedGroup?.group,
 //                   itemGroup == group {
@@ -896,15 +945,37 @@ struct ClipboardGroupView: View {
                     switch event.keyCode {
                     case 124:
                         // right arrow to expand group
-                        if currSelectGroup.group.count > 1 {
-                            clipboardManager.expand(for: currSelectGroup)
-                            return nil
+                        if !isSearchFocused {
+                            if currSelectGroup.group.count > 1 {
+                                clipboardManager.expand(for: currSelectGroup)
+                                return nil
+                            }
                         }
                     case 123:
                         // left arrow to contract group
-                        if currSelectGroup.group.count > 1 {
-                            clipboardManager.contract(for: currSelectGroup)
-                            return nil
+//                        if !isSearchFocused {
+//                            if currSelectGroup.group.count > 1 {
+//                                if clipboardManager.selectedItem != nil {
+//                                    clipboardManager.contract(for: currSelectGroup)
+//                                    return nil
+//                                }
+//                            }
+//                        }
+                        
+                        // works like apple folder list view now
+                        if !isSearchFocused {
+                            if currSelectGroup.group.count > 1 {
+                                if clipboardManager.selectedGroup?.isExpanded == true {
+                                    if clipboardManager.selectedItem != nil {
+                                        clipboardManager.selectedItem = nil
+                                        return nil
+                                    }
+                                    else if let selectedGroup = clipboardManager.selectedGroup {
+                                        clipboardManager.contract(for: selectedGroup)
+                                        return nil
+                                    }
+                                }
+                            }
                         }
                     case 36, 76:
                         // Handle Enter or Return
@@ -927,7 +998,6 @@ struct ClipboardGroupView: View {
         }
     }
 }
-
 
 struct ClipboardItemView: View {
     
@@ -1181,7 +1251,6 @@ private let itemFormatter: DateFormatter = {
     formatter.timeStyle = .medium
     return formatter
 }()
-
 
 
 #if DEBUG
