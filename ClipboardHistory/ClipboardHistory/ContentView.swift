@@ -13,37 +13,6 @@ enum ActiveAlert {
     case clear, delete
 }
 
-//struct ContentView: View {
-//    @Environment(\.managedObjectContext) private var viewContext
-//    @FetchRequest(
-//        entity: ClipboardGroup.entity(),
-//        sortDescriptors: [NSSortDescriptor(keyPath: \ClipboardGroup.timeStamp, ascending: false)],
-//        animation: nil)
-//    private var clipboardGroups: FetchedResults<ClipboardGroup>
-//    
-////    @EnvironmentObject var clipboardManager: ClipboardManager
-//    
-////    @State private var isCopied = false
-//    
-//
-//    
-//    var body: some View {
-//        VStack {
-//            ScrollView {
-//                ForEach(clipboardGroups, id: \.self) { group in
-//                    VStack(alignment: .leading) {
-//                        ForEach(group.itemsArray, id: \.self) { item in
-//                            Text(item.content ?? "No Content")
-//                                .padding()
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
-
-
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @FetchRequest(
@@ -127,34 +96,34 @@ struct ContentView: View {
                     isFocused = false
                 }
             
-//            if clipboardManager.isCopied {
-//                ZStack(alignment: .center) {
-//                    
-//                    ZStack(alignment: .top) {
-//                        Rectangle()
-//                            .foregroundColor(Color(.darkGray))
-//                            .cornerRadius(8)
-//                        Rectangle()
-//                            .foregroundColor(Color(.darkGray))
-//                            .frame(height: 10)
-//                            .zIndex(1)
-//                    }
-//                    Text("Copied!")
-//                        .font(.subheadline)
-//                        .bold()
-//                        
-//                        .cornerRadius(8)
-//                        .frame(alignment: .center)
-//                }
-//                .transition(.move(edge: .top).combined(with: .opacity))
-//                .animation(.easeInOut, value: clipboardManager.isCopied)
-//                .position(x: 50, y: -211)
-//                .frame(width: 90, height: 24)
-//                .zIndex(5)
-//            
-//                
-//                Color.white.opacity(0.1).flash(duration: 0.3)
-//            }
+            if clipboardManager.isCopied {
+                ZStack(alignment: .center) {
+                    
+                    ZStack(alignment: .top) {
+                        Rectangle()
+                            .foregroundColor(Color(.darkGray))
+                            .cornerRadius(8)
+                        Rectangle()
+                            .foregroundColor(Color(.darkGray))
+                            .frame(height: 10)
+                            .zIndex(1)
+                    }
+                    Text("Copied!")
+                        .font(.subheadline)
+                        .bold()
+                        
+                        .cornerRadius(8)
+                        .frame(alignment: .center)
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.easeInOut, value: clipboardManager.isCopied)
+                .position(x: 50, y: -211)
+                .frame(width: 90, height: 24)
+                .zIndex(5)
+            
+                
+                Color.white.opacity(0.1).flash(duration: 0.3)
+            }
             
             VStack {
                 
@@ -679,6 +648,9 @@ struct ClipboardGroupView: View {
 //                isGroupSelected = true
 //                clipboardManager.selectedGroup = selectGroup
 //            }
+            .onAppear {
+                setUpKeyboardHandling()
+            }
         }
         else if group.count > 1 {
             

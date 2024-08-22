@@ -17,8 +17,8 @@ class ClipboardMonitor: ObservableObject {
     private var checkTimer: Timer?
     private var lastChangeCount: Int = NSPasteboard.general.changeCount
     
-    private var maxGroupCount: Int = 30
-    private var maxItemCount: Int = 100
+    private var maxGroupCount: Int = 50
+    private var maxItemCount: Int = 150
     
     @Published var tmpFolderPath = FileManager.default.temporaryDirectory
     
@@ -416,12 +416,10 @@ class ClipboardMonitor: ObservableObject {
             let results = try childContext.fetch(fetchRequest)
             
             if results.count < 2 { // less than 2 means there wasnt anything copied before, so save it
-//                print("shouldnt be here")
                 shouldSave = true
                 clearTmpImages()
             }
             else if let newGroup = results.last, let lastGroup = results.dropLast().last {
-//                print("here")
                 let lastItems = lastGroup.itemsArray
                 let newItems = newGroup.itemsArray
                 
@@ -429,7 +427,7 @@ class ClipboardMonitor: ObservableObject {
                     // Different number of items, definitely save
                     shouldSave = true
                 } else {
-                    // Compare the sorted arrays element by element
+                    // Compare the sorted arrays item by item
                     shouldSave = !zip(lastItems, newItems).allSatisfy { ClipboardItem.isEqual(itemA: $0, itemB: $1) }
                 }
             }
@@ -440,14 +438,18 @@ class ClipboardMonitor: ObservableObject {
         return shouldSave
     }
     
-    func checkLast(group: ClipboardGroup, context: NSManagedObjectContext?) -> Bool {
+    func checkLast(group: ClipboardGroup?, item: ClipboardItem?, context: NSManagedObjectContext?) -> Bool {
        // !!! Not UPDATED
+        if (group == nil && item == nil) || (group != nil && item != nil) {
+            return false
+        }
+        
         var shouldSave = false
                 
         let context = context ?? PersistenceController.shared.container.viewContext
         let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
-        fetchRequest.fetchLimit = 1
+        fetchRequest.fetchLimit = 2
         
         do {
             let results = try context.fetch(fetchRequest)
@@ -455,19 +457,31 @@ class ClipboardMonitor: ObservableObject {
             if results.first == nil {
                 // blank list
                 shouldSave = true
-                
                 clearTmpImages()
             }
             
             else if let lastGroup = results.first {
-                if lastGroup.count != group.count {
-                    shouldSave = true
+                let lastItems = lastGroup.itemsArray
+                if let group = group {
+                    let newItems = group.itemsArray
+                    if lastItems.count != newItems.count {
+                        // Different number of items, definitely save
+                        shouldSave = true
+                    }
+                    else {
+                        // Compare the sorted arrays item by item
+                        shouldSave = !zip(lastItems, newItems).allSatisfy { ClipboardItem.isEqual(itemA: $0, itemB: $1) }
+                    }
                 }
-                else {
-                    let lastItems = Set(lastGroup.items?.allObjects as? [ClipboardItem] ?? [])
-                    let newItems = Set(group.items?.allObjects as? [ClipboardItem] ?? [])
-                    
-                    if lastItems != newItems { shouldSave = true }
+                else if let item = item {
+                    if lastItems.count != 1 {
+                        // last group is not a single item, so they arent the same
+                        shouldSave = true
+                    }
+                    else if let lastItem = lastItems.first {
+                        // Compare the items
+                        shouldSave = !ClipboardItem.isEqual(itemA: item, itemB: lastItem)
+                    }
                 }
             }
         } catch {

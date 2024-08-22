@@ -41,17 +41,18 @@ class ClipboardManager: ObservableObject {
         switch item.type {
         case "text":
             if let content = item.content {
-                pasteboard.setString(content, forType: .string)
-                copied()
+                if copied(item: item) {
+                    pasteboard.setString(content, forType: .string)
+                }
 
             }
         case "image", "file", "folder", "alias":
             if let filePath = item.filePath {
                 let url = URL(fileURLWithPath: filePath)
-                pasteboard.writeObjects([url as NSURL])
-                print(url.path)
-                copied()
-
+                if copied(item: item) {
+                    pasteboard.writeObjects([url as NSURL])
+                    print(url.path)
+                }
             }
         default:
             print("unsupported item for copying: \(item.type ?? "nil type")")
@@ -71,15 +72,16 @@ class ClipboardManager: ObservableObject {
         switch item.type {
         case "text":
             if let content = item.content {
-                pasteboard.setString(content, forType: .string)
-                copied()
-            }
+                if copied(item: item) {
+                    pasteboard.setString(content, forType: .string)
+                }            }
         case "image", "file", "folder", "alias":
             if let filePath = item.filePath {
                 let url = URL(fileURLWithPath: filePath)
-                pasteboard.writeObjects([url as NSURL])
-                print(url.path)
-                copied()
+                if copied(item: item) {
+                    pasteboard.writeObjects([url as NSURL])
+                    print(url.path)
+                }
             }
         default:
             print("unsupported group item for copying: \(item.type ?? "nil type")")
@@ -108,13 +110,11 @@ class ClipboardManager: ObservableObject {
             switch item.type {
             case "text":
                 if let content = item.content {
-//                    pasteboard.setString(content, forType: .string)
                     array.append(content as NSString)
                 }
             case "image", "file", "folder", "alias":
                 if let filePath = item.filePath {
                     let url = URL(fileURLWithPath: filePath)
-//                    pasteboard.writeObjects([url as NSURL])
                     print(url.path)
                     array.append(url as NSURL)
                 }
@@ -123,32 +123,50 @@ class ClipboardManager: ObservableObject {
             }
         }
         
-        if pasteboard.writeObjects(array as [NSPasteboardWriting]) {
-            copied()
-        }
-        else {
-            print("Failed to write objects to pasteboard.")
-
+        if copied(item: nil) {
+            if pasteboard.writeObjects(array as [NSPasteboardWriting]) {
+//                copied()
+            }
+            else {
+                print("Failed to write objects to pasteboard.")
+                
+            }
         }
         
     }
             
-    func copied() {
-//        guard let item = selectedItem,
-//              let itemType = item.type,
-//              item.content != nil || item.imageData != nil || item.filePath != nil else {
-////            print("Selected item or required properties are nil")
-//            return
-//        }
-
-//        if clipboardMonitor?.checkLast(group: selectedGroup!, context: nil) == true {
-//            DispatchQueue.main.async {
-//                self.isCopied = true
-//                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-//                    self.isCopied = false
-//                }
-//            }
-//        }
+    func copied(item: ClipboardItem?) -> Bool {
+        if let item = item {
+            if clipboardMonitor?.checkLast(group: nil, item: item, context: nil) == true {
+                DispatchQueue.main.async {
+                    self.isCopied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        self.isCopied = false
+                    }
+                }
+                return true
+            }
+            else {
+                return false
+            }
+        }
+        else if let selectGroup = self.selectedGroup {
+            if clipboardMonitor?.checkLast(group: selectGroup.group, item: nil, context: nil) == true {
+                DispatchQueue.main.async {
+                    self.isCopied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        self.isCopied = false
+                    }
+                }
+                return true
+            }
+            else {
+                return false
+            }
+        }
+        else {
+            return false
+        }
     }
     
     func deleteGroup(group: ClipboardGroup?, selectList: [SelectedGroup], viewContext: NSManagedObjectContext) {
