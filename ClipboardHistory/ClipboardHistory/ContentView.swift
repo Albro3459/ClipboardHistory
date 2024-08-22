@@ -529,45 +529,45 @@ struct ContentView: View {
                 case 125:
                     // Handle down arrow
                     isFocused = false
-                    print( )
+                    // print( )
                     if let currIndex = currentIndex, currIndex < selectList.count - 1 {
-                        print("a")
+                        // print("a")
                         
                         let currGroup = selectList[currIndex]
                         if currGroup.isExpanded {
-                            print("b")
+                            // print("b")
                             if let selectedItem = clipboardManager.selectedItem {
-                                print("c")
+                                // print("c")
                                 if let currItemIndex = currGroup.group.itemsArray.firstIndex(where: { $0 == selectedItem }),
                                         currItemIndex + 1 < currGroup.group.itemsArray.count {
-                                    print("d")
+                                    // print("d")
                                     clipboardManager.selectedItem = currGroup.group.itemsArray[currItemIndex + 1]
                                 } else {
-                                    print("e")
+                                    // print("e")
                                     if currIndex + 1 < selectList.count {
-                                        print("f")
+                                        // print("f")
                                         clipboardManager.selectedGroup = selectList[currIndex + 1]
                                         clipboardManager.selectedItem = nil
                                     }
                                 }
                             } else {
-                                print("g")
+                                // print("g")
                                 clipboardManager.selectedItem = currGroup.group.itemsArray.first
 //                                clipboardManager.selectedGroup = currGroup
                             }
                         } else {
-                            print("h")
+                            // print("h")
                             if currIndex + 1 < selectList.count {
                                 clipboardManager.selectedGroup = selectList[currIndex + 1]
                                 clipboardManager.selectedItem = nil
-                                print(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "null")
-                                print(clipboardManager.selectedItem?.content ?? "dne")
-                                print(clipboardManager.selectedGroup?.group.count ?? 69)
+                                // print(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "null")
+                                // print(clipboardManager.selectedItem?.content ?? "dne")
+                                // print(clipboardManager.selectedGroup?.group.count ?? 69)
                             }
                         }
                     }
                     else if let currIndex = currentIndex {
-                        print("i")
+                        // print("i")
                         // at bottom of selectList, but group is expanded
                         let currGroup = selectList[currIndex]
                         if currGroup.isExpanded {
@@ -589,7 +589,7 @@ struct ContentView: View {
                             }
                         }
                     }
-                    print( )
+                    // print( )
                     return nil
 //                case 123:
 //                    isFocused = false
@@ -847,8 +847,52 @@ struct ClipboardGroupView: View {
                     )
                     .clipped()
             }
-            else if item.type == "folder" || item.type == "alias", let _ = item.content {
-                Image("FolderThumbnail")
+            else if item.type == "folder", let content = item.content {
+                if content == "/" {
+                    //main drive
+                    Image("HardDriveThumbnail")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 60)
+                }
+                else {
+                    Image("FolderThumbnail")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 60)
+                }
+            }
+            else if item.type == "alias", let content = item.content {
+                if content == "/" {
+                    //main drive
+                    Image("HardDriveThumbnail")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 60)
+                }
+                else {
+                    if item.imageData == nil {
+                        Image("AliasFolderThumbnail")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 60)
+                    }
+                    else if let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 60)
+                            .cornerRadius(8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color(.black), lineWidth: 1)
+                            )
+                            .clipped()
+                    }
+                }
+            }
+            else if item.type == "removable", let _ = item.content {
+                Image("DiskThumbnail")
                     .resizable()
                     .scaledToFit()
                     .frame(height: 60)
@@ -949,8 +993,72 @@ struct ClipboardItemView: View {
                             .lineLimit(1)
                     }
                 }
-                else if item.type == "folder" || item.type == "alias", let content = item.content {
-                    Image("FolderThumbnail")
+                else if item.type == "folder", let content = item.content {
+                    if content == "/" {
+                        //main drive
+                        Image("HardDriveThumbnail")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 49/*isPartOfGroup ? 60 : 49*/)
+                        Text("Macintosh HD")
+                            .font(.subheadline)
+                            .bold()
+                            .lineLimit(1)
+                    }
+                    else {
+                        Image("FolderThumbnail")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 49/*isPartOfGroup ? 60 : 49*/)
+                        Text(content)
+                            .font(.subheadline)
+                            .bold()
+                            .lineLimit(1)
+                    }
+                }
+                else if item.type == "alias", let content = item.content {
+                    if content == "/" {
+                        //main drive
+                        Image("HardDriveThumbnail")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 49/*isPartOfGroup ? 60 : 49*/)
+                        Text("Macintosh HD")
+                            .font(.subheadline)
+                            .bold()
+                            .lineLimit(1)
+                    }
+                    else {
+                        if item.imageData == nil {
+                            Image("AliasFolderThumbnail")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 49/*isPartOfGroup ? 60 : 49*/)
+                            Text(content)
+                                .font(.subheadline)
+                                .bold()
+                                .lineLimit(1)
+                        }
+                        else if let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
+                            Image(nsImage: nsImage)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 70 * imageSizeMultiple)
+                                .cornerRadius(8)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(.black), lineWidth: 1)
+                                )
+                                .clipped()
+                            Text(content)
+                                .font(.subheadline)
+                                .bold()
+                                .lineLimit(1)
+                        }
+                    }
+                }
+                else if item.type == "removable", let content = item.content {
+                    Image("DiskThumbnail")
                         .resizable()
                         .scaledToFit()
                         .frame(height: 49/*isPartOfGroup ? 60 : 49*/)

@@ -60,7 +60,6 @@ class ClipboardMonitor: ObservableObject {
                         self.processImageData(image: image, inGroup: group, context: context)
                     }
                     else if let content = pasteboard.string(forType: .string) {
-//                        self.saveClipboard(content: content, type: "text", imageData: nil, filePath: nil, imageHash: nil)
                         let item = ClipboardItem(context: context)
                         item.content = content
                         item.type = "text"
@@ -73,7 +72,6 @@ class ClipboardMonitor: ObservableObject {
                     counter += 1
                 }
                 self.saveClipboardGroup(context: context)
-//                print(group.count)
             }
         }
     }
@@ -92,7 +90,6 @@ class ClipboardMonitor: ObservableObject {
             if let image = NSImage(contentsOf: fileUrl) {
                 if let tiffRep = image.tiffRepresentation {
                     let imageHash = self.hashImageData(tiffRep)
-                    //                    self.saveClipboard(content: fileUrl.lastPathComponent, type: "image", imageData: image.tiffRepresentation, filePath: fileUrl.path, imageHash: imageHash)
                     item.type = "image"
                     item.imageData = image.tiffRepresentation
                     item.imageHash = imageHash
@@ -106,21 +103,42 @@ class ClipboardMonitor: ObservableObject {
                 let resourceValues = try fileUrl.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isAliasFileKey, .isUbiquitousItemKey, .volumeIsRemovableKey])
                 
                 if let isDirectory = resourceValues.isDirectory, isDirectory {
-//                    self.saveClipboard(content: fileUrl.lastPathComponent, type: "folder", imageData: nil, filePath: fileUrl.path, imageHash: nil)
-                    item.type = "folder"
+                    if let volumeIsRemovable = resourceValues.volumeIsRemovable, volumeIsRemovable {
+                        item.type = "removable"
+                        print("removable")
+                    }
+                    else {
+                        item.type = "folder"
+                    }
                 } else if let isSymbolicLink = resourceValues.isSymbolicLink, isSymbolicLink {
-//                    self.saveClipboard(content: fileUrl.lastPathComponent, type: "symlink", imageData: nil, filePath: fileUrl.path, imageHash: nil)
+                    // haven't tested these
                     item.type = "symlink"
                 } else if let isAliasFile = resourceValues.isAliasFile, isAliasFile {
-//                    self.saveClipboard(content: fileUrl.lastPathComponent, type: "alias", imageData: nil, filePath: fileUrl.path, imageHash: nil)
                     item.type = "alias"
-                } else if let volumeIsRemovable = resourceValues.volumeIsRemovable, volumeIsRemovable {
-//                    self.saveClipboard(content: fileUrl.lastPathComponent, type: "removable", imageData: nil, filePath: fileUrl.path, imageHash: nil)
-                    item.type = "removable"
+                    // here is where I check for the alias's actual file/folder and deteminie if it is a file, folder, image or something else
+                    if let resolvedUrl = resolveAlias(fileUrl: fileUrl) {
+                        let resolvedResourceValues = try resolvedUrl.resourceValues(forKeys: [.isDirectoryKey, .contentTypeKey])
+                        
+                        if let isDirectory = resolvedResourceValues.isDirectory, isDirectory {
+                            // It's a directory/folder, do nothing because the alias image is set as the folder icon
+                        } else {
+                            if let contentType = resolvedResourceValues.contentType {
+                                if contentType.conforms(to: .image) {
+                                    print("here")
+                                    if let image = NSImage(contentsOf: resolvedUrl) {
+                                        item.imageData = image.tiffRepresentation
+                                    }
+                                } else {
+                                    self.generateThumbnail(for: resolvedUrl.path) { thumbnail in
+                                        item.imageData = thumbnail?.tiffRepresentation
+                                    }
+                                }
+                            }
+                        }
+                    }
                 } else {
-                    
+                    // regular file
                     self.generateThumbnail(for: fileUrl.path) { thumbnail in
-//                        self.saveClipboard(content: fileUrl.lastPathComponent, type: "file", imageData: thumbnail?.tiffRepresentation, filePath: fileUrl.path, imageHash: nil)
                         item.type = "file"
                         item.imageData = thumbnail?.tiffRepresentation
                         item.imageHash = nil
@@ -132,6 +150,21 @@ class ClipboardMonitor: ObservableObject {
         }
         group.addToItems(item)
     }
+    
+    // try to determine file type alias points to
+    private func resolveAlias(fileUrl: URL) -> URL? {
+        do {
+            let resourceValues = try fileUrl.resourceValues(forKeys: [.isAliasFileKey])
+            if resourceValues.isAliasFile == true {
+                let originalUrl = try URL(resolvingAliasFileAt: fileUrl, options: [])
+                return originalUrl
+            }
+        } catch {
+            print("Failed to resolve alias: \(error)")
+        }
+        return nil
+    }
+    
     // takes in imageData, like a screenshot, turns it into an image file
     // image file is stored as a temp file, user can copy and paste anywhere, but temp file is deleted when clipboard item is eventually deleted
     private func processImageData(image: NSImage, inGroup group: ClipboardGroup, context: NSManagedObjectContext) {
@@ -263,7 +296,6 @@ class ClipboardMonitor: ObservableObject {
         do {
             var groups = try context.fetch(fetchRequest)
             // includes newly created group and its items, even though it wasnt saved yet
-            
             
             cleanUp(context: context, inputGroups: groups)
 
@@ -512,27 +544,7 @@ class ClipboardMonitor: ObservableObject {
             }
         }
     }
-    
-//    func createImageFile(item: ClipboardItem?, imageData: Data?, filePath: String?, timeStamp: Date?) {
-//        guard let image = NSImage(data: imageData!) else {
-//            print("Failed to create image from TIFF data.")
-//            return
-//        }
-//
-//        if let pngData = convertNSImageToPNG(image: image) {
-//            let formatter = DateFormatter()
-//            // 2024-08-05 at 12.39.38 PM
-//            formatter.dateFormat = "yyyy-MM-dd h.mm.ss bb"
-//            let fileDate = formatter.string(from: timeStamp ?? Date())
-//            let splitDate = fileDate.split(separator: " ")
-//            let filePathDate = splitDate[0] + " at " + splitDate[1]
-//            
-//            saveImageDataToFile(item: item, imageData: pngData, filePath: "Image \(filePathDate)", fileType: .png)
-//        } else {
-//            print("Failed to convert image to JPEG.")
-//        }
-//    }
-    
+        
     func createImageFile(imageData: Data?) -> URL? {
         guard let image = NSImage(data: imageData!) else {
             print("Failed to create image from TIFF data.")
@@ -541,7 +553,7 @@ class ClipboardMonitor: ObservableObject {
 
         if let pngData = convertNSImageToPNG(image: image) {
             let formatter = DateFormatter()
-            // 2024-08-05 at 12.39.38 PM
+            // format of: 2024-08-05 at 12.39.38 PM
             formatter.dateFormat = "yyyy-MM-dd h.mm.ss bb"
             let fileDate = formatter.string(from: Date())
             let splitDate = fileDate.split(separator: " ")
@@ -565,27 +577,7 @@ class ClipboardMonitor: ObservableObject {
         return bitmapImage.representation(using: .png, properties: [:])
     }
     
-//    func saveImageDataToFile(item: ClipboardItem?, imageData: Data, filePath: String, fileType: NSBitmapImageRep.FileType) {
-        let fileManager = FileManager.default
-//        let folderPath: URL
-//        do {
-////            let documentsURL = try fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-////            folderPath = documentsURL  // Change this to .downloadsDirectory if preferred
-//            folderPath = tmpFolderPath
-//
-//            let fileURL = folderPath.appendingPathComponent(filePath + (fileType == .jpeg ? ".jpg" : ".png"))
-//            
-//            item?.filePath = fileURL.path
-//            
-//            try imageData.write(to: fileURL, options: .atomic)
-//            
-//            print("File saved: \(fileURL.path)")
-//        } catch {
-//            print("Error saving file: \(error)")
-//        }
-    
     func saveImageDataToFile(imageData: Data, filePath: String, fileType: NSBitmapImageRep.FileType) -> URL? {
-//        let fileManager = FileManager.default
         let folderPath: URL
         do {
 //            let documentsURL = try fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)

@@ -234,7 +234,7 @@ class ClipboardManager: ObservableObject {
 //            }
             else if groupCount >= 2 {
                 let itemIndex = GetItemIndexInGroup(item: item)
-                if var index = itemIndex {
+                if let index = itemIndex {
                     if index == groupCount {
                         // if its the last item, select the next last item
                         self.selectedItem = selectGroup.group.itemsArray[index - 1]

@@ -21,10 +21,8 @@ extension ClipboardGroup {
     @NSManaged public var items: NSSet?
 
     public var itemsArray: [ClipboardItem] {
-        // Convert NSSet to Set<ClipboardItem>
         let set = items as? Set<ClipboardItem> ?? []
-    
-        //I want to sort by type, text, images, then files then folders, and in these types, I want by content alphabetically
+        
         let typePriority: [String: Int] = [
             "text": 1,
             "image": 2,
@@ -35,16 +33,18 @@ extension ClipboardGroup {
             "symlink": 7
         ]
         
-        return set.sorted {
-            // First compare by content
-            let contentOrder = ($0.content ?? "").lowercased().compare(($1.content ?? "").lowercased())
-            if contentOrder == .orderedSame {
-                // If content is the same, then sort by type
-                let typeOrder1 = typePriority[$0.type ?? ""] ?? 999
-                let typeOrder2 = typePriority[$1.type ?? ""] ?? 999
-                return typeOrder1 < typeOrder2
+        return set.sorted { itemA, itemB in
+            // Compares 2 items by type based on priority number
+            let typeOrder1 = typePriority[itemA.type ?? "unknown"] ?? 999
+            let typeOrder2 = typePriority[itemB.type ?? "unknown"] ?? 999
+
+            // If types are the same, sort by content alphabetically
+            if typeOrder1 == typeOrder2 {
+                // true means itemA before itemB, false means the other way around
+                return (itemA.content ?? "").lowercased() < (itemB.content ?? "").lowercased()
             }
-            return contentOrder == .orderedAscending
+            // true means itemA before itemB, false means the other way around
+            return typeOrder1 < typeOrder2
         }
     }
     
@@ -53,11 +53,9 @@ extension ClipboardGroup {
             
             for selection in list {
                 if selection.group == group {
-                    print("ohh")
                     return selection
                 }
             }
-            print("yo")
             return SelectedGroup(group: group, selectedItem: nil, isExpanded: findExpandedState(for: group, selectList: list))
 
         }
