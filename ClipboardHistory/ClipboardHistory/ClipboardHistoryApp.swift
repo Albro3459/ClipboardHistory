@@ -110,10 +110,38 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             setupWindow(window: window)
                    
             self.window = window
+            
+            window.collectionBehavior = [] // No special behavior
+
+            // Observe for active space changes
+            NSWorkspace.shared.notificationCenter.addObserver(
+                self,
+                selector: #selector(spaceDidChange(_:)),
+                name: NSWorkspace.activeSpaceDidChangeNotification,
+                object: nil
+            )
         }
         
         setupStatusBar()
     }
+    
+    @objc func spaceDidChange(_ notification: Notification) {
+        // Determine if the active application is in full-screen mode
+        if let activeApp = NSWorkspace.shared.frontmostApplication {
+            if isAppInFullScreen(activeApp) {
+                window?.orderOut(nil) // Hide window
+            }
+            //            else {
+            //                window?.orderFront(nil) // Show window
+            //            }
+        }
+    }
+    
+    private func isAppInFullScreen(_ app: NSRunningApplication) -> Bool {
+        // Check if the current system's presentation options include full screen
+        return NSApplication.shared.currentSystemPresentationOptions.contains(.fullScreen)
+    }
+    
     
     func setupWindow(window: NSWindow) {
         let screen = window.screen ?? NSScreen.main!

@@ -201,7 +201,7 @@ class ClipboardMonitor: ObservableObject {
     }
     
     // determine file path that alias points to
-    private func resolveAlias(fileUrl: URL) -> URL? {
+    func resolveAlias(fileUrl: URL) -> URL? {
         do {
             let resourceValues = try fileUrl.resourceValues(forKeys: [.isAliasFileKey])
             if resourceValues.isAliasFile == true {

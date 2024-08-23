@@ -173,25 +173,27 @@ struct ContentView: View {
                 HStack {
                     SearchBarView(searchText: $searchText)
                         .focused($isFocused)
+                        .padding(.trailing, (fetchedClipboardGroups.count <= 0) ? 10 : 0)
                     
-                    Button(action: {
-                        isSelectingCategory.toggle()
-                        isFocused = false
-                    }) {
-                        Image(systemName: "line.horizontal.3.decrease.circle")
-                            .foregroundColor(.white)
-                            .padding(.trailing, selectList.count > 0 ? -2 : 5)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .popover(isPresented: $isSelectingCategory) {
-                           TypeDropDownMenu(multiSelection: $selectedTypes)
-                            .frame(width: 140, height: 165)
-                            .padding(.bottom, -11)
-                       }
-                       .zIndex(1)
-                       .help("Filter Items by Type")
+                    if fetchedClipboardGroups.count > 0 {
+                        Button(action: {
+                            isSelectingCategory.toggle()
+                            isFocused = false
+                        }) {
+                            Image(systemName: "line.horizontal.3.decrease.circle")
+                                .foregroundColor(.white)
+                                .padding(.trailing, -2)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .popover(isPresented: $isSelectingCategory) {
+                               TypeDropDownMenu(multiSelection: $selectedTypes)
+                                .frame(width: 140, height: 165)
+                                .padding(.bottom, -11)
+                           }
+                           .zIndex(1)
+                           .help("Filter Items by Type")
                     
-                    if selectList.count > 0 {
+                    
                         Button(action: {
                             if !atTopOfList {
                                 scrollToTop = true
@@ -458,10 +460,15 @@ struct ContentView: View {
                 case 53:
                     // Escape key
                     DispatchQueue.main.async {
-                        isSelectingCategory = false
-                        isFocused = false
+                        if isFocused == false && isSelectingCategory == false {
+                            searchText = ""
+                        }
+                        else {
+                            isSelectingCategory = false
+                            isFocused = false
+                        }
                     }
-                     return nil
+                    return nil
                 case 126:
                     // Handle up arrow
                     isFocused = false
@@ -1149,6 +1156,57 @@ struct ClipboardItemView: View {
             .padding(.all, 10)
            
             Spacer()
+            
+            if let filePath = item.filePath {
+                if item.type == "alias" {
+                    if let resolvedUrl = clipboardManager.clipboardMonitor?.resolveAlias(fileUrl: URL(fileURLWithPath: filePath)),
+                       let resourceValues = try? resolvedUrl.resourceValues(forKeys: [.isDirectoryKey, .isAliasFileKey]) {
+                        
+                        if resourceValues.isAliasFile == true || resourceValues.isDirectory == true {
+                            Button(action: {
+                                self.openFolder(filePath: resolvedUrl.path)
+                            }) {
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                    .foregroundColor(.white)
+                            }
+                            .buttonStyle(BorderlessButtonStyle())
+                            .padding(.trailing, 5)
+                            .help("Open Folder")
+                        } else {
+                            Button(action: {
+                                self.openFile(filePath: resolvedUrl.path)
+                            }) {
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                    .foregroundColor(.white)
+                            }
+                            .buttonStyle(BorderlessButtonStyle())
+                            .padding(.trailing, 5)
+                            .help("Open File")
+                        }
+                    }
+                } else if item.type == "folder" || item.type == "removable" {
+                    Button(action: {
+                        self.openFolder(filePath: filePath)
+                    }) {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .foregroundColor(.white)
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
+                    .padding(.trailing, 5)
+                    .help("Open Folder")
+                } else if item.type == "file" || item.type == "image" {
+                    Button(action: {
+                    self.openFile(filePath: filePath)
+                    }) {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .foregroundColor(.white)
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
+                    .padding(.trailing, 5)
+                    .help("Open \(item.type == "image" ? "Image" : "File")")
+                }
+            }
+            
             Button(action: {
                 clipboardManager.selectedGroup = selectGroup
                 if isPartOfGroup {
@@ -1222,12 +1280,6 @@ struct ClipboardItemView: View {
         .onTapGesture(count: 1) {
             isSelected = true
             clipboardManager.selectedGroup = selectGroup
-//            print("Item View tapp:")
-//            print("isPartOfGroup: \(isPartOfGroup)")
-//            print(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "nullll")
-//            print(clipboardManager.selectedItem?.content ?? "nulllll")
-//            print( )
-            
             if isPartOfGroup {
                 clipboardManager.selectedItem = item
             }
@@ -1235,11 +1287,57 @@ struct ClipboardItemView: View {
                 clipboardManager.selectedItem = nil
             }
         }
-//        .onChange(of: group.count) {
-//            if group.count == 1 {
-//                shouldSelectGroup = false
-//            }
-//        }
+    }
+    
+    private func openFolder(filePath: String) {
+        let fileURL = URL(fileURLWithPath: filePath)
+        NSWorkspace.shared.activateFileViewerSelecting([fileURL])
+    }
+    
+    private func openFile(filePath: String) {
+        // if file is tmp image, copy to desktop, then open
+            // else, open the file
+        
+        
+        let fileURL = URL(fileURLWithPath: filePath)
+        let fileName = fileURL.lastPathComponent
+        
+        let regexPattern = "^Image \\d{4}-\\d{2}-\\d{2} at \\d{1,2}\\.\\d{2}\\.\\d{2} (AM|PM)\\.png$"
+        
+        do {
+            let regex = try NSRegularExpression(pattern: regexPattern)
+            let range = NSRange(location: 0, length: fileName.utf16.count)
+            
+            if regex.firstMatch(in: fileName, options: [], range: range) != nil && fileURL.path.hasPrefix(clipboardManager.clipboardMonitor?.tmpFolderPath.path ?? "") {
+                                // File matches the regex pattern, copy it to the desktop
+                let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
+                let destinationURL = desktopURL.appendingPathComponent(fileName)
+                
+                
+                do {
+                    try FileManager.default.copyItem(at: fileURL, to: destinationURL)
+                    print("File copied to Desktop: \(destinationURL.path)")
+                    // Check if the file exists and open it
+                    if FileManager.default.fileExists(atPath: destinationURL.path) {
+                        NSWorkspace.shared.open(destinationURL)
+                    } else {
+                        print("File does not exist at path: \(destinationURL.path)")
+                    }
+                } catch {
+                    print("Failed to copy file to Desktop: \(error)")
+                }
+            }
+            else {
+                // Check if the file exists and open it
+                if FileManager.default.fileExists(atPath: filePath) {
+                    NSWorkspace.shared.open(fileURL)
+                } else {
+                    print("File does not exist at path: \(filePath)")
+                }
+            }
+        } catch {
+            print("Invalid regex pattern: \(error)")
+        }
     }
 }
 
