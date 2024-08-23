@@ -3,4 +3,5 @@
 
 **/venv/*
 
-ClipboardHistory/ClipboardHistory.xcodeproj/project.xcworkspace/xcuserdata/alexbrodsky.xcuserdatad/UserInterfaceState.xcuserstate
+ClipboardHistory/ClipboardHistory.xcodeproj/project.xcworkspace/xcuserdata/*
+ClipboardHistory/ClipboardHistory.xcodeproj/xcuserdata/*
