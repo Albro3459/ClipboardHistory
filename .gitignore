@@ -3,5 +3,7 @@
 
 **/venv/*
 
-ClipboardHistory/ClipboardHistory.xcodeproj/project.xcworkspace/xcuserdata/*
-ClipboardHistory/ClipboardHistory.xcodeproj/xcuserdata/*
+**/ClipboardHistory.xcodeproj/project.xcworkspace/xcuserdata/*
+**/ClipboardHistory.xcodeproj/xcuserdata/*
+
+**/.DS_Store
