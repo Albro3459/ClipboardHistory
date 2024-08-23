@@ -53,27 +53,27 @@ struct ContentView: View {
         }
         
         return fetchedClipboardGroups.filter { group in
-            var typeMatch: Bool
+            let typeMatch: Bool
             if selectedTypes.isEmpty || selectedTypeNames.contains("Select All") || selectedTypes.count == clipboardManager.types.count {
                 typeMatch = true // No filtering by type when none or all are selected.
-//                return true
+                //                return true
             }
             else if selectedTypeNames.contains("Groups") && group.count > 1 {
                 typeMatch = true
-//                return true
+                //                return true
             }
             else {
                 typeMatch = group.itemsArray.contains { item in
                     if selectedTypeNames.contains("Files / Folders") {
                         // images are files too
                         return item.type?.localizedCaseInsensitiveContains("file") ?? false ||
-                            item.type?.localizedCaseInsensitiveContains("folder") ?? false ||
-                            item.type?.localizedCaseInsensitiveContains("image") ?? false
-                    } 
+                        item.type?.localizedCaseInsensitiveContains("folder") ?? false ||
+                        item.type?.localizedCaseInsensitiveContains("image") ?? false
+                    }
                     else if selectedTypeNames.contains("Images") {
                         // files can be images if they have an imageHash
                         return item.imageHash != nil ||
-                            item.type?.localizedCaseInsensitiveContains("image") ?? false
+                        item.type?.localizedCaseInsensitiveContains("image") ?? false
                     }
                     else {
                         // Check against other types.
@@ -83,26 +83,51 @@ struct ContentView: View {
                     }
                 }
             }
-
+            
             if searchText.isEmpty {
                 return typeMatch
-//                return true
+                //                return true
             }
             else {
                 // Further filter by searchText if it is not empty.
                 var searchTextMatch = false
-                if searchText.contains("file".lowercased()) {
+                let searchText = searchText.lowercased()
+                
+                if ["file", "fil", "fi", "doc", "docu", "docum", "docume", "documen", "document", "pd", "pdf"].contains(where: { searchText.hasPrefix($0) }) {
                     searchTextMatch = group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
-                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false }) || group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("image") ?? false })
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("image") ?? false })
+                }
+                else if ["group", "grou", "gro", "gr"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.count > 1
+                }
+                else if ["image", "ima", "im", "pic", "pict", "pictu", "pictur", "picture"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.imageHash != nil }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("image") ?? false })
+                }
+                else if ["text", "tex", "te", "tx", "txt", "note", "not"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("text") ?? false })
+                }
+                else if ["folder", "fol", "fo", "dir", "dire", "direc", "direct", "directo", "director", "directory"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("folder") ?? false })
+                }
+                else if ["alias", "alia", "ali", "symlink", "symlin", "symli", "syml", "sym", "lin", "link"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("alias") ?? false })
+                }
+                else if ["symlink", "symlin", "symli", "syml", "sym", "lin", "link", "ali", "alia", "alias"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("symlink") ?? false })
                 }
                 else {
-                    searchTextMatch = group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
-                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false })
+                    searchTextMatch = group.itemsArray.contains( where: {
+                        ($0.type?.lowercased().contains(searchText) ?? false) ||
+                        ($0.content?.lowercased().contains(searchText) ?? false)
+                    })
                 }
                 return searchTextMatch && typeMatch
             }
         }
     }
+    
     
     var body: some View {
         ZStack {
@@ -200,17 +225,19 @@ struct ContentView: View {
                     ScrollViewReader { scrollView in
                         LazyVStack(spacing: 0) {
                             ForEach(selectList.indices, id: \.self) { index in
-                                ClipboardGroupView(selectGroup: selectList[index], selectList: $selectList, parentShowingAlert: $showingAlert, isSearchFocused: $isSearchFocused, isSelectingCategory: $isSelectingCategory,
-                                   isGroupSelected: Binding(
-                                    get: { if index >= 0 { return self.clipboardManager.selectedGroup == selectList[index] }
-                                        else { return false } },
-                                    set: { isSelected in
-                                        if index >= 0 {
-                                            self.clipboardManager.selectedGroup = isSelected ? selectList[index] : nil
-                                        }
-                                        isFocused = false
-                                    }))
-                                .id(selectList[index].group.objectID)
+                                if index >= 0 && index < selectList.count {
+                                    ClipboardGroupView(selectGroup: selectList[index], selectList: $selectList, parentShowingAlert: $showingAlert, isSearchFocused: $isSearchFocused, isSelectingCategory: $isSelectingCategory,
+                                                       isGroupSelected: Binding(
+                                                        get: { if index >= 0 && index < selectList.count { return self.clipboardManager.selectedGroup == selectList[index] }
+                                                            else { return false } },
+                                                        set: { isSelected in
+                                                            if index >= 0 && index < selectList.count{
+                                                                self.clipboardManager.selectedGroup = isSelected ? selectList[index] : nil
+                                                            }
+                                                            isFocused = false
+                                                        }))
+                                    .id(selectList[index].group.objectID)
+                                }
                             }
                             
                         } //scrolls when using the arrow keys
@@ -861,16 +888,17 @@ struct ClipboardGroupView: View {
             }
             else if item.type == "image" || item.type == "file",
                     let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
-                Image(nsImage: nsImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 60)
-                    .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(.black), lineWidth: 1)
-                    )
-                    .clipped()
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: 80, maxHeight: 60, alignment: .center)
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(.black), lineWidth: 1)
+                        )
+                        .clipped()
+                    
             }
             else if item.type == "folder", let content = item.content {
                 if content == "/" {
@@ -1028,7 +1056,7 @@ struct ClipboardItemView: View {
                     Image(nsImage: nsImage)
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 70 * imageSizeMultiple)
+                        .frame(maxHeight: 70 * imageSizeMultiple)
                         .cornerRadius(8)
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
