@@ -355,11 +355,6 @@ struct ContentView: View {
             .onChange(of: isFocused) {
                 isSearchFocused = isFocused
             }
-            .onChange(of: clipboardItems.count) { oldValue, newValue in
-                if clipboardItems.count == 1 {
-                    clipboardManager.selectedItem = clipboardItems.first
-                }
-            }
         }
     }
     
