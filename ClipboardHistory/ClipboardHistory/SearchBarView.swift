@@ -105,17 +105,20 @@ struct ClipboardType: Identifiable {
     static func getTypeName(by id: UUID) -> String {
         switch id {
         case ClipboardType.text.id:
-            return "text"
+//            return "text"
+            return ClipboardType.text.name
         case ClipboardType.image.id:
-            return "image"
+//            return "image"
+            return ClipboardType.image.name
         case ClipboardType.fileFolder.id:
-            return "fileFolder"
+//            return "fileFolder"
+            return ClipboardType.fileFolder.name
         case ClipboardType.group.id:
-            return "group"
-        case ClipboardType.group.id:
-            return "group"
+//            return "group"
+            return ClipboardType.group.name
         case ClipboardType.selectAll.id:
-            return "Select All"
+//            return "selectAll"
+            return ClipboardType.selectAll.name
         default:
             return ""
         }
@@ -129,20 +132,14 @@ struct ClipboardType: Identifiable {
 }
 
 struct TypeDropDownMenu: View {
-    let types = [
-        ClipboardType.text,
-        ClipboardType.image,
-        ClipboardType.fileFolder,
-        ClipboardType.group,
-        ClipboardType.selectAll
-    ]
+    @EnvironmentObject var cm: ClipboardManager
     
     @Binding var multiSelection: Set<UUID>
     @State private var isSelectAll: Bool = false
     @State private var deselectingFromAll: Bool = false
-    
+        
     var body: some View {
-        VStack(alignment: .center){
+        VStack(alignment: .center) {
             ZStack {
                 Rectangle()
                     .fill(.background)
@@ -158,7 +155,7 @@ struct TypeDropDownMenu: View {
 //            .zIndex(2)
             
             
-            List(types, id: \.id, selection: $multiSelection) { type in
+            List(cm.types, id: \.id, selection: $multiSelection) { type in
                 HStack {
                     Spacer()  // Pushes the text to the center
                     Text(type.name)
@@ -180,7 +177,7 @@ struct TypeDropDownMenu: View {
                                 isSelectAll = true
                             }
                         }
-                        else if multiSelection.count == types.count {
+                        else if multiSelection.count == cm.types.count {
                             if !isSelectAll {
                                 multiSelection.removeAll()
                             }
@@ -194,7 +191,7 @@ struct TypeDropDownMenu: View {
                     }
                     else {
                         if multiSelection.contains(type.id) {
-                            if multiSelection.count == types.count {
+                            if multiSelection.count == cm.types.count {
                                 deselectingFromAll = true
                                 isSelectAll = false
                                 
@@ -209,7 +206,6 @@ struct TypeDropDownMenu: View {
                             multiSelection.insert(type.id)
                         }
                     }
-                    print()
                 }
                 .scrollDisabled(true)
             }
@@ -228,7 +224,7 @@ struct TypeDropDownMenu: View {
                 }
             }
             .onChange(of: multiSelection.count) {
-                if multiSelection.count == types.count-1 && !multiSelection.contains(ClipboardType.selectAll.id) {
+                if multiSelection.count == cm.types.count-1 && !multiSelection.contains(ClipboardType.selectAll.id) {
                     isSelectAll = true
                 }
             }

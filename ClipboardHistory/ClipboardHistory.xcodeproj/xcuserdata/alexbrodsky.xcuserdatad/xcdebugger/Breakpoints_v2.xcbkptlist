@@ -7,15 +7,15 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "6D028681-C6EC-41E6-A4DD-A511F99BC4A6"
+            uuid = "30EFAF14-9D5A-4A8D-A64D-F29541272D25"
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "ClipboardHistory/SearchBarView.swift"
+            filePath = "ClipboardHistory/ContentView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "195"
-            endingLineNumber = "195"
+            startingLineNumber = "806"
+            endingLineNumber = "806"
             landmarkName = "body"
             landmarkType = "24">
          </BreakpointContent>
@@ -23,15 +23,15 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "E351D62A-B9E5-44D8-A11F-26E6DC3B3C0E"
+            uuid = "6652700C-AEC5-4279-8230-CE0E24D6C52C"
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "ClipboardHistory/SearchBarView.swift"
+            filePath = "ClipboardHistory/ContentView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "174"
-            endingLineNumber = "174"
+            startingLineNumber = "812"
+            endingLineNumber = "812"
             landmarkName = "body"
             landmarkType = "24">
          </BreakpointContent>
@@ -39,15 +39,15 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "60836C1E-84C6-4F05-9772-7C12AD23E45F"
+            uuid = "B7FAD905-A2DD-4988-B699-359D25DD6AD7"
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "ClipboardHistory/SearchBarView.swift"
+            filePath = "ClipboardHistory/ContentView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "175"
-            endingLineNumber = "175"
+            startingLineNumber = "805"
+            endingLineNumber = "805"
             landmarkName = "body"
             landmarkType = "24">
          </BreakpointContent>

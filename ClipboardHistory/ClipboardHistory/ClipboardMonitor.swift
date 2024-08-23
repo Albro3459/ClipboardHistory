@@ -47,114 +47,157 @@ class ClipboardMonitor: ObservableObject {
 //            let context = PersistenceController.shared.container.viewContext
             childContext.parent = PersistenceController.shared.container.viewContext
 
-            
-            if let items = pasteboard.pasteboardItems, !items.isEmpty {
-                let group = ClipboardGroup(context: childContext)
-                group.timeStamp = Date()
-                group.count = Int16(min(items.count, self.maxItemCount))
-                
-                var counter = 0
-                for item in items {
-                    if counter >= self.maxItemCount {
-                        continue
+            childContext.perform {
+                if let items = pasteboard.pasteboardItems, !items.isEmpty {
+                    let group = ClipboardGroup(context: childContext)
+                    group.timeStamp = Date()
+                    group.count = Int16(min(items.count, self.maxItemCount))
+                    
+                    var operationsPending = 0
+                    var counter = 0
+                    for item in items {
+                        if counter >= self.maxItemCount {
+                            continue
+                        }
+                        // Check for file URLs first
+                        if let urlString = item.string(forType: .fileURL), let fileUrl = URL(string: urlString) {
+                            operationsPending += 1
+                            self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { completion in
+                                defer {
+                                    operationsPending -= 1
+                                    if operationsPending == 0 {
+                                        self.saveClipboardGroup(childContext: childContext)
+                                    }
+                                }
+                                if !completion {
+                                    print("Failed to process file at URL: \(fileUrl)")
+                                }
+                            }
+                        }
+                        else if let imageData = pasteboard.data(forType: .tiff), let image = NSImage(data: imageData) {
+                            self.processImageData(image: image, inGroup: group, context: childContext)
+                        }
+                        else if let content = pasteboard.string(forType: .string) {
+                            let item = ClipboardItem(context: childContext)
+                            item.content = content
+                            item.type = "text"
+                            item.filePath = nil
+                            item.imageData = nil
+                            item.imageHash = nil
+                            item.group = group
+                            group.addToItems(item)
+                        }
+                        counter += 1
                     }
-                    // Check for file URLs first
-                    if let urlString = item.string(forType: .fileURL), let fileUrl = URL(string: urlString) {
-                        self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext)
+                    //                let itemsArray = group.itemsArray
+                    //                for item in itemsArray {
+                    //                    let content = item.content
+                    //                }
+                    //
+                    if operationsPending == 0 {
+                        self.saveClipboardGroup(childContext: childContext)
                     }
-                    else if let imageData = pasteboard.data(forType: .tiff), let image = NSImage(data: imageData) {
-                        self.processImageData(image: image, inGroup: group, context: childContext)
-                    }
-                    else if let content = pasteboard.string(forType: .string) {
-                        let item = ClipboardItem(context: childContext)
-                        item.content = content
-                        item.type = "text"
-                        item.filePath = nil
-                        item.imageData = nil
-                        item.imageHash = nil
-                        item.group = group
-                        group.addToItems(item)
-                    }
-                    counter += 1
                 }
-                self.saveClipboardGroup(childContext: childContext)
             }
         }
     }
     
-    private func processFileFolder(fileUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext) {
+    private func processFileFolder(fileUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext,
+                                   completion: @escaping (Bool) -> Void) {
         let imageExtensions = ["tiff", "jpeg", "jpg", "png", "svg", "gif"]
 
         let fileExtension = fileUrl.pathExtension.lowercased()
         
-        let item = ClipboardItem(context: context)
-        item.content = fileUrl.lastPathComponent
-        item.filePath = fileUrl.path
-        item.group = group
-        
-        if imageExtensions.contains(fileExtension) {
-            if let image = NSImage(contentsOf: fileUrl) {
-                if let tiffRep = image.tiffRepresentation {
-                    let imageHash = self.hashImageData(tiffRep)
-                    item.type = "image"
-                    item.imageData = image.tiffRepresentation
-                    item.imageHash = imageHash
-                }
-            }
-        } else {
-            item.imageData = nil
-            item.imageHash = nil
+        context.perform {
+            let item = ClipboardItem(context: context)
+            item.content = fileUrl.lastPathComponent
+            item.filePath = fileUrl.path
+            item.group = group
             
-            do {
-                let resourceValues = try fileUrl.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isAliasFileKey, .isUbiquitousItemKey, .volumeIsRemovableKey])
-                
-                if let isDirectory = resourceValues.isDirectory, isDirectory {
-                    if let volumeIsRemovable = resourceValues.volumeIsRemovable, volumeIsRemovable {
-                        item.type = "removable"
-                        print("removable")
+            if imageExtensions.contains(fileExtension) {
+                if let image = NSImage(contentsOf: fileUrl) {
+                    if let tiffRep = image.tiffRepresentation {
+                        let imageHash = self.hashImageData(tiffRep)
+                        item.type = "image"
+                        item.imageData = image.tiffRepresentation
+                        item.imageHash = imageHash
+                        group.addToItems(item)
+                        completion(true)
+                        return
                     }
-                    else {
-                        item.type = "folder"
+                }
+                completion(false)
+            }
+            else {
+                do {
+                    item.imageData = nil
+                    item.imageHash = nil
+                    
+                    let resourceValues = try fileUrl.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isAliasFileKey, .isUbiquitousItemKey, .volumeIsRemovableKey])
+                    
+                    if let isDirectory = resourceValues.isDirectory, isDirectory {
+                        if let volumeIsRemovable = resourceValues.volumeIsRemovable, volumeIsRemovable {
+                            item.type = "removable"
+                            print("removable")
+                        }
+                        else {
+                            item.type = "folder"
+                        }
+                        group.addToItems(item)
+                        completion(true)
                     }
-                } else if let isSymbolicLink = resourceValues.isSymbolicLink, isSymbolicLink {
-                    // haven't tested these
-                    item.type = "symlink"
-                } else if let isAliasFile = resourceValues.isAliasFile, isAliasFile {
-                    item.type = "alias"
-                    // here is where I check for the alias's actual file/folder and deteminie if it is a file, folder, image or something else
-                    if let resolvedUrl = resolveAlias(fileUrl: fileUrl) {
-                        let resolvedResourceValues = try resolvedUrl.resourceValues(forKeys: [.isDirectoryKey, .contentTypeKey])
-                        
-                        if let isDirectory = resolvedResourceValues.isDirectory, isDirectory {
-                            // It's a directory/folder, do nothing because the alias image is set as the folder icon
-                        } else {
-                            if let contentType = resolvedResourceValues.contentType {
-                                if contentType.conforms(to: .image) {
-                                    print("here")
-                                    if let image = NSImage(contentsOf: resolvedUrl) {
-                                        item.imageData = image.tiffRepresentation
-                                    }
-                                } else {
-                                    self.generateThumbnail(for: resolvedUrl.path) { thumbnail in
-                                        item.imageData = thumbnail?.tiffRepresentation
+                    else if let isSymbolicLink = resourceValues.isSymbolicLink, isSymbolicLink {
+                        // haven't tested these
+                        item.type = "symlink"
+                        group.addToItems(item)
+                        completion(true)
+                    }
+                    else if let isAliasFile = resourceValues.isAliasFile, isAliasFile {
+                        item.type = "alias"
+                        // here is where I check for the alias's actual file/folder and deteminie if it is a file, folder, image or something else
+                        if let resolvedUrl = self.resolveAlias(fileUrl: fileUrl) {
+                            let resolvedResourceValues = try resolvedUrl.resourceValues(forKeys: [.isDirectoryKey, .contentTypeKey])
+                            
+                            if let isDirectory = resolvedResourceValues.isDirectory, isDirectory {
+                                // It's a directory/folder, do nothing because the alias image is set as the folder icon
+                            }
+                            else {
+                                if let contentType = resolvedResourceValues.contentType {
+                                    if contentType.conforms(to: .image) {
+                                        if let image = NSImage(contentsOf: resolvedUrl) {
+                                            item.imageData = image.tiffRepresentation
+                                        }
+                                    } else {
+                                        self.generateThumbnail(for: resolvedUrl.path) { thumbnail in
+                                            item.imageData = thumbnail?.tiffRepresentation
+                                        }
                                     }
                                 }
                             }
                         }
+                        group.addToItems(item)
+                        completion(true)
                     }
-                } else {
-                    // regular file
-                    self.generateThumbnail(for: fileUrl.path) { thumbnail in
-                        item.type = "file"
-                        item.imageData = thumbnail?.tiffRepresentation
-                        item.imageHash = nil
+                    else {
+                        // regular file
+                        self.generateThumbnail(for: fileUrl.path) { thumbnail in
+                            if let thumbnail = thumbnail {
+                                item.type = "file"
+                                item.imageData = thumbnail.tiffRepresentation
+                                item.imageHash = nil
+                                group.addToItems(item)
+                                completion(true)
+                            }
+                        }
                     }
                 }
-            } catch {
-                print("Error checking file type: \(error)")
+                catch {
+                    print("Error checking file type: \(error)")
+                    completion(false)
+                }
             }
+            //        group.addToItems(item)
         }
-        group.addToItems(item)
     }
     
     // determine file path that alias points to
@@ -231,68 +274,87 @@ class ClipboardMonitor: ObservableObject {
     }
     
     private func saveClipboardGroup(childContext: NSManagedObjectContext) {
-        if !checkLast(childContext: childContext) {
-            return
-        }
-                        
-        let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
-        
-        do {
-            var groups = try childContext.fetch(fetchRequest)
-            
-            cleanUp(childContext: childContext, inputGroups: groups)
-
-            var groupCount = groups.count
-            
-            while groupCount > self.maxGroupCount {
-                
-                if let oldestGroup = groups.last {
-                    deleteGroupAndItems(oldestGroup, childContext: childContext)
-                    groupCount -= 1
-                    groups.removeFirst()
-                }
+        childContext.perform {
+            if !self.checkLast(childContext: childContext) {
+                return
             }
-            try childContext.save()
-            try childContext.parent?.save()
             
-            return
-        } catch {
-            print("Failed to save and update groups: \(error)")
-            return
+            let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
+            
+            do {
+                var groups = try childContext.fetch(fetchRequest)
+                
+                //            for group in groups {
+                //                let itemsArray = group.itemsArray
+                //                let content = itemsArray.first?.content
+                //                print(content)
+                //            }
+                
+                self.cleanUpExtraGroups(childContext: childContext, inputGroups: groups)
+                //
+                var groupCount = groups.count
+                
+                while groupCount > self.maxGroupCount {
+                    
+                    if let oldestGroup = groups.last {
+                        self.deleteGroupAndItems(oldestGroup, childContext: childContext)
+                        groupCount -= 1
+                        groups.removeFirst()
+                    }
+                }
+                
+                try childContext.save()
+                //            try childContext.parent?.save()
+                if let parentContext = childContext.parent {
+                    parentContext.performAndWait {
+                        do {
+                            try parentContext.save()
+                        } catch {
+                            print("Failed to save parent context: \(error)")
+                        }
+                    }
+                }
+                
+                return
+            } catch {
+                print("Failed to save and update groups: \(error)")
+                return
+            }
         }
     }
 
     func checkLast(childContext: NSManagedObjectContext) -> Bool {
         var shouldSave = false
         
-//        let context = childContext ?? PersistenceController.shared.container.viewContext
-        let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
-        fetchRequest.fetchLimit = 2 // 2 because new item and last item
         
-        do {
-            let results = try childContext.fetch(fetchRequest)
+        childContext.performAndWait {
+            let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
+            fetchRequest.fetchLimit = 2 // 2 because new item and last item
             
-            if results.count < 2 { // less than 2 means there wasnt anything copied before, so save it
-                shouldSave = true
-                clearTmpImages()
-            }
-            else if let newGroup = results.last, let lastGroup = results.dropLast().last {
-                let lastItems = lastGroup.itemsArray
-                let newItems = newGroup.itemsArray
+            do {
+                let results = try childContext.fetch(fetchRequest)
                 
-                if lastItems.count != newItems.count {
-                    // Different number of items, definitely save
+                if results.count < 2 { // less than 2 means there wasnt anything copied before, so save it
                     shouldSave = true
-                } else {
-                    // Compare the sorted arrays item by item
-                    shouldSave = !zip(lastItems, newItems).allSatisfy { ClipboardItem.isEqual(itemA: $0, itemB: $1) }
                 }
+                else if let newGroup = results.last, let lastGroup = results.dropLast().last {
+                    let lastItems = lastGroup.itemsArray
+                    let newItems = newGroup.itemsArray
+                    
+                    if lastItems.count != newItems.count {
+                        // Different number of items, definitely save
+                        shouldSave = true
+                    } else {
+                        // Compare the sorted arrays item by item
+                        shouldSave = !zip(lastItems, newItems).allSatisfy { ClipboardItem.isEqual(itemA: $0, itemB: $1) }
+                    }
+                }
+            } catch {
+                print("Fetch failed: \(error.localizedDescription)")
+                shouldSave = false
             }
-        } catch {
-            print("Fetch failed: \(error.localizedDescription)")
-            shouldSave = false
         }
         return shouldSave
     }
@@ -305,90 +367,101 @@ class ClipboardMonitor: ObservableObject {
         var shouldSave = false
                 
         let context = context ?? PersistenceController.shared.container.viewContext
-        let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
-        fetchRequest.fetchLimit = 2
         
-        do {
-            let results = try context.fetch(fetchRequest)
+        context.performAndWait {
+            let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
+            fetchRequest.fetchLimit = 2
             
-            if results.first == nil {
-                // blank list
-                shouldSave = true
-                clearTmpImages()
-            }
-            
-            else if let lastGroup = results.first {
-                let lastItems = lastGroup.itemsArray
-                if let group = group {
-                    let newItems = group.itemsArray
-                    if lastItems.count != newItems.count {
-                        // Different number of items, definitely save
-                        shouldSave = true
+            do {
+                let results = try context.fetch(fetchRequest)
+                
+                if results.first == nil {
+                    // blank list
+                    shouldSave = true
+                }
+                
+                else if let lastGroup = results.first {
+                    let lastItems = lastGroup.itemsArray
+                    if let group = group {
+                        let newItems = group.itemsArray
+                        if lastItems.count != newItems.count {
+                            // Different number of items, definitely save
+                            shouldSave = true
+                        }
+                        else {
+                            // Compare the sorted arrays item by item
+                            shouldSave = !zip(lastItems, newItems).allSatisfy { ClipboardItem.isEqual(itemA: $0, itemB: $1) }
+                        }
                     }
-                    else {
-                        // Compare the sorted arrays item by item
-                        shouldSave = !zip(lastItems, newItems).allSatisfy { ClipboardItem.isEqual(itemA: $0, itemB: $1) }
+                    else if let item = item {
+                        if lastItems.count != 1 {
+                            // last group is not a single item, so they arent the same
+                            shouldSave = true
+                        }
+                        else if let lastItem = lastItems.first {
+                            // Compare the items
+                            shouldSave = !ClipboardItem.isEqual(itemA: item, itemB: lastItem)
+                        }
                     }
                 }
-                else if let item = item {
-                    if lastItems.count != 1 {
-                        // last group is not a single item, so they arent the same
-                        shouldSave = true
-                    }
-                    else if let lastItem = lastItems.first {
-                        // Compare the items
-                        shouldSave = !ClipboardItem.isEqual(itemA: item, itemB: lastItem)
-                    }
-                }
+            } catch {
+                print("Fetch failed: \(error.localizedDescription)")
+                shouldSave = false
             }
-        } catch {
-            print("Fetch failed: \(error.localizedDescription)")
-            shouldSave = false
         }
         return shouldSave
     }
     
-    private func cleanUp(childContext: NSManagedObjectContext, inputGroups: [ClipboardGroup]?) {
-        var groups: [ClipboardGroup]
+    private func cleanUpExtraGroups(childContext: NSManagedObjectContext, inputGroups: [ClipboardGroup]?) {
+        childContext.perform {
+            var groups: [ClipboardGroup]
             
-        if let existingGroups = inputGroups {
-            groups = existingGroups
-        } else {
-            let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
-            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
-            do {
-                groups = try childContext.fetch(fetchRequest)
-            } catch {
-                print("Failed to fetch groups for cleanup: \(error.localizedDescription)")
-                return
+            if let existingGroups = inputGroups {
+                groups = existingGroups
+            } else {
+                let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
+                fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
+                do {
+                    groups = try childContext.fetch(fetchRequest)
+                } catch {
+                    print("Failed to fetch groups for cleanup: \(error.localizedDescription)")
+                    return
+                }
             }
-        }
-
-        do {
+            
+            if groups.count == 1, let group = groups.first, let item = group.itemsArray.first, item.type != "image" {
+                // only clears on first copy when list is blank, if first copy isnt an image
+                self.clearTmpImages()
+            }
+            
+            //        do {
             var totalItems = groups.reduce(0) { $0 + ($1.items?.count ?? 0) }
-
+            
             while totalItems > self.maxItemCount {
                 if let oldestGroup = groups.last {
                     let itemCount = oldestGroup.items?.count ?? 0
-                    deleteGroupAndItems(oldestGroup, childContext: childContext)
+                    self.deleteGroupAndItems(oldestGroup, childContext: childContext)
                     groups.removeLast()
                     totalItems -= itemCount
                 }
             }
-            try childContext.save()
-        } catch {
-            print("Failed to clean up groups: \(error.localizedDescription)")
+            //            try childContext.save()
+            //        } catch {
+            //            print("Failed to clean up groups: \(error.localizedDescription)")
+            //        }
         }
     }
     
     func deleteGroupAndItems(_ group: ClipboardGroup, childContext: NSManagedObjectContext) {
-        if let items = group.items as? Set<ClipboardItem> {
-            for item in items {
-                deleteItem(item, childContext: childContext)
+        childContext.perform {
+            if let items = group.items as? Set<ClipboardItem> {
+                for item in items {
+                    self.deleteItem(item, childContext: childContext)
+                }
             }
+            childContext.delete(group)
         }
-        childContext.delete(group)
     }
     
     func deleteItem(_ item: ClipboardItem, childContext: NSManagedObjectContext) {

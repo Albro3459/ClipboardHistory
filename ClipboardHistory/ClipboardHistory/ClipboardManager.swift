@@ -21,6 +21,14 @@ class ClipboardManager: ObservableObject {
     @Published var selectedGroup: SelectedGroup?
     
     @Published var isCopied: Bool = false
+    
+    @Published private(set) var types = [
+        ClipboardType.text,
+        ClipboardType.image,
+        ClipboardType.fileFolder,
+        ClipboardType.group,
+        ClipboardType.selectAll
+    ]
         
     var clipboardMonitor: ClipboardMonitor?
 

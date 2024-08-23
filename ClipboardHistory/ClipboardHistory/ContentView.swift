@@ -19,7 +19,9 @@ struct ContentView: View {
         entity: ClipboardGroup.entity(),
         sortDescriptors: [NSSortDescriptor(keyPath: \ClipboardGroup.timeStamp, ascending: false)],
         animation: nil)
-    private var clipboardGroups: FetchedResults<ClipboardGroup>
+    
+//    private var clipboardGroups: FetchedResults<ClipboardGroup>
+    private var fetchedClipboardGroups: FetchedResults<ClipboardGroup>
     
     @EnvironmentObject var clipboardManager: ClipboardManager
     
@@ -43,88 +45,64 @@ struct ContentView: View {
     @State private var imageSizeMultiple: CGFloat = 1
     
     @State private var selectList: [SelectedGroup] = []
-
+    
+    private var clipboardGroups: [ClipboardGroup] {
         
-//    private var clipboardItems: [ClipboardItem] {
-//        
-//        let selectedTypeNames: [String] = selectedTypes.map { id in
-//            ClipboardType.getTypeName(by: id)
-//        }
-//        
-//        return fetchedClipboardItems.filter { item in
-//            let typeMatch: Bool
-//            if selectedTypes.isEmpty || selectedTypes.count == 3 {
-//                typeMatch = true // No filtering by type when none or all are selected.
-//            } else {
-//                typeMatch = selectedTypeNames.contains { typeName in
-//                    if typeName == "fileFolder" {
-//                        item.type?.localizedCaseInsensitiveContains("file") ?? false ||
-//                        item.type?.localizedCaseInsensitiveContains("folder") ?? false ||
-//                        item.type?.localizedCaseInsensitiveContains("image") ?? false
-//                    }
-//                    else {
-//                        item.type?.localizedCaseInsensitiveContains(typeName) ?? false
-//                    }
-//                }
-//            }
-//
-//            if searchText.isEmpty {
-//                return typeMatch
-//            } else {
-//                // Further filter by searchText if it is not empty.
-//                var searchTextMatch = false
-//                if searchText.contains("file".lowercased()) {
-//                    searchTextMatch = item.content?.localizedCaseInsensitiveContains(searchText) ?? false ||
-//                    item.type?.localizedCaseInsensitiveContains(searchText) ?? false || item.type?.localizedCaseInsensitiveContains("image") ?? false
-//                }
-//                else {
-//                    searchTextMatch = item.content?.localizedCaseInsensitiveContains(searchText) ?? false ||
-//                    item.type?.localizedCaseInsensitiveContains(searchText) ?? false
-//                }
-//                return searchTextMatch && typeMatch
-//            }
-//        }
-//    }
-//    private var clipboardGroups: [ClipboardGroup] {
-//        
-//        let selectedTypeNames: [String] = selectedTypes.map { id in
-//            ClipboardType.getTypeName(by: id)
-//        }
-//        
-//        return fetchedClipboardItems.filter { item in
-//            let typeMatch: Bool
-//            if selectedTypes.isEmpty || selectedTypes.count == 3 {
-//                typeMatch = true // No filtering by type when none or all are selected.
-//            } else {
-//                typeMatch = selectedTypeNames.contains { typeName in
-//                    if typeName == "fileFolder" {
-//                        item.type?.localizedCaseInsensitiveContains("file") ?? false ||
-//                        item.type?.localizedCaseInsensitiveContains("folder") ?? false ||
-//                        item.type?.localizedCaseInsensitiveContains("image") ?? false
-//                    }
-//                    else {
-//                        item.type?.localizedCaseInsensitiveContains(typeName) ?? false
-//                    }
-//                }
-//            }
-//
-//            if searchText.isEmpty {
-//                return typeMatch
-//            } else {
-//                // Further filter by searchText if it is not empty.
-//                var searchTextMatch = false
-//                if searchText.contains("file".lowercased()) {
-//                    searchTextMatch = item.content?.localizedCaseInsensitiveContains(searchText) ?? false ||
-//                    item.type?.localizedCaseInsensitiveContains(searchText) ?? false || item.type?.localizedCaseInsensitiveContains("image") ?? false
-//                }
-//                else {
-//                    searchTextMatch = item.content?.localizedCaseInsensitiveContains(searchText) ?? false ||
-//                    item.type?.localizedCaseInsensitiveContains(searchText) ?? false
-//                }
-//                return searchTextMatch && typeMatch
-//            }
-//        }
-//    }
+        let selectedTypeNames: [String] = selectedTypes.map { id in
+            ClipboardType.getTypeName(by: id)
+        }
+        
+        return fetchedClipboardGroups.filter { group in
+            var typeMatch: Bool
+            if selectedTypes.isEmpty || selectedTypeNames.contains("Select All") || selectedTypes.count == clipboardManager.types.count {
+                typeMatch = true // No filtering by type when none or all are selected.
+//                return true
+            }
+            else if selectedTypeNames.contains("Groups") && group.count > 1 {
+                typeMatch = true
+//                return true
+            }
+            else {
+                typeMatch = group.itemsArray.contains { item in
+                    if selectedTypeNames.contains("Files / Folders") {
+                        // images are files too
+                        return item.type?.localizedCaseInsensitiveContains("file") ?? false ||
+                            item.type?.localizedCaseInsensitiveContains("folder") ?? false ||
+                            item.type?.localizedCaseInsensitiveContains("image") ?? false
+                    } 
+                    else if selectedTypeNames.contains("Images") {
+                        // files can be images if they have an imageHash
+                        return item.imageHash != nil ||
+                            item.type?.localizedCaseInsensitiveContains("image") ?? false
+                    }
+                    else {
+                        // Check against other types.
+                        return selectedTypeNames.contains(where: { typeName in
+                            item.type?.localizedCaseInsensitiveContains(typeName) ?? false
+                        })
+                    }
+                }
+            }
+
+            if searchText.isEmpty {
+                return typeMatch
+//                return true
+            }
+            else {
+                // Further filter by searchText if it is not empty.
+                var searchTextMatch = false
+                if searchText.contains("file".lowercased()) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false }) || group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("image") ?? false })
+                }
+                else {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false })
+                }
+                return searchTextMatch && typeMatch
+            }
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -177,7 +155,7 @@ struct ContentView: View {
                     }) {
                         Image(systemName: "line.horizontal.3.decrease.circle")
                             .foregroundColor(.white)
-                            .padding(.trailing, -2)
+                            .padding(.trailing, selectList.count > 0 ? -2 : 5)
                     }
                     .buttonStyle(PlainButtonStyle())
                     .popover(isPresented: $isSelectingCategory) {
@@ -188,20 +166,22 @@ struct ContentView: View {
                        .zIndex(1)
                        .help("Filter Items by Type")
                     
-                    Button(action: {
-                        if !atTopOfList {
-                            scrollToTop = true
+                    if selectList.count > 0 {
+                        Button(action: {
+                            if !atTopOfList {
+                                scrollToTop = true
+                            }
+                            else {
+                                scrollToBottom = true
+                            }
+                        }) {
+                            Image(systemName: !atTopOfList ? "arrow.up.circle" : "arrow.down.circle")
+                                .foregroundColor(.white)
+                                .padding(.trailing, 5)
                         }
-                        else {
-                            scrollToBottom = true
-                        }
-                    }) {
-                        Image(systemName: !atTopOfList ? "arrow.up.circle" : "arrow.down.circle")
-                            .foregroundColor(.white)
-                            .padding(.trailing, 1)
+                        .buttonStyle(PlainButtonStyle())
+                        .help(!atTopOfList ? "Scroll to Top" : "Scroll to Bottom")
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .help(!atTopOfList ? "Scroll to Top" : "Scroll to Bottom")
                     
                 }
                 .padding(.top, 2)
@@ -220,7 +200,7 @@ struct ContentView: View {
                     ScrollViewReader { scrollView in
                         LazyVStack(spacing: 0) {
                             ForEach(selectList.indices, id: \.self) { index in
-                                ClipboardGroupView(selectGroup: selectList[index], selectList: $selectList, parentShowingAlert: $showingAlert, isSearchFocused: $isSearchFocused,
+                                ClipboardGroupView(selectGroup: selectList[index], selectList: $selectList, parentShowingAlert: $showingAlert, isSearchFocused: $isSearchFocused, isSelectingCategory: $isSelectingCategory,
                                    isGroupSelected: Binding(
                                     get: { if index >= 0 { return self.clipboardManager.selectedGroup == selectList[index] }
                                         else { return false } },
@@ -257,17 +237,21 @@ struct ContentView: View {
                         }
                         
                         .onChange(of: scrollToTop, initial: false) {
-                            withAnimation() {
-                                scrollView.scrollTo(selectList.first?.group.objectID, anchor: .top)
-                                scrollToTop = false
-                                clipboardManager.selectedGroup = selectList.first
+                            if selectList.count > 0 {
+                                withAnimation() {
+                                    scrollView.scrollTo(selectList.first?.group.objectID, anchor: .top)
+                                    scrollToTop = false
+                                    clipboardManager.selectedGroup = selectList.first
+                                }
                             }
                         }
                         .onChange(of: scrollToBottom, initial: false) {
-                            withAnimation() {
-                                scrollView.scrollTo(selectList.last?.group.objectID)
-                                scrollToBottom = false
-                                clipboardManager.selectedGroup = selectList.last
+                            if selectList.count > 0 {
+                                withAnimation() {
+                                    scrollView.scrollTo(selectList.last?.group.objectID)
+                                    scrollToBottom = false
+                                    clipboardManager.selectedGroup = selectList.last
+                                }
                             }
                         }
                     }
@@ -324,14 +308,12 @@ struct ContentView: View {
             .onAppear {
                 clipboardManager.selectedGroup = selectList.first
                 setUpKeyboardHandling()
-//                self.selectList = clipboardGroups.map { SelectedGroup(group: $0) }
                 initializeSelectList()
             }
             .onChange(of: clipboardGroups.count) { oldValue, newValue in
                 if clipboardGroups.count == 1 {
                     clipboardManager.selectedGroup = selectList.first
                 }
-//                self.selectList = clipboardGroups.map { SelectedGroup(group: $0) }
                 initializeSelectList()
             }
             .onChange(of: clipboardGroups.first) { oldValue, newValue in
@@ -339,7 +321,6 @@ struct ContentView: View {
                 if clipboardGroups.count == 1 {
                     clipboardManager.selectedGroup = selectList.first
                 }
-//                self.selectList = clipboardGroups.map { SelectedGroup(group: $0) }
                 initializeSelectList()
             }
             .onChange(of: isFocused) {
@@ -362,6 +343,8 @@ struct ContentView: View {
     
     private func clearClipboardItems() {
         clipboardManager.clipboardMonitor?.clearTmpImages()
+        
+        selectedTypes.removeAll()
         
         for item in clipboardGroups {
             viewContext.delete(item)
@@ -401,7 +384,7 @@ struct ContentView: View {
                 switch event.keyCode {
                 case 8:
                     if event.modifierFlags.contains(.command) {
-                        if !isFocused {
+                        if !isFocused || !isSelectingCategory {
                             // Handle Command + C
                             if clipboardManager.selectedItem != nil {
                                 clipboardManager.copySelectedItemInGroup()
@@ -428,7 +411,7 @@ struct ContentView: View {
                 case 51:
                     // Handle Command + Del
                     if event.modifierFlags.contains(.command) {
-                        if !isFocused {
+                        if !isFocused || !isSelectingCategory {
                             DispatchQueue.main.async {
                                 self.showingAlert = true
                                 activeAlert = .delete
@@ -440,6 +423,7 @@ struct ContentView: View {
                     if event.modifierFlags.contains(.command) {
                         // Handle Command + F
                         DispatchQueue.main.async {
+                            isSelectingCategory = false
                             isFocused = true
                         }
                          return nil // no more beeps
@@ -454,6 +438,8 @@ struct ContentView: View {
                 case 126:
                     // Handle up arrow
                     isFocused = false
+                    isSelectingCategory = false
+                    
                     if event.modifierFlags.contains(.command) {
                         scrollToTop = true
                     }
@@ -540,6 +526,7 @@ struct ContentView: View {
                 case 125:
                     // Handle down arrow
                     isFocused = false
+                    isSelectingCategory = false
                     
                     if event.modifierFlags.contains(.command) {
                         scrollToBottom = true
@@ -610,6 +597,7 @@ struct ContentView: View {
                     return nil
                 case 123:
                     isFocused = false
+                    isSelectingCategory = false
 
 //                    print("left arrow")
                     
@@ -659,6 +647,7 @@ struct ClipboardGroupView: View {
     @Binding var parentShowingAlert: Bool
     
     @Binding var isSearchFocused: Bool
+    @Binding var isSelectingCategory: Bool
     
     @Binding var isGroupSelected: Bool
         
@@ -945,7 +934,9 @@ struct ClipboardGroupView: View {
                     switch event.keyCode {
                     case 124:
                         // right arrow to expand group
-                        if !isSearchFocused {
+                        isSearchFocused = false
+                        isSelectingCategory = false
+                        if !isSearchFocused || !isSelectingCategory {
                             if currSelectGroup.group.count > 1 {
                                 clipboardManager.expand(for: currSelectGroup)
                                 return nil
@@ -953,7 +944,9 @@ struct ClipboardGroupView: View {
                         }
                     case 123:
                         // left arrow to contract group
-//                        if !isSearchFocused {
+                        isSearchFocused = false
+                        isSelectingCategory = false
+//                        if !isSearchFocused || !isSelectingCategory {
 //                            if currSelectGroup.group.count > 1 {
 //                                if clipboardManager.selectedItem != nil {
 //                                    clipboardManager.contract(for: currSelectGroup)
@@ -963,7 +956,7 @@ struct ClipboardGroupView: View {
 //                        }
                         
                         // works like apple folder list view now
-                        if !isSearchFocused {
+                        if !isSearchFocused || !isSelectingCategory {
                             if currSelectGroup.group.count > 1 {
                                 if clipboardManager.selectedGroup?.isExpanded == true {
                                     if clipboardManager.selectedItem != nil {
@@ -979,7 +972,7 @@ struct ClipboardGroupView: View {
                         }
                     case 36, 76:
                         // Handle Enter or Return
-                        if !isSearchFocused {
+                        if !isSearchFocused || !isSelectingCategory {
                             if clipboardManager.selectedItem != nil {
                                 clipboardManager.copySelectedItemInGroup()
                                 return nil
