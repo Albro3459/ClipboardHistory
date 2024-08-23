@@ -239,15 +239,16 @@ struct ContentView: View {
                                                             isFocused = false
                                                         }))
                                     .id(selectList[index].group.objectID)
+                                    .animation(atTopOfList ? .default : nil, value: selectList.first?.group.objectID)
                                 }
                             }
                             
                         } //scrolls when using the arrow keys
                         .onChange(of: clipboardManager.selectedGroup, initial: false) {
                             if let selectedGroup = clipboardManager.selectedGroup, let index = selectList.firstIndex(of: selectedGroup) {
-                                    withAnimation(.easeInOut(duration: 0.5)) {
-                                        scrollView.scrollTo(selectList[index].group.objectID)
-                                    }
+                                withAnimation(.easeInOut(duration: 0.5)) {
+                                    scrollView.scrollTo(selectList[index].group.objectID)
+                                }
                             }
                         }
                         .onChange(of: clipboardManager.selectedItem, initial: false) {
@@ -261,6 +262,7 @@ struct ContentView: View {
                                         withAnimation(.easeInOut(duration: 0.5)) {
                                             scrollView.scrollTo(selectList[index].group.objectID, anchor: (selectedGroup.isExpanded && clipboardManager.selectedItem == nil) ? .top : nil)
                                         }
+//                                    }
                                 }
                             }
                         }
