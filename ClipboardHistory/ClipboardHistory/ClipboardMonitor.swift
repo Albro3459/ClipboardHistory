@@ -21,6 +21,13 @@ class ClipboardMonitor: ObservableObject {
     private var maxItemCount: Int = 100
     
     @Published var tmpFolderPath = FileManager.default.temporaryDirectory
+    
+    // User Defaults:
+    private var noDuplicates: Bool
+    
+    init() {
+        self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
+    }
                 
     func startMonitoring() {
         checkTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(checkClipboard), userInfo: nil, repeats: true)
@@ -283,7 +290,7 @@ class ClipboardMonitor: ObservableObject {
             do {
                 var groups = try childContext.fetch(fetchRequest)
                 
-                if let group = groups.first/*, user.NoDuplicates*/ {
+                if let group = groups.first, self.noDuplicates {
                     self.cleanUpDuplicates(for: group, childContext: childContext)
                 }
 
@@ -305,7 +312,6 @@ class ClipboardMonitor: ObservableObject {
                     parentContext.performAndWait {
                         do {
                             try parentContext.save()
-                            print("saved \n")
                         } catch {
                             print("Failed to save parent context: \(error)")
                         }

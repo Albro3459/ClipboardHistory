@@ -31,9 +31,15 @@ class ClipboardManager: ObservableObject {
     ]
         
     var clipboardMonitor: ClipboardMonitor?
+    
+    // User Defaults
+    private var noDuplicates: Bool
 
     init() {
         self.clipboardMonitor = ClipboardMonitor()
+        
+        // User Defaults
+        self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
     }
     
     func search(fetchedClipboardGroups: FetchedResults<ClipboardGroup>, searchText: String, selectedTypes: Set<UUID>) -> [ClipboardGroup] {
@@ -178,7 +184,7 @@ class ClipboardManager: ObservableObject {
     }
     
     // copying a whole group
-    func copySelectedGroup(selectList: [SelectedGroup], viewContext: NSManagedObjectContext) {
+    func copySelectedGroup() {
         guard let items = selectedGroup?.group.itemsArray, !items.isEmpty else {
             print("No items to copy or selected group is nil")
             return

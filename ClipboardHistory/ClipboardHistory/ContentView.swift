@@ -25,6 +25,9 @@ struct ContentView: View {
     
     @EnvironmentObject var clipboardManager: ClipboardManager
     
+    // User Defaults:
+    @State private var noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
+    
 //    @State private var isCopied = false
     
     @State private var showingAlert = false
@@ -160,6 +163,7 @@ struct ContentView: View {
                                                             isFocused = false
                                                         }))
                                     .id(selectList[index].group.objectID)
+                                    .animation((atTopOfList || noDuplicates) ? .default : nil, value: selectList.first?.group.objectID)
                                 }
                             }
                             
@@ -275,9 +279,9 @@ struct ContentView: View {
             }
             .onChange(of: selectList.first) { oldValue, newValue in
                 // is user wants no dupes, then select the top when a new copy comes in
-//                if user.noDuplicates {
-                clipboardManager.selectedGroup = selectList.first
-//                }
+                if noDuplicates {
+                    clipboardManager.selectedGroup = selectList.first
+                }
             }
             .onChange(of: isFocused) {
                 isSearchFocused = isFocused
@@ -345,8 +349,7 @@ struct ContentView: View {
                                 return nil
                             }
                             else {
-//                                clipboardManager.copySelectedGroup()
-                                clipboardManager.copySelectedGroup(selectList: selectList, viewContext: viewContext)
+                                clipboardManager.copySelectedGroup()
                                 return nil
                             }
                         }
@@ -633,8 +636,7 @@ struct ClipboardGroupView: View {
                         Button(action: {
                             isGroupSelected = true
                             clipboardManager.selectedGroup = selectGroup
-                            clipboardManager.copySelectedGroup(selectList: selectList, viewContext: viewContext)
-                            
+                            clipboardManager.copySelectedGroup()
                         }) {
                             Image(systemName: "doc.on.doc")
                                 .foregroundColor(.white)
@@ -685,8 +687,7 @@ struct ClipboardGroupView: View {
                     .onTapGesture(count: 2) {
                         isGroupSelected = true
                         clipboardManager.selectedGroup = selectGroup
-//                        clipboardManager.copySelectedGroup()
-                        clipboardManager.copySelectedGroup(selectList: selectList, viewContext: viewContext)
+                        clipboardManager.copySelectedGroup()
                     }
                     .onTapGesture(count: 1) {
                         isGroupSelected = true
@@ -871,8 +872,7 @@ struct ClipboardGroupView: View {
                                 return nil
                             }
                             else {
-//                                clipboardManager.copySelectedGroup()
-                                clipboardManager.copySelectedGroup(selectList: selectList, viewContext: viewContext)
+                                clipboardManager.copySelectedGroup()
                                 return nil
                             }
                         }

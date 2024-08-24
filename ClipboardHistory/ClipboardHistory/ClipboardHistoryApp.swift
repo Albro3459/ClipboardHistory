@@ -20,9 +20,10 @@ struct ClipboardHistoryApp: App {
     @State private var hideTitle = false
     
     init() {
+        registerUserDefaults()
+
         self.clipboardMonitor = ClipboardMonitor()
         self.clipboardMonitor?.startMonitoring()
-    
     }
     
     var body: some Scene {
@@ -32,6 +33,14 @@ struct ClipboardHistoryApp: App {
                 .environmentObject(appDelegate.clipboardManager)
         }
         
+    }
+    
+    private func registerUserDefaults() {
+        let defaults: [String: Any] = [
+            "noDuplicates": true
+        ]
+        
+        UserDefaults.standard.register(defaults: defaults)
     }
 }
 
