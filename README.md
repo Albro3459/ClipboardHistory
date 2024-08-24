@@ -10,7 +10,9 @@
 
 * Also, cmd + shift + v will paste text without formatting while running
 
-* clipboard history is currently limited to 30 items. I picked a limit.
+* clipboard history is currently limited to 50 items.
+
+## Download the ClipboardHistory.app folder to try it out!
 
 <!-- <br />
 
