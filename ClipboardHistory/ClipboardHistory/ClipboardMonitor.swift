@@ -18,10 +18,10 @@ class ClipboardMonitor: ObservableObject {
     private var lastChangeCount: Int = NSPasteboard.general.changeCount
     
     private var maxGroupCount: Int = 50
-    private var maxItemCount: Int = 150
+    private var maxItemCount: Int = 100
     
     @Published var tmpFolderPath = FileManager.default.temporaryDirectory
-    
+                
     func startMonitoring() {
         checkTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(checkClipboard), userInfo: nil, repeats: true)
     }
@@ -89,11 +89,6 @@ class ClipboardMonitor: ObservableObject {
                         }
                         counter += 1
                     }
-                    //                let itemsArray = group.itemsArray
-                    //                for item in itemsArray {
-                    //                    let content = item.content
-                    //                }
-                    //
                     if operationsPending == 0 {
                         self.saveClipboardGroup(childContext: childContext)
                     }
@@ -243,34 +238,37 @@ class ClipboardMonitor: ObservableObject {
     
     func findItems(content: String?, type: String?, imageHash: String?, filePath: String?, context: NSManagedObjectContext?) -> [ClipboardItem] {
         let context = context ?? PersistenceController.shared.container.viewContext
-        let fetchRequest: NSFetchRequest<ClipboardItem> = ClipboardItem.fetchRequest()
+        var results: [ClipboardItem] = []
         
-        var predicates: [NSPredicate] = []
-        
-        if let content = content {
-            predicates.append(NSPredicate(format: "content == %@", content))
+        context.performAndWait {
+            let fetchRequest: NSFetchRequest<ClipboardItem> = ClipboardItem.fetchRequest()
+            
+            var predicates: [NSPredicate] = []
+            
+            if let content = content {
+                predicates.append(NSPredicate(format: "content == %@", content))
+            }
+            if let type = type {
+                predicates.append(NSPredicate(format: "type == %@", type))
+            }
+            if let imageHash = imageHash {
+                predicates.append(NSPredicate(format: "imageHash == %@", imageHash))
+            }
+            if let filePath = filePath {
+                predicates.append(NSPredicate(format: "filePath == %@", filePath))
+            }
+            
+            fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+            
+            fetchRequest.fetchLimit = self.maxItemCount
+            
+            do {
+                results = try context.fetch(fetchRequest)
+            } catch {
+                print("Fetch failed: \(error.localizedDescription)")
+            }
         }
-        if let type = type {
-            predicates.append(NSPredicate(format: "type == %@", type))
-        }
-        if let imageHash = imageHash {
-            predicates.append(NSPredicate(format: "imageHash == %@", imageHash))
-        }
-        if let filePath = filePath {
-            predicates.append(NSPredicate(format: "filePath == %@", filePath))
-        }
-        
-        fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
-        
-        fetchRequest.fetchLimit = maxItemCount
-
-        do {
-            let results = try context.fetch(fetchRequest)
-            return results
-        } catch {
-            print("Fetch failed: \(error.localizedDescription)")
-            return []
-        }
+        return results
     }
     
     private func saveClipboardGroup(childContext: NSManagedObjectContext) {
@@ -285,22 +283,19 @@ class ClipboardMonitor: ObservableObject {
             do {
                 var groups = try childContext.fetch(fetchRequest)
                 
-                //            for group in groups {
-                //                let itemsArray = group.itemsArray
-                //                let content = itemsArray.first?.content
-                //                print(content)
-                //            }
+                if let group = groups.first/*, user.NoDuplicates*/ {
+                    self.cleanUpDuplicates(for: group, childContext: childContext)
+                }
+
+                self.cleanUpExtraItems(childContext: childContext, inputGroups: groups)
                 
-                self.cleanUpExtraGroups(childContext: childContext, inputGroups: groups)
-                //
                 var groupCount = groups.count
                 
                 while groupCount > self.maxGroupCount {
-                    
                     if let oldestGroup = groups.last {
                         self.deleteGroupAndItems(oldestGroup, childContext: childContext)
                         groupCount -= 1
-                        groups.removeFirst()
+                        groups.removeLast()
                     }
                 }
                 
@@ -310,6 +305,7 @@ class ClipboardMonitor: ObservableObject {
                     parentContext.performAndWait {
                         do {
                             try parentContext.save()
+                            print("saved \n")
                         } catch {
                             print("Failed to save parent context: \(error)")
                         }
@@ -413,8 +409,40 @@ class ClipboardMonitor: ObservableObject {
         return shouldSave
     }
     
-    private func cleanUpExtraGroups(childContext: NSManagedObjectContext, inputGroups: [ClipboardGroup]?) {
-        childContext.perform {
+    func cleanUpDuplicates(for group: ClipboardGroup, childContext: NSManagedObjectContext) {
+        
+        childContext.performAndWait {
+            let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
+            fetchRequest.fetchLimit = maxGroupCount
+            
+            do {
+                let results = try childContext.fetch(fetchRequest)
+                
+                if results.count < 2 { // less than 2 means there wasnt anything copied before, so save it
+                    return
+                }
+                else {
+                    
+                    let foundDupe = results.contains(where: { $0 != results.first && ClipboardGroup.isDupe(groupA: group, groupB: $0) })
+                    
+                    if foundDupe && results.count > 1 {
+                        for result in results where  result != results.first {
+                            if ClipboardGroup.isDupe(groupA: group, groupB: result) {
+                                childContext.delete(result)
+                            }
+                        }
+                    }
+                }
+                
+            } catch {
+                print("Fetch failed: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func cleanUpExtraItems(childContext: NSManagedObjectContext, inputGroups: [ClipboardGroup]?) {
+        childContext.performAndWait {
             var groups: [ClipboardGroup]
             
             if let existingGroups = inputGroups {
@@ -454,28 +482,32 @@ class ClipboardMonitor: ObservableObject {
     }
     
     func deleteGroupAndItems(_ group: ClipboardGroup, childContext: NSManagedObjectContext) {
-        childContext.perform {
+        childContext.performAndWait {
             if let items = group.items as? Set<ClipboardItem> {
                 for item in items {
                     self.deleteItem(item, childContext: childContext)
+                    print("deleted item")
                 }
             }
             childContext.delete(group)
+            print("deleted group")
         }
     }
     
     func deleteItem(_ item: ClipboardItem, childContext: NSManagedObjectContext) {
-        let folderPath = tmpFolderPath
-        if let filePath = item.filePath, filePath.contains(folderPath.path) {
-            // if the file is not still in the clipboard history
-            let items = self.findItems(content: nil, type: nil, imageHash: item.imageHash, filePath: filePath, context: childContext)
-            
-            // only want to delete file if its the only copy left
-            if items.count < 2 {
-                self.deleteTmpImage(filePath: filePath)
+        childContext.performAndWait {
+            let folderPath = self.tmpFolderPath
+            if let filePath = item.filePath, filePath.contains(folderPath.path) {
+                // if the file is not still in the clipboard history
+                let items = self.findItems(content: nil, type: nil, imageHash: item.imageHash, filePath: filePath, context: childContext)
+                
+                // only want to delete file if its the only copy left
+                if items.count < 2 {
+                    self.deleteTmpImage(filePath: filePath)
+                }
             }
+            childContext.delete(item)
         }
-        childContext.delete(item)
     }
     
     private func generateThumbnail(for filePath: String?, completion: @escaping (NSImage?) -> Void) {

@@ -47,87 +47,8 @@ struct ContentView: View {
     @State private var selectList: [SelectedGroup] = []
     
     private var clipboardGroups: [ClipboardGroup] {
-        
-        let selectedTypeNames: [String] = selectedTypes.map { id in
-            ClipboardType.getTypeName(by: id)
-        }
-        
-        return fetchedClipboardGroups.filter { group in
-            let typeMatch: Bool
-            if selectedTypes.isEmpty || selectedTypeNames.contains("Select All") || selectedTypes.count == clipboardManager.types.count {
-                typeMatch = true // No filtering by type when none or all are selected.
-                //                return true
-            }
-            else if selectedTypeNames.contains("Groups") && group.count > 1 {
-                typeMatch = true
-                //                return true
-            }
-            else {
-                typeMatch = group.itemsArray.contains { item in
-                    if selectedTypeNames.contains("Files / Folders") {
-                        // images are files too
-                        return item.type?.localizedCaseInsensitiveContains("file") ?? false ||
-                        item.type?.localizedCaseInsensitiveContains("folder") ?? false ||
-                        item.type?.localizedCaseInsensitiveContains("image") ?? false
-                    }
-                    else if selectedTypeNames.contains("Images") {
-                        // files can be images if they have an imageHash
-                        return item.imageHash != nil ||
-                        item.type?.localizedCaseInsensitiveContains("image") ?? false
-                    }
-                    else {
-                        // Check against other types.
-                        return selectedTypeNames.contains(where: { typeName in
-                            item.type?.localizedCaseInsensitiveContains(typeName) ?? false
-                        })
-                    }
-                }
-            }
-            
-            if searchText.isEmpty {
-                return typeMatch
-                //                return true
-            }
-            else {
-                // Further filter by searchText if it is not empty.
-                var searchTextMatch = false
-                let searchText = searchText.lowercased()
-                
-                if ["file", "fil", "fi", "doc", "docu", "docum", "docume", "documen", "document", "pd", "pdf"].contains(where: { searchText.hasPrefix($0) }) {
-                    searchTextMatch = group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
-                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
-                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("image") ?? false })
-                }
-                else if ["group", "grou", "gro", "gr"].contains(where: { searchText.hasPrefix($0) }) {
-                    searchTextMatch = group.count > 1
-                }
-                else if ["image", "ima", "im", "pic", "pict", "pictu", "pictur", "picture"].contains(where: { searchText.hasPrefix($0) }) {
-                    searchTextMatch = group.itemsArray.contains(where: { $0.imageHash != nil }) ||
-                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("image") ?? false })
-                }
-                else if ["text", "tex", "te", "tx", "txt", "note", "not"].contains(where: { searchText.hasPrefix($0) }) {
-                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("text") ?? false })
-                }
-                else if ["folder", "fol", "fo", "dir", "dire", "direc", "direct", "directo", "director", "directory"].contains(where: { searchText.hasPrefix($0) }) {
-                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("folder") ?? false })
-                }
-                else if ["alias", "alia", "ali", "symlink", "symlin", "symli", "syml", "sym", "lin", "link"].contains(where: { searchText.hasPrefix($0) }) {
-                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("alias") ?? false })
-                }
-                else if ["symlink", "symlin", "symli", "syml", "sym", "lin", "link", "ali", "alia", "alias"].contains(where: { searchText.hasPrefix($0) }) {
-                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("symlink") ?? false })
-                }
-                else {
-                    searchTextMatch = group.itemsArray.contains( where: {
-                        ($0.type?.lowercased().contains(searchText) ?? false) ||
-                        ($0.content?.lowercased().contains(searchText) ?? false)
-                    })
-                }
-                return searchTextMatch && typeMatch
-            }
-        }
+        return clipboardManager.search(fetchedClipboardGroups: fetchedClipboardGroups, searchText: searchText, selectedTypes: selectedTypes)
     }
-    
     
     var body: some View {
         ZStack {
@@ -319,7 +240,7 @@ struct ContentView: View {
                             message: Text("Are you sure you want to delete this clipboard item?"),
                             primaryButton: .destructive(Text("Delete")) {
                                 if let item = clipboardManager.selectedItem {
-                                        clipboardManager.deleteItem(item: item, viewContext: viewContext, isCalledByGroup: false)
+                                        clipboardManager.deleteItem(item: item, viewContext: viewContext, shouldSave: true)
                                 }
                                 else {
                                     clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectList, viewContext: viewContext)
@@ -351,6 +272,12 @@ struct ContentView: View {
                     clipboardManager.selectedGroup = selectList.first
                 }
                 initializeSelectList()
+            }
+            .onChange(of: selectList.first) { oldValue, newValue in
+                // is user wants no dupes, then select the top when a new copy comes in
+//                if user.noDuplicates {
+                clipboardManager.selectedGroup = selectList.first
+//                }
             }
             .onChange(of: isFocused) {
                 isSearchFocused = isFocused
@@ -399,7 +326,6 @@ struct ContentView: View {
                 if !selectList.isEmpty {
                     clipboardManager.selectedGroup = selectList[0]
                     if let group = clipboardManager.selectedGroup?.group, group.count == 1 {
-//                        print("here")
                         clipboardManager.selectedGroup?.selectedItem = clipboardManager.selectedGroup?.group.itemsArray.first
                     }
                     currentIndex = 0
@@ -408,7 +334,6 @@ struct ContentView: View {
                     return event
                 }
             }
-            
             if event.type == .keyDown && !self.showingAlert {
                 switch event.keyCode {
                 case 8:
@@ -420,23 +345,12 @@ struct ContentView: View {
                                 return nil
                             }
                             else {
-                                clipboardManager.copySelectedGroup()
+//                                clipboardManager.copySelectedGroup()
+                                clipboardManager.copySelectedGroup(selectList: selectList, viewContext: viewContext)
                                 return nil
                             }
                         }
                     }
-                    
-//                case 36, 76:
-//                    // Handle Enter or Return
-//                    for group in selectList {
-//                        print(group.isExpanded)
-//                    }
-//                    print("\n")
-//                    
-//                    if !isFocused {
-////                        clipboardManager.copySelectedItem()
-//                         return nil // no more beeps
-//                    }
                 case 51:
                     // Handle Command + Del
                     if event.modifierFlags.contains(.command) {
@@ -479,10 +393,8 @@ struct ContentView: View {
                     }
                     else {
                         if let currIndex = currentIndex, currIndex - 1 >= 0 {
-                            
                             let aboveGroup = selectList[currIndex - 1]
                             let currGroup = selectList[currIndex]
-                            
                             
                             if currGroup.isExpanded {
                                 if let selectedItem = clipboardManager.selectedItem {
@@ -494,12 +406,6 @@ struct ContentView: View {
                                         else if itemIndex - 1 >= 0 {
                                             clipboardManager.selectedItem = currGroup.group.itemsArray[itemIndex - 1]
                                         }
-                                    } else {
-                                        print("*** idk ***")
-                                        //                                    if currIndex - 1 >= 0 {
-                                        //                                        clipboardManager.selectedGroup = selectList[currIndex - 1]
-                                        //                                        clipboardManager.selectedItem = nil
-                                        //                                    }
                                     }
                                 }
                                 // group is expanded, but at the top of the current group
@@ -516,10 +422,7 @@ struct ContentView: View {
                             // current group isnt expanded, so lets go to the next group up, but how? ...
                             else {
                                 clipboardManager.selectedGroup = aboveGroup
-                                
                                 if !aboveGroup.isExpanded {
-                                    //                                print("not group")
-                                    //                            clipboardManager.selectedGroup = aboveGroup
                                     clipboardManager.selectedItem = nil
                                 }
                                 else if aboveGroup.isExpanded {
@@ -529,9 +432,7 @@ struct ContentView: View {
                         }
                         else if let currIndex = currentIndex {
                             // at the top of the selectList, but group is expanded
-                            
                             let currGroup = selectList[currIndex]
-                            
                             if currGroup.isExpanded {
                                 if let selectedItem = clipboardManager.selectedItem {
                                     if let itemIndex = currGroup.group.itemsArray.firstIndex(where: { $0 == selectedItem }) {
@@ -543,17 +444,8 @@ struct ContentView: View {
                                             clipboardManager.selectedItem = currGroup.group.itemsArray[itemIndex - 1]
                                         }
                                     }
-                                    //                                else {
-                                    //                                    print("*** idk ***")
-                                    ////                                    if currIndex - 1 >= 0 {
-                                    ////                                        clipboardManager.selectedGroup = selectList[currIndex - 1]
-                                    ////                                        clipboardManager.selectedItem = nil
-                                    ////                                    }
-                                    //                                }
                                 }
-                                
                             }
-                            
                         }
                     }
                     return nil //no more beeps
@@ -566,45 +458,30 @@ struct ContentView: View {
                         scrollToBottom = true
                     }
                     else {
-                        // print( )
                         if let currIndex = currentIndex, currIndex < selectList.count - 1 {
-                            // print("a")
-                            
                             let currGroup = selectList[currIndex]
                             if currGroup.isExpanded {
-                                // print("b")
                                 if let selectedItem = clipboardManager.selectedItem {
-                                    // print("c")
                                     if let currItemIndex = currGroup.group.itemsArray.firstIndex(where: { $0 == selectedItem }),
                                        currItemIndex + 1 < currGroup.group.itemsArray.count {
-                                        // print("d")
                                         clipboardManager.selectedItem = currGroup.group.itemsArray[currItemIndex + 1]
                                     } else {
-                                        // print("e")
                                         if currIndex + 1 < selectList.count {
-                                            // print("f")
                                             clipboardManager.selectedGroup = selectList[currIndex + 1]
                                             clipboardManager.selectedItem = nil
                                         }
                                     }
                                 } else {
-                                    // print("g")
                                     clipboardManager.selectedItem = currGroup.group.itemsArray.first
-                                    //                                clipboardManager.selectedGroup = currGroup
                                 }
                             } else {
-                                // print("h")
                                 if currIndex + 1 < selectList.count {
                                     clipboardManager.selectedGroup = selectList[currIndex + 1]
                                     clipboardManager.selectedItem = nil
-                                    // print(clipboardManager.selectedGroup?.group.itemsArray.first?.content ?? "null")
-                                    // print(clipboardManager.selectedItem?.content ?? "dne")
-                                    // print(clipboardManager.selectedGroup?.group.count ?? 69)
                                 }
                             }
                         }
                         else if let currIndex = currentIndex {
-                            // print("i")
                             // at bottom of selectList, but group is expanded
                             let currGroup = selectList[currIndex]
                             if currGroup.isExpanded {
@@ -622,18 +499,16 @@ struct ContentView: View {
                                 }
                                 else {
                                     clipboardManager.selectedItem = currGroup.group.itemsArray.first
-                                    //                                clipboardManager.selectedGroup = currGroup
                                 }
                             }
                         }
-                        // print( )
                     }
                     return nil
                 case 123:
+//                    print("left arrow")
+                    
                     isFocused = false
                     isSelectingCategory = false
-
-//                    print("left arrow")
                     
                     if clipboardManager.selectedGroup?.isExpanded == true {
                         if clipboardManager.selectedItem != nil {
@@ -645,12 +520,6 @@ struct ContentView: View {
                             return nil
                         }
                     }
-//                    if let currIndex = currentIndex, currIndex < selectList.count - 1 {
-//
-//                        let currGroup = selectList[currIndex]
-//                        clipboardManager.selectedGroup = currGroup
-//                    }
-
                 case 115, 116:
                     // Handle Home or Page Up Key action
                     scrollToTop = true
@@ -705,9 +574,7 @@ struct ClipboardGroupView: View {
                 }))
             .id(item.objectID)
             .background(RoundedRectangle(cornerRadius: 8)
-//                .fill(shouldSelectGroup ? (isGroupSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5)) : Color(.darkGray).opacity(0.5))
                 .fill((clipboardManager.selectedGroup == selectGroup && clipboardManager.selectedItem == nil) ? (isGroupSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5)) : Color(.darkGray).opacity(0.5))
-//                .fill(isGroupSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
             )
@@ -766,7 +633,8 @@ struct ClipboardGroupView: View {
                         Button(action: {
                             isGroupSelected = true
                             clipboardManager.selectedGroup = selectGroup
-                            clipboardManager.copySelectedGroup()
+                            clipboardManager.copySelectedGroup(selectList: selectList, viewContext: viewContext)
+                            
                         }) {
                             Image(systemName: "doc.on.doc")
                                 .foregroundColor(.white)
@@ -792,7 +660,7 @@ struct ClipboardGroupView: View {
                                 message: Text("Are you sure you want to delete this clipboard item?"),
                                 primaryButton: .destructive(Text("Delete")) {
                                     if let item = clipboardManager.selectedItem {
-                                        clipboardManager.deleteItem(item: item, viewContext: viewContext, isCalledByGroup: false)
+                                        clipboardManager.deleteItem(item: item, viewContext: viewContext, shouldSave: true)
                                     }
                                     else {
                                         clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectList, viewContext: viewContext)
@@ -808,7 +676,6 @@ struct ClipboardGroupView: View {
                     .padding(.bottom, 4)
                     
                     .background(RoundedRectangle(cornerRadius: 8)
-//                        .fill(shouldSelectGroup ? (isGroupSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5)) : Color(.darkGray).opacity(0.5))
                         .fill((clipboardManager.selectedGroup == selectGroup && clipboardManager.selectedItem == nil) ? (isGroupSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5)) : Color(.darkGray).opacity(0.5))
 
                         .padding(.horizontal, 10)
@@ -818,11 +685,10 @@ struct ClipboardGroupView: View {
                     .onTapGesture(count: 2) {
                         isGroupSelected = true
                         clipboardManager.selectedGroup = selectGroup
-                        clipboardManager.copySelectedGroup()
+//                        clipboardManager.copySelectedGroup()
+                        clipboardManager.copySelectedGroup(selectList: selectList, viewContext: viewContext)
                     }
                     .onTapGesture(count: 1) {
-//                        print("Group Top Tapp:")
-//                        print("shouldSelectGroup: \(shouldSelectGroup)")
                         isGroupSelected = true
                         clipboardManager.selectedGroup = selectGroup
                         clipboardManager.selectedItem = nil
@@ -981,14 +847,6 @@ struct ClipboardGroupView: View {
                         // left arrow to contract group
                         isSearchFocused = false
                         isSelectingCategory = false
-//                        if !isSearchFocused || !isSelectingCategory {
-//                            if currSelectGroup.group.count > 1 {
-//                                if clipboardManager.selectedItem != nil {
-//                                    clipboardManager.contract(for: currSelectGroup)
-//                                    return nil
-//                                }
-//                            }
-//                        }
                         
                         // works like apple folder list view now
                         if !isSearchFocused || !isSelectingCategory {
@@ -1013,7 +871,8 @@ struct ClipboardGroupView: View {
                                 return nil
                             }
                             else {
-                                clipboardManager.copySelectedGroup()
+//                                clipboardManager.copySelectedGroup()
+                                clipboardManager.copySelectedGroup(selectList: selectList, viewContext: viewContext)
                                 return nil
                             }
                         }
@@ -1058,7 +917,7 @@ struct ClipboardItemView: View {
                             .lineLimit(3)
                     }
                 }
-                else if /*item.type == "imageData" ||*/ item.type == "image" || item.type == "file", 
+                else if item.type == "image" || item.type == "file",
                                 let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
                     Image(nsImage: nsImage)
                         .resizable()
@@ -1071,7 +930,7 @@ struct ClipboardItemView: View {
                         )
                         .clipped()
                     
-                    if /*item.type != "imageData", */let content = item.content {
+                    if let content = item.content {
                         Text(content)
                             .font(.subheadline)
                             .bold()
@@ -1084,7 +943,7 @@ struct ClipboardItemView: View {
                         Image("HardDriveThumbnail")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 49/*isPartOfGroup ? 60 : 49*/)
+                            .frame(height: 49)
                         Text("Macintosh HD")
                             .font(.subheadline)
                             .bold()
@@ -1094,7 +953,7 @@ struct ClipboardItemView: View {
                         Image("FolderThumbnail")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 49/*isPartOfGroup ? 60 : 49*/)
+                            .frame(height: 49)
                         Text(content)
                             .font(.subheadline)
                             .bold()
@@ -1107,7 +966,7 @@ struct ClipboardItemView: View {
                         Image("HardDriveThumbnail")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 49/*isPartOfGroup ? 60 : 49*/)
+                            .frame(height: 49)
                         Text("Macintosh HD")
                             .font(.subheadline)
                             .bold()
@@ -1118,7 +977,7 @@ struct ClipboardItemView: View {
                             Image("AliasFolderThumbnail")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(height: 49/*isPartOfGroup ? 60 : 49*/)
+                                .frame(height: 49)
                             Text(content)
                                 .font(.subheadline)
                                 .bold()
@@ -1146,7 +1005,7 @@ struct ClipboardItemView: View {
                     Image("DiskThumbnail")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 49/*isPartOfGroup ? 60 : 49*/)
+                        .frame(height: 49)
                     Text(content)
                         .font(.subheadline)
                         .bold()
@@ -1244,7 +1103,7 @@ struct ClipboardItemView: View {
                     message: Text("Are you sure you want to delete this clipboard item?"),
                     primaryButton: .destructive(Text("Delete")) {
                         if let item = clipboardManager.selectedItem {
-                            clipboardManager.deleteItem(item: item, viewContext: viewContext, isCalledByGroup: false)
+                            clipboardManager.deleteItem(item: item, viewContext: viewContext, shouldSave: true)
                         }
                         else {
                             clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectList, viewContext: viewContext)
@@ -1261,7 +1120,6 @@ struct ClipboardItemView: View {
         
         .background(RoundedRectangle(cornerRadius: 8)
             .fill(isPartOfGroup ? (isSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5)) : Color.clear)
-//            .fill(isSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5))
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
         )
@@ -1349,7 +1207,7 @@ struct FlashViewModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .opacity(flash ? 0 : 1)
-            .animation(.easeOut(duration: duration)/*.repeatForever()*/, value: flash)
+            .animation(.easeOut(duration: duration), value: flash)
             .onAppear {
                 withAnimation {
                     flash = true

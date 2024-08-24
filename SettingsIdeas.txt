@@ -1,0 +1,51 @@
+
+Ideas for what options should be available in settings
+
+ - TODO: should copy from list should move the item to the top (delete the old item)
+
+ - TODO: dark mode (default) or light mode
+
+ - TODO: open on startup
+
+ - change default window width and height
+ - change default window positioning
+
+ - should window float
+    - should window hide when clicked off
+ - should window be available on all desktops
+
+ - show menu icon
+ - TODO: pause button
+ - TODO: can window open out of menu icon
+ - TODO: can window open out of menu icon and desktop or just one or the other
+
+ - how many items should be stored
+
+ - turn on or off paste without formatting
+
+ - should files, folders and images be copyable
+    - explain how shift + ctrl + cmd + 3/4 copies to clipboard and how that should be used if they want it copied to the app
+
+ - changeable shortcuts:
+    - option + r: reset window
+    - cmd + shift + c: open and close window
+    - cmd + shift + v: paste without formatting
+
+    - cmd + f: open search
+    - cmd + delete: delete selected item
+
+
+ - unchangeable shortcuts:
+    - right arrow: expand group
+    - left arrow: contract group
+    - up arrow: move up
+    - down arrow: move down
+
+    - cmd + up: scroll to top
+    - page up: scroll to top
+
+    - cmd + down: scroll to bottom
+    - page down: scroll to bottom
+
+    - esc: exit search or type selector
+

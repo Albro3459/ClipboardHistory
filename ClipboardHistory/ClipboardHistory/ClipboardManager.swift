@@ -36,6 +36,88 @@ class ClipboardManager: ObservableObject {
         self.clipboardMonitor = ClipboardMonitor()
     }
     
+    func search(fetchedClipboardGroups: FetchedResults<ClipboardGroup>, searchText: String, selectedTypes: Set<UUID>) -> [ClipboardGroup] {
+        
+        let selectedTypeNames: [String] = selectedTypes.map { id in
+            ClipboardType.getTypeName(by: id)
+        }
+        
+        return fetchedClipboardGroups.filter { group in
+            let typeMatch: Bool
+            if selectedTypes.isEmpty || selectedTypeNames.contains("Select All") || selectedTypes.count == self.types.count {
+                typeMatch = true // No filtering by type when none or all are selected.
+                //                return true
+            }
+            else if selectedTypeNames.contains("Groups") && group.count > 1 {
+                typeMatch = true
+                //                return true
+            }
+            else {
+                typeMatch = group.itemsArray.contains { item in
+                    if selectedTypeNames.contains("Files / Folders") {
+                        // images are files too
+                        return item.type?.localizedCaseInsensitiveContains("file") ?? false ||
+                        item.type?.localizedCaseInsensitiveContains("folder") ?? false ||
+                        item.type?.localizedCaseInsensitiveContains("image") ?? false
+                    }
+                    else if selectedTypeNames.contains("Images") {
+                        // files can be images if they have an imageHash
+                        return item.imageHash != nil ||
+                        item.type?.localizedCaseInsensitiveContains("image") ?? false
+                    }
+                    else {
+                        // Check against other types.
+                        return selectedTypeNames.contains(where: { typeName in
+                            item.type?.localizedCaseInsensitiveContains(typeName) ?? false
+                        })
+                    }
+                }
+            }
+            
+            if searchText.isEmpty {
+                return typeMatch
+                //                return true
+            }
+            else {
+                // Further filter by searchText if it is not empty.
+                var searchTextMatch = false
+                let searchText = searchText.lowercased()
+                
+                if ["file", "fil", "fi", "doc", "docu", "docum", "docume", "documen", "document", "pd", "pdf"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("image") ?? false })
+                }
+                else if ["group", "grou", "gro", "gr"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.count > 1
+                }
+                else if ["image", "ima", "im", "pic", "pict", "pictu", "pictur", "picture"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.imageHash != nil }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("image") ?? false })
+                }
+                else if ["text", "tex", "te", "tx", "txt", "note", "not"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("text") ?? false })
+                }
+                else if ["folder", "fol", "fo", "dir", "dire", "direc", "direct", "directo", "director", "directory"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("folder") ?? false })
+                }
+                else if ["alias", "alia", "ali", "symlink", "symlin", "symli", "syml", "sym", "lin", "link"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("alias") ?? false })
+                }
+                else if ["symlink", "symlin", "symli", "syml", "sym", "lin", "link", "ali", "alia", "alias"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("symlink") ?? false })
+                }
+                else {
+                    searchTextMatch = group.itemsArray.contains( where: {
+                        ($0.type?.lowercased().contains(searchText) ?? false) ||
+                        ($0.content?.lowercased().contains(searchText) ?? false)
+                    })
+                }
+                return searchTextMatch && typeMatch
+            }
+        }
+    }
+    
     // copying a group with just 1 item
     func copySingleGroup() {
         guard let items = selectedGroup?.group.itemsArray, let item = items.first else {
@@ -52,7 +134,6 @@ class ClipboardManager: ObservableObject {
                 if copied(item: item) {
                     pasteboard.setString(content, forType: .string)
                 }
-
             }
         case "image", "file", "folder", "alias":
             if let filePath = item.filePath {
@@ -97,13 +178,13 @@ class ClipboardManager: ObservableObject {
     }
     
     // copying a whole group
-    func copySelectedGroup() {
+    func copySelectedGroup(selectList: [SelectedGroup], viewContext: NSManagedObjectContext) {
         guard let items = selectedGroup?.group.itemsArray, !items.isEmpty else {
             print("No items to copy or selected group is nil")
             return
         }
         if items.count == 1, selectedItem == nil {
-            copySingleGroup()
+            self.copySingleGroup()
             return
         }
 
@@ -178,18 +259,21 @@ class ClipboardManager: ObservableObject {
     }
     
     func deleteGroup(group: ClipboardGroup?, selectList: [SelectedGroup], viewContext: NSManagedObjectContext) {
+//        print("made it")
         
         if let group = group {
             let selectedGroup = group.GetSelecGroupObj(group, list: selectList)
             let index = GetGroupIndex(group: selectedGroup, selectList: selectList)
             
             for item in group.itemsArray {
-                deleteItem(item: item, viewContext: viewContext, isCalledByGroup: true)
+                deleteItem(item: item, viewContext: viewContext, shouldSave: false)
             }
             
             viewContext.delete(group)
             
             if selectList.count > 1 {
+                // only if user wants this setting on
+//                self.selectedGroup = selectList[0]
                 if selectList.count == 2 {
                     self.selectedGroup = selectList[0]
                 }
@@ -219,7 +303,7 @@ class ClipboardManager: ObservableObject {
         }
     }
     
-    func deleteItem(item: ClipboardItem, viewContext: NSManagedObjectContext, isCalledByGroup: Bool) {
+    func deleteItem(item: ClipboardItem, viewContext: NSManagedObjectContext, shouldSave: Bool) {
         
         if let selectGroup = self.selectedGroup, item.group == selectGroup.group {
             //cleaning up tmp image files first
@@ -271,7 +355,7 @@ class ClipboardManager: ObservableObject {
             
             viewContext.delete(item)
             
-            if !isCalledByGroup {
+            if shouldSave {
                 do {
                     try viewContext.save()
                 } catch {
@@ -292,7 +376,6 @@ class ClipboardManager: ObservableObject {
                 if !selectList.isEmpty {
                     selectedGroup = selectList[0]
                     if let group = selectedGroup?.group, group.count == 1 {
-                        //                        print("here")
                         selectedGroup?.selectedItem = selectedGroup?.group.itemsArray.first
                     }
                     currentIndex = 0

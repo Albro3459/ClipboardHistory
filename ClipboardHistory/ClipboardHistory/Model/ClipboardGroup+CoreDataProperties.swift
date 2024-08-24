@@ -68,6 +68,16 @@ extension ClipboardGroup {
         // if this group was already in selectList, return its isExpanded
         return selectList.first(where: { $0.group == inputGroup })?.isExpanded ?? false
     }
+    
+    
+}
+
+extension ClipboardGroup {
+    static func isDupe(groupA: ClipboardGroup, groupB: ClipboardGroup) -> Bool {
+        return groupA.count == groupB.count &&
+//                groupA.itemsArray.elementsEqual(groupB.itemsArray)
+            zip(groupA.itemsArray, groupB.itemsArray).allSatisfy { ClipboardItem.isEqual(itemA: $0, itemB: $1) }
+    }
 }
 
 // MARK: Generated accessors for items
