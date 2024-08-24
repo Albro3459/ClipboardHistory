@@ -20,10 +20,10 @@
 
 ### Screenshots:
 
-<div style="display: flex; flex-wrap: wrap; gap: 12.5px;">
-  <img src="https://github.com/user-attachments/assets/5159adc7-daa6-439a-8380-c28f2f8c5863" alt="example screen shot" height="300"/>
-  <img src="https://github.com/user-attachments/assets/0fc2feba-a20e-4bb0-a75e-d8a2747b75ff" alt="example screen shot with open group" height="300"/>
-  <img src="https://github.com/user-attachments/assets/2186ca49-865a-4204-bb59-14b22a51288a" alt="example folder search screen shot" height="300"/>
+<div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 40px;">
+    <img src="https://github.com/user-attachments/assets/5159adc7-daa6-439a-8380-c28f2f8c5863" alt="example screen shot" height="300"/>
+    <img src="https://github.com/user-attachments/assets/0fc2feba-a20e-4bb0-a75e-d8a2747b75ff" alt="example screen shot with open group" height="300"/>
+    <img src="https://github.com/user-attachments/assets/2186ca49-865a-4204-bb59-14b22a51288a" alt="example folder search screen shot" height="300"/>
 </div>
 
 ### Tips for using the app:
