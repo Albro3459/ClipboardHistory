@@ -50,6 +50,8 @@
 
 * cmd + shift + v for paste without formatting anywhere on your computer!
 
+* the open button next to files and folders opens the file or folder
+
 <!-- <br />
 
 ##### OLD:
