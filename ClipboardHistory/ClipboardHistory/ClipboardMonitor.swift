@@ -17,16 +17,22 @@ class ClipboardMonitor: ObservableObject {
     private var checkTimer: Timer?
     private var lastChangeCount: Int = NSPasteboard.general.changeCount
     
-    private var maxGroupCount: Int = 50
-    private var maxItemCount: Int = 100
+    private var noDuplicates: Bool
+    private var maxGroupCount: Int
+    private var maxItemCount: Int
+    private var canCopyFilesOrFolders: Bool
+    private var canCopyImages: Bool
+    
     
     @Published var tmpFolderPath = FileManager.default.temporaryDirectory
     
-    // User Defaults:
-    private var noDuplicates: Bool
-    
     init() {
         self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
+        self.maxGroupCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
+        self.maxItemCount = self.maxGroupCount * 2
+        
+        self.canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
+        self.canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
     }
                 
     func startMonitoring() {
@@ -68,21 +74,25 @@ class ClipboardMonitor: ObservableObject {
                         }
                         // Check for file URLs first
                         if let urlString = item.string(forType: .fileURL), let fileUrl = URL(string: urlString) {
-                            operationsPending += 1
-                            self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { completion in
-                                defer {
-                                    operationsPending -= 1
-                                    if operationsPending == 0 {
-                                        self.saveClipboardGroup(childContext: childContext)
+                            if self.canCopyImages || self.canCopyFilesOrFolders {
+                                operationsPending += 1
+                                self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { completion in
+                                    defer {
+                                        operationsPending -= 1
+                                        if operationsPending == 0 {
+                                            self.saveClipboardGroup(childContext: childContext)
+                                        }
                                     }
-                                }
-                                if !completion {
-                                    print("Failed to process file at URL: \(fileUrl)")
+                                    if !completion {
+                                        print("Failed to process file at URL: \(fileUrl)")
+                                    }
                                 }
                             }
                         }
                         else if let imageData = pasteboard.data(forType: .tiff), let image = NSImage(data: imageData) {
-                            self.processImageData(image: image, inGroup: group, context: childContext)
+                            if self.canCopyImages {
+                                self.processImageData(image: image, inGroup: group, context: childContext)
+                            }
                         }
                         else if let content = pasteboard.string(forType: .string) {
                             let item = ClipboardItem(context: childContext)
@@ -116,7 +126,7 @@ class ClipboardMonitor: ObservableObject {
             item.filePath = fileUrl.path
             item.group = group
             
-            if imageExtensions.contains(fileExtension) {
+            if self.canCopyImages && imageExtensions.contains(fileExtension) {
                 if let image = NSImage(contentsOf: fileUrl) {
                     if let tiffRep = image.tiffRepresentation {
                         let imageHash = self.hashImageData(tiffRep)
@@ -130,7 +140,7 @@ class ClipboardMonitor: ObservableObject {
                 }
                 completion(false)
             }
-            else {
+            else if self.canCopyFilesOrFolders {
                 do {
                     item.imageData = nil
                     item.imageHash = nil
@@ -492,11 +502,9 @@ class ClipboardMonitor: ObservableObject {
             if let items = group.items as? Set<ClipboardItem> {
                 for item in items {
                     self.deleteItem(item, childContext: childContext)
-                    print("deleted item")
                 }
             }
             childContext.delete(group)
-            print("deleted group")
         }
     }
     

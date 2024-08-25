@@ -40,6 +40,7 @@ class ClipboardManager: ObservableObject {
         
         // User Defaults
         self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
+        print(self.noDuplicates)
     }
     
     func search(fetchedClipboardGroups: FetchedResults<ClipboardGroup>, searchText: String, selectedTypes: Set<UUID>) -> [ClipboardGroup] {
@@ -265,7 +266,6 @@ class ClipboardManager: ObservableObject {
     }
     
     func deleteGroup(group: ClipboardGroup?, selectList: [SelectedGroup], viewContext: NSManagedObjectContext) {
-//        print("made it")
         
         if let group = group {
             let selectedGroup = group.GetSelecGroupObj(group, list: selectList)

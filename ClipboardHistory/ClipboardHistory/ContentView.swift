@@ -306,7 +306,7 @@ struct ContentView: View {
         
         selectedTypes.removeAll()
         
-        for item in clipboardGroups {
+        for item in fetchedClipboardGroups {
             viewContext.delete(item)
         }
         clipboardManager.selectedGroup = nil

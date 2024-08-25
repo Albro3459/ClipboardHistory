@@ -1,8 +1,6 @@
 
 Ideas for what options should be available in settings
 
- - TODO: should copy from list should move the item to the top (delete the old item)
-
  - TODO: dark mode (default) or light mode
 
  - TODO: open on startup
@@ -20,6 +18,7 @@ Ideas for what options should be available in settings
  - TODO: can window open out of menu icon and desktop or just one or the other
 
  - how many items should be stored
+ - store duplicates?
 
  - turn on or off paste without formatting
 

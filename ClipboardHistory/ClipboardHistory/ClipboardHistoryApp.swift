@@ -17,11 +17,16 @@ struct ClipboardHistoryApp: App {
     let persistenceController = PersistenceController.shared
     var clipboardMonitor: ClipboardMonitor?
     
+//    let userDefaultsManager = UserDefaultsManager.shared
+    
     @State private var hideTitle = false
     
     init() {
-        registerUserDefaults()
+        //have to register first!!
+        self.registerUserDefaults()
+        let userDefaultsManager = UserDefaultsManager.shared
 
+        
         self.clipboardMonitor = ClipboardMonitor()
         self.clipboardMonitor?.startMonitoring()
     }
@@ -36,8 +41,38 @@ struct ClipboardHistoryApp: App {
     }
     
     private func registerUserDefaults() {
+        // User Defaults
+        
+        let encoder = JSONEncoder()
+        
         let defaults: [String: Any] = [
-            "noDuplicates": true
+            "darkMode": true,
+            "openOnStartup": true,
+            
+            "windowWidth": 300,
+            "windowHeight": 500,
+            "windowLocation": "bottomRight",
+            "windowPopOut": false,
+            "onlyPopOutWindow": false,
+            "canWindowFloat": false,
+            "hideWindowWhenNotSelected": false,
+            "windowOnAllDesktops": true,
+            
+            "showMenuIcon": true,
+            "pauseCopying": false,
+            
+            "maxStoreCount": 50,
+            "noDuplicates": true,
+            "canCopyFilesOrFolders": true,
+            "canCopyImages": true,
+            
+            "pasteWithoutFormatting": false,
+            
+            "pasteWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd", "shift"], key: "v")),
+            "toggleWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd", "shift"], key: "c")),
+            "resetWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["option"], key: "r")),
+            "openSearch": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd"], key: "f")),
+            "deleteSelectedGroupOrItem": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd"], key: "d"))
         ]
         
         UserDefaults.standard.register(defaults: defaults)
@@ -49,16 +84,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var statusBarItem: NSStatusItem?
     
     var clipboardManager = ClipboardManager()
+    let userDefaultsManager = UserDefaultsManager.shared
     
     private var lastToggleTime: Date?
     private var lastPasteNoFormatTime: Date?
     
     private var isSwitchingSpaces = false
     
-    @Published var windowWidth: CGFloat = 300
-    @Published var windowHeight: CGFloat = 500
-    
-        
     override init() {
         super.init()
         setupGlobalHotKey()
@@ -72,12 +104,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func setupGlobalHotKey() {
-        KeyboardShortcuts.onKeyDown(for: .toggleVisibility) {
-            self.toggleWindowVisibility()
+        KeyboardShortcuts.onKeyDown(for: .toggleWindow) {
+            self.toggleWindow()
         }
         
-        KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
-            self.pasteNoFormatting()
+        if userDefaultsManager.pasteWithoutFormatting {
+            KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
+                self.pasteNoFormatting()
+            }
         }
         
         KeyboardShortcuts.onKeyUp(for: .resetWindow) {
@@ -86,9 +120,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
     }
     
-    @objc func toggleWindowVisibility() {
+    @objc func toggleWindow() {
 //                print("Cmd-Shift-C pressed: Toggling window visibility")
-        
+                
         let now = Date()
         if let lastToggleTime = lastToggleTime, now.timeIntervalSince(lastToggleTime) < 0.33 {
             //            print("Toggle too fast, ignoring.")
@@ -154,9 +188,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     
     func setupWindow(window: NSWindow) {
         let screen = window.screen ?? NSScreen.main!
-        let windowWidth: CGFloat = windowWidth
-        let windowHeight: CGFloat = windowHeight
-        
+        let windowWidth: CGFloat = userDefaultsManager.windowWidth
+        let windowHeight: CGFloat = userDefaultsManager.windowHeight
+                                
         let xPosition = screen.visibleFrame.maxX - windowWidth
         let yPosition = screen.visibleFrame.minY
         
@@ -179,8 +213,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             
             let screen = window.screen ?? NSScreen.main!
 
-            let windowWidth: CGFloat = windowWidth
-            let windowHeight: CGFloat = windowHeight
+            let windowWidth: CGFloat = CGFloat(userDefaultsManager.windowWidth)
+            let windowHeight: CGFloat = CGFloat(userDefaultsManager.windowHeight)
             
             let xPosition = screen.visibleFrame.maxX - windowWidth
             let yPosition = screen.visibleFrame.minY
@@ -279,7 +313,176 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 }
 
 extension KeyboardShortcuts.Name {
-    static var toggleVisibility = Self("toggleVisibility", default: .init(.c, modifiers: [.command, .shift]))
-    static var pasteNoFormatting = Self("pasteNoFormatting", default: .init(.v, modifiers: [.command, .shift]))
-    static var resetWindow = Self("resetWindow", default: .init(.r, modifiers: [.option]))
+    static var toggleWindow: Self {
+        let userDefaultsManager = UserDefaultsManager.shared
+        return Self("toggleWindow", default: .from(userDefaultsManager.toggleWindowShortcut))
+    }
+
+    static var pasteNoFormatting: Self {
+        let userDefaultsManager = UserDefaultsManager.shared
+        return Self("pasteNoFormatting", default: .from(userDefaultsManager.pasteWithoutFormattingShortcut))
+    }
+
+    static var resetWindow: Self {
+        let userDefaultsManager = UserDefaultsManager.shared
+        return Self("resetWindow", default: .from(userDefaultsManager.resetWindowShortcut))
+    }
+}
+
+extension KeyboardShortcuts.Shortcut {
+    static func from(_ customShortcut: KeyboardShortcut) -> Self {
+        let modifiers: NSEvent.ModifierFlags = {
+            var flags = NSEvent.ModifierFlags()
+            if customShortcut.modifiers.contains("cmd") {
+                flags.insert(.command)
+            }
+            if customShortcut.modifiers.contains("shift") {
+                flags.insert(.shift)
+            }
+            if customShortcut.modifiers.contains("option") {
+                flags.insert(.option)
+            }
+            if customShortcut.modifiers.contains("control") {
+                flags.insert(.control)
+            }
+            return flags
+        }()
+        
+        let key: KeyboardShortcuts.Key = {
+            switch customShortcut.key.lowercased() {
+            case "a": return .a
+            case "b": return .b
+            case "c": return .c
+            case "d": return .d
+            case "e": return .e
+            case "f": return .f
+            case "g": return .g
+            case "h": return .h
+            case "i": return .i
+            case "j": return .j
+            case "k": return .k
+            case "l": return .l
+            case "m": return .m
+            case "n": return .n
+            case "o": return .o
+            case "p": return .p
+            case "q": return .q
+            case "r": return .r
+            case "s": return .s
+            case "t": return .t
+            case "u": return .u
+            case "v": return .v
+            case "w": return .w
+            case "x": return .x
+            case "y": return .y
+            case "z": return .z
+            case "0": return .zero
+            case "1": return .one
+            case "2": return .two
+            case "3": return .three
+            case "4": return .four
+            case "5": return .five
+            case "6": return .six
+            case "7": return .seven
+            case "8": return .eight
+            case "9": return .nine
+            case ";": return .semicolon
+            case "'": return .quote
+            case ",": return .comma
+            case ".": return .period
+            case "/": return .slash
+            case "\\": return .backslash
+            case "-": return .minus
+            case "=": return .equal
+            case "[": return .leftBracket
+            case "]": return .rightBracket
+            case " ": return .space
+            case "tab": return .tab
+            case "return": return .return
+            case "escape": return .escape
+            case "delete": return .delete
+            default: fatalError("Unsupported key: \(customShortcut.key)")
+            }
+        }()
+                
+        return Self(key, modifiers: modifiers)
+    }
+}
+
+
+class UserDefaultsManager {
+    static let shared = UserDefaultsManager()
+
+//  User Defaults
+    var darkMode: Bool
+    var openOnStartup: Bool
+    
+    var windowWidth: CGFloat
+    var windowHeight: CGFloat
+    var windowLocation: String
+    var windowPopOut: Bool  // pop out of the menu button when clicked
+    var canWindowFloat: Bool
+    var hideWindowWhenNotSelected: Bool
+    var windowOnAllDesktops: Bool
+    
+    var showMenuIcon: Bool
+    var pauseCopying: Bool
+    
+    var pasteWithoutFormatting: Bool
+    
+    var pasteWithoutFormattingShortcut: KeyboardShortcut
+    var toggleWindowShortcut: KeyboardShortcut
+    var resetWindowShortcut: KeyboardShortcut
+    var openSearch: KeyboardShortcut
+    var deleteSelectedGroupOrItem: KeyboardShortcut
+    
+    init() {
+        let decoder = JSONDecoder()
+        
+        self.darkMode = UserDefaults.standard.bool(forKey: "darkMode")
+        self.openOnStartup = UserDefaults.standard.bool(forKey: "openOnStartup")
+        
+        self.windowWidth = CGFloat(UserDefaults.standard.float(forKey: "windowWidth"))
+        self.windowHeight = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
+        self.windowLocation = UserDefaults.standard.string(forKey: "windowLocation") ?? "bottomRight"
+        self.windowPopOut = UserDefaults.standard.bool(forKey: "windowPopOut")
+        self.canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
+        self.hideWindowWhenNotSelected = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
+        self.windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
+
+        self.showMenuIcon = UserDefaults.standard.bool(forKey: "showMenuIcon")
+        self.pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
+
+        self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
+        
+        if let data = UserDefaults.standard.data(forKey: "pasteWithoutFormattingShortcut") {
+            self.pasteWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
+        } else {
+            self.pasteWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "v")
+        }
+        
+        if let data = UserDefaults.standard.data(forKey: "toggleWindowShortcut") {
+            self.toggleWindowShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
+        } else {
+            self.toggleWindowShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "c")
+        }
+        
+        if let data = UserDefaults.standard.data(forKey: "resetWindowShortcut") {
+            self.resetWindowShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
+        } else {
+            self.resetWindowShortcut = KeyboardShortcut(modifiers: ["option"], key: "r")
+        }
+        
+        if let data = UserDefaults.standard.data(forKey: "openSearch") {
+            self.openSearch = try! decoder.decode(KeyboardShortcut.self, from: data)
+        } else {
+            self.openSearch = KeyboardShortcut(modifiers: ["cmd"], key: "f")
+        }
+        
+        if let data = UserDefaults.standard.data(forKey: "deleteSelectedGroupOrItem") {
+            self.deleteSelectedGroupOrItem = try! decoder.decode(KeyboardShortcut.self, from: data)
+        } else {
+            self.deleteSelectedGroupOrItem = KeyboardShortcut(modifiers: ["cmd"],key: "d")
+        }
+    }
 }
