@@ -25,11 +25,8 @@ struct ContentView: View {
     
     @EnvironmentObject var clipboardManager: ClipboardManager
     
-    // User Defaults:
-    @State private var noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
-    
-//    @State private var isCopied = false
-    
+    let userDefaultsManager = UserDefaultsManager.shared
+        
     @State private var showingAlert = false
     @State private var activeAlert: ActiveAlert = .clear
 
@@ -47,6 +44,8 @@ struct ContentView: View {
     @State private var justScrolledToTop: Bool = true
     
     @State private var imageSizeMultiple: CGFloat = 1
+    
+    @State private var windowWidth: CGFloat = 0
     
     @State private var selectList: [SelectedGroup] = []
     
@@ -147,15 +146,22 @@ struct ContentView: View {
                             atTopOfList = newValue >= 0
 //                             print(atTopOfList)
                         }
+                        .onAppear {
+                            self.windowWidth = geometry.size.width
+                        }
+                        .onChange(of: geometry.size.width) { old, new in
+                            self.windowWidth = new
+                        }
                     }
                     .frame(height: 0)
                     .padding(0)
+                    
                     
                     ScrollViewReader { scrollView in
                         LazyVStack(spacing: 0) {
                             ForEach(selectList.indices, id: \.self) { index in
                                 if index >= 0 && index < selectList.count {
-                                    ClipboardGroupView(selectGroup: selectList[index], selectList: $selectList, parentShowingAlert: $showingAlert, isSearchFocused: $isSearchFocused, isSelectingCategory: $isSelectingCategory,
+                                    ClipboardGroupView(selectGroup: selectList[index], selectList: $selectList, parentShowingAlert: $showingAlert, isSearchFocused: $isSearchFocused, isSelectingCategory: $isSelectingCategory, windowWidth: $windowWidth,
                                                        isGroupSelected: Binding(
                                                         get: { if index >= 0 && index < selectList.count { return self.clipboardManager.selectedGroup == selectList[index] }
                                                             else { return false } },
@@ -166,7 +172,7 @@ struct ContentView: View {
                                                             isFocused = false
                                                         }))
                                     .id(selectList[index].group.objectID)
-                                    .animation((atTopOfList || noDuplicates) ? .default : nil, value: selectList.first?.group.objectID)
+                                    .animation((atTopOfList || userDefaultsManager.noDuplicates) ? .default : nil, value: selectList.first?.group.objectID)
                                 }
                             }
                             
@@ -284,7 +290,7 @@ struct ContentView: View {
             }
             .onChange(of: selectList.first) { oldValue, newValue in
                 // is user wants no dupes, then select the top when a new copy comes in
-                if noDuplicates {
+                if userDefaultsManager.noDuplicates {
                     clipboardManager.selectedGroup = selectList.first
                 }
             }
@@ -554,6 +560,8 @@ struct ClipboardGroupView: View {
     
     @EnvironmentObject var clipboardManager: ClipboardManager
     
+    let userDefaultsManager = UserDefaultsManager.shared
+    
     var selectGroup: SelectedGroup
     @Binding var selectList: [SelectedGroup]
     
@@ -561,6 +569,8 @@ struct ClipboardGroupView: View {
     
     @Binding var isSearchFocused: Bool
     @Binding var isSelectingCategory: Bool
+    
+    @Binding var windowWidth: CGFloat
     
     @Binding var isGroupSelected: Bool
         
@@ -571,6 +581,9 @@ struct ClipboardGroupView: View {
 //    @State private var isGroupExpanded: Bool = false
     
     @State private var shouldSelectGroup: Bool = true
+    
+    @State private var shouldShowItemIcon: Bool = true
+//    @State private var currentWidthOfAllIcons: CGFloat = CGFloat(60)
     
     
     var body: some View {
@@ -626,13 +639,41 @@ struct ClipboardGroupView: View {
                         
                         
                         // icon view for each item in group
+                        let visibleItems = calculateVisibleItems(for: group.itemsArray, maxWidth: windowWidth - 87) // 87 is the pixel width of the buttons and stuff on the right
                         ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: -20) { // Negative spacing for overlapping
-                                ForEach(Array(group.itemsArray.prefix(3).indices), id: \.self) { index in
-                                    let item = group.itemsArray[index]
-                                    itemIconView(item)
-                                        .zIndex(Double(10 - index)) // Ensure the first item is on top
-                                        .shadow(color: Color.black.opacity(0.5), radius: 3, x: 0, y: 2)
+                            ZStack(alignment: .trailing) {
+                                HStack(spacing: -20) { // Negative spacing for overlapping
+                                    ForEach(visibleItems, id: \.self) { item in
+                                        itemIconView(item)
+                                            .zIndex(Double(visibleItems.count - group.itemsArray.firstIndex(of: item)!)) // Ensure the first item is on top
+                                            .shadow(color: Color.black.opacity(0.5), radius: 3, x: 0, y: 2)
+                                    }
+                                }
+                                
+                                // lil icon showing there are more items than visible
+                                if visibleItems.count < group.itemsArray.count {
+                                    let count = group.itemsArray.count - visibleItems.count
+                                    ZStack {
+                                        
+                                        Image(systemName: "circle.fill")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 25, height: 25)
+                                            .foregroundStyle(.black)
+                                            .opacity(0.65)
+                                        
+                                        Image(systemName: "circle")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 25, height: 25)
+                                            .foregroundStyle(.white)
+                                        
+                                        Text("+\(count)")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.white)
+                                    }
+                                    .padding(.top, 18)
+                                    .padding(.trailing, 5)
                                 }
                             }
                         }
@@ -743,160 +784,6 @@ struct ClipboardGroupView: View {
         }
     }
     
-    @ViewBuilder
-    private func itemIconView(_ item: ClipboardItem) -> some View {
-        ZStack {
-            if item.type == "text", let _ = item.content {
-                // text image
-                ZStack { // haven't tested this yet!!
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white)
-                        .frame(width: 50, height: 70)
-                        .shadow(radius: 2)
-                    
-                    VStack {
-                        Image(systemName: "doc.text")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 30, height: 30)
-                        
-                        Text("TXT")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                    }
-                }
-                .padding(.all, 10)
-            }
-            else if item.type == "image" || item.type == "app",
-                    let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
-                    Image(nsImage: nsImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: 80, maxHeight: (item.type == "app" ? 70 : 60), alignment: .center)
-                        .cornerRadius(8)
-                        .clipped()
-                    
-            }
-            else if item.type == "calendarApp" || item.type == "settingsApp" || item.type == "photoBoothApp" {
-                switch item.type {
-                case "calendarApp":
-                    Image("CalendarIcon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 70)
-                case "settingsApp":
-                    Image("SystemSettingsIcon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 70)
-                case "photoBoothApp":
-                    Image("PhotoBoothIcon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 70)
-                default:
-                    Image("FolderThumbnail")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 60)
-                }
-            }
-            else if item.type == "file",
-                    let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
-                    Image(nsImage: nsImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: 80, maxHeight: 60, alignment: .center)
-                        .cornerRadius(8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(.black), lineWidth: 1)
-                        )
-                        .clipped()
-                    
-            }
-            else if item.type == "zipFile" || item.type == "dmgFile" || item.type == "randomFile" || item.type == "execFile" {
-                switch item.type {
-                case "zipFile":
-                    Image("ZipFileThumbnail")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 60)
-                case "dmgFile":
-                    Image("DmgFileThumbnail")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 60)
-                case "randomFile":
-                    Image("RandomFileThumbnail")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 60)
-                case "execFile":
-                    Image("ExecFileThumbnail")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 60)
-                default:
-                    Image("RandomFileThumbnail")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 60)
-                }
-            }
-            else if item.type == "folder", let content = item.content {
-                if content == "/" {
-                    //main drive
-                    Image("HardDriveThumbnail")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 60)
-                }
-                else {
-                    Image("FolderThumbnail")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 60)
-                }
-            }
-            else if item.type == "alias", let content = item.content {
-                if content == "/" {
-                    //main drive
-                    Image("HardDriveThumbnail")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 60)
-                }
-                else {
-                    if item.imageData == nil {
-                        Image("AliasFolderThumbnail")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 60)
-                    }
-                    else if let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 60)
-                            .cornerRadius(8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(.black), lineWidth: 1)
-                            )
-                            .clipped()
-                    }
-                }
-            }
-            else if item.type == "removable", let _ = item.content {
-                Image("DiskThumbnail")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 60)
-            }
-        }
-    }
-    
     private func setUpKeyboardHandling() {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             
@@ -937,14 +824,22 @@ struct ClipboardGroupView: View {
                     case 36, 76:
                         // Handle Enter or Return
                         if !isSearchFocused || !isSelectingCategory {
-                            if clipboardManager.selectedItem != nil {
-                                clipboardManager.copySelectedItemInGroup()
-                                return nil
+                            if event.modifierFlags.contains(.command) {
+                                // this is where I would open the file/folder
                             }
                             else {
-                                clipboardManager.copySelectedGroup()
-                                return nil
+                                if clipboardManager.selectedItem != nil {
+                                    clipboardManager.copySelectedItemInGroup()
+                                    return nil
+                                }
+                                else {
+                                    clipboardManager.copySelectedGroup()
+                                    return nil
+                                }
                             }
+                            
+                            
+                            
                         }
                     default:
                         break
@@ -952,6 +847,46 @@ struct ClipboardGroupView: View {
                 }
             }
             return event
+        }
+    }
+    
+    func calculateVisibleItems(for items: [ClipboardItem], maxWidth: CGFloat) -> [ClipboardItem] {
+//        print("maxWidth: \(maxWidth)")
+        var visibleItems: [ClipboardItem] = []
+        var currentWidth: CGFloat = 42 + 20 // 42 is the pixel width of the stuff on the left, 20 is becuase one item doesnt have negative spacing
+        
+        for item in items {
+            let iconWidth: CGFloat = getItemIconWidth(item: item)
+
+            currentWidth += iconWidth - 20 // Account for negative spacing
+
+            if currentWidth <= maxWidth {
+                visibleItems.append(item)
+            } else {
+                break
+            }
+        }
+
+        return visibleItems
+    }
+    
+    func getItemIconWidth(item : ClipboardItem) -> CGFloat {
+        switch item.type {
+        case "text", "file", "zipFile", "dmgFile", "randomFile", "removable", "folder", "execFile":
+            return CGFloat(60)
+        case "app", "calendarApp", "photoBoothApp", "settingsApp":
+            return CGFloat(70)
+        case "image":
+            return CGFloat(80)
+        case "alias" :
+            if item.imageData == nil {
+                return CGFloat(80)
+            }
+            else {
+                return CGFloat(60)
+            }
+        default:
+            return CGFloat(60)
         }
     }
 }
@@ -997,10 +932,18 @@ struct ClipboardItemView: View {
                         .clipped()
                     
                     if let content = item.content {
-                        Text(content)
-                            .font(.subheadline)
-                            .bold()
-                            .lineLimit(1)
+                        if item.type == "app", let appName = content.split(separator: ".").first {
+                            Text(appName)
+                                .font(.subheadline)
+                                .bold()
+                                .lineLimit(1)
+                        }
+                        else {
+                            Text(content)
+                                .font(.subheadline)
+                                .bold()
+                                .lineLimit(1)
+                        }
                     }
                 }
                 else if item.type == "calendarApp" || item.type == "settingsApp" || item.type == "photoBoothApp" {
@@ -1026,7 +969,7 @@ struct ClipboardItemView: View {
                             .scaledToFit()
                             .frame(height: 70 * imageSizeMultiple)
                     }
-                    if let content = item.content {
+                    if let content = item.content, let content = content.split(separator: ".").first {
                         Text(content)
                             .font(.subheadline)
                             .bold()
@@ -1355,6 +1298,183 @@ struct ClipboardItemView: View {
             }
         } catch {
             print("Invalid regex pattern: \(error)")
+        }
+    }
+}
+
+struct GroupItemIconView: View {
+    let item: ClipboardItem
+    @Binding var currentWidthOfAllIcons: CGFloat
+    @State private var shouldShowItemIcon: Bool = true
+    
+    var body: some View {
+        if shouldShowItemIcon {
+            itemIconView(item)
+                .background(GeometryReader { geo in
+                    Color.clear
+                        .onAppear {
+                            let iconWidth = geo.frame(in: .local).width
+                            let availableWidth = CGFloat(299)
+                            currentWidthOfAllIcons += iconWidth
+                            if currentWidthOfAllIcons > availableWidth {
+                                shouldShowItemIcon = false
+                            }
+                        }
+                })
+        }
+    }
+}
+
+@ViewBuilder
+private func itemIconView(_ item: ClipboardItem) -> some View {
+    ZStack {
+        if item.type == "text", let _ = item.content {
+            // text image
+            ZStack { // haven't tested this yet!!
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.white)
+                    .frame(width: 50, height: 70)
+                    .shadow(radius: 2)
+                
+                VStack {
+                    Image(systemName: "doc.text")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 30, height: 30)
+                    
+                    Text("TXT")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                }
+            }
+            .padding(.all, 10)
+        }
+        else if item.type == "image" || item.type == "app",
+                let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: 80, maxHeight: (item.type == "app" ? 70 : 60), alignment: .center)
+                    .cornerRadius(8)
+                    .clipped()
+                
+        }
+        else if item.type == "calendarApp" || item.type == "settingsApp" || item.type == "photoBoothApp" {
+            switch item.type {
+            case "calendarApp":
+                Image("CalendarIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 70)
+            case "settingsApp":
+                Image("SystemSettingsIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 70)
+            case "photoBoothApp":
+                Image("PhotoBoothIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 70)
+            default:
+                Image("FolderThumbnail")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+            }
+        }
+        else if item.type == "file",
+                let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: 80, maxHeight: 60, alignment: .center)
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(.black), lineWidth: 1)
+                    )
+                    .clipped()
+                
+        }
+        else if item.type == "zipFile" || item.type == "dmgFile" || item.type == "randomFile" || item.type == "execFile" {
+            switch item.type {
+            case "zipFile":
+                Image("ZipFileThumbnail")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+            case "dmgFile":
+                Image("DmgFileThumbnail")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+            case "randomFile":
+                Image("RandomFileThumbnail")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+            case "execFile":
+                Image("ExecFileThumbnail")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+            default:
+                Image("RandomFileThumbnail")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+            }
+        }
+        else if item.type == "folder", let content = item.content {
+            if content == "/" {
+                //main drive
+                Image("HardDriveThumbnail")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+            }
+            else {
+                Image("FolderThumbnail")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+            }
+        }
+        else if item.type == "alias", let content = item.content {
+            if content == "/" {
+                //main drive
+                Image("HardDriveThumbnail")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+            }
+            else {
+                if item.imageData == nil {
+                    Image("AliasFolderThumbnail")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 60)
+                }
+                else if let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 60)
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(.black), lineWidth: 1)
+                        )
+                        .clipped()
+                }
+            }
+        }
+        else if item.type == "removable", let _ = item.content {
+            Image("DiskThumbnail")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 60)
         }
     }
 }

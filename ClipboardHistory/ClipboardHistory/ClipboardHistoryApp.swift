@@ -43,20 +43,20 @@ struct ClipboardHistoryApp: App {
         let encoder = JSONEncoder()
         
         let defaults: [String: Any] = [
-            "darkMode": true,
-            "openOnStartup": true,
+            "darkMode": true, // TODO
+            "openOnStartup": true, // TODO
             
             "windowWidth": 300,
             "windowHeight": 500,
-            "windowLocation": "bottomRight",
-            "windowPopOut": false,
-            "onlyPopOutWindow": false,
+            "windowLocation": "bottomRight", // TODO
+            "windowPopOut": false, // TODO
+            "onlyPopOutWindow": false, // TODO
             "canWindowFloat": false,
             "hideWindowWhenNotSelected": false,
             "windowOnAllDesktops": true,
             
-            "showMenuIcon": true,
-            "pauseCopying": false,
+            "showMenuIcon": true, // TODO ehh idk i think it should stay there
+            "pauseCopying": false, // TODO
             
             "maxStoreCount": 50,
             "noDuplicates": true,
@@ -65,11 +65,16 @@ struct ClipboardHistoryApp: App {
             
             "pasteWithoutFormatting": true,
             
+            // out of app shortcuts
             "pasteWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd", "shift"], key: "v")),
             "toggleWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd", "shift"], key: "c")),
             "resetWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["option"], key: "r")),
-            "openSearch": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd"], key: "f")),
-            "deleteSelectedGroupOrItem": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd"], key: "d"))
+            
+            //in-app shortcuts
+            "openSearchShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd"], key: "f")), // TODO
+            "deleteSelectedItemShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd"], key: "d")), // TODO
+            "scrollUpShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd"], key: "upArrow")), // TODO
+            "scrollDownShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd"], key: "downArrow")) // TODO
         ]
         
         UserDefaults.standard.register(defaults: defaults)
@@ -86,18 +91,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var lastToggleTime: Date?
     private var lastPasteNoFormatTime: Date?
     
-    private var isSwitchingSpaces = false
     
     override init() {
         super.init()
         setupGlobalHotKey()
-    }
-
-    @objc func spaceDidChange() {
-        isSwitchingSpaces = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.isSwitchingSpaces = false
-        }
     }
 
     func setupGlobalHotKey() {
@@ -117,6 +114,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
     }
     
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        
+        setupGlobalHotKey()
+        
+        if let window = NSApplication.shared.windows.first {
+            setupWindow(window: window)
+                   
+            self.window = window
+            
+            window.collectionBehavior = [] // No special behavior
+            
+//            NotificationCenter.default.addObserver(self, selector: #selector(windowDidBecomeKey(_:)), name: NSWindow.didBecomeKeyNotification, object: nil)
+            if userDefaultsManager.hideWindowWhenNotSelected {
+                NotificationCenter.default.addObserver(self, selector: #selector(windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
+            }
+        }
+        
+        setupStatusBar()
+    }
+    
     @objc func toggleWindow() {
 //                print("Cmd-Shift-C pressed: Toggling window visibility")
                 
@@ -132,7 +149,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             if let window = self.window {
                 if !window.isKeyWindow {
                     window.makeKeyAndOrderFront(nil)
-                    window.collectionBehavior = .canJoinAllSpaces
+                    if self.userDefaultsManager.windowOnAllDesktops {
+                        window.collectionBehavior = .canJoinAllSpaces
+                    }
+                    if self.userDefaultsManager.canWindowFloat {
+                        window.level = .floating
+                    }
                     NSApplication.shared.activate(ignoringOtherApps: true)
                 }
                 else {
@@ -142,46 +164,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
     
-
-    func applicationDidFinishLaunching(_ notification: Notification) {
-        setupGlobalHotKey()
+    @objc func windowDidResignKey(_ notification: Notification) {
+//        print("Window did resign key (unfocused)")
+        // App lost focus
         
-        if let window = NSApplication.shared.windows.first {
-            setupWindow(window: window)
-                   
-            self.window = window
-            
-            window.collectionBehavior = [] // No special behavior
-
-            // Observe for active space changes
-            NSWorkspace.shared.notificationCenter.addObserver(
-                self,
-                selector: #selector(spaceDidChange(_:)),
-                name: NSWorkspace.activeSpaceDidChangeNotification,
-                object: nil
-            )
+        if userDefaultsManager.hideWindowWhenNotSelected {
+            hideWindow()
         }
-        
-        setupStatusBar()
     }
     
-    @objc func spaceDidChange(_ notification: Notification) {
-        // Determine if the active application is in full-screen mode
-        if let activeApp = NSWorkspace.shared.frontmostApplication {
-            if isAppInFullScreen(activeApp) {
-                window?.orderOut(nil) // Hide window
+    @objc func hideWindow() {
+        DispatchQueue.main.async {
+            if let window = self.window {
+                window.orderOut(nil)
             }
-            //            else {
-            //                window?.orderFront(nil) // Show window
-            //            }
         }
     }
-    
-    private func isAppInFullScreen(_ app: NSRunningApplication) -> Bool {
-        // Check if the current system's presentation options include full screen
-        return NSApplication.shared.currentSystemPresentationOptions.contains(.fullScreen)
-    }
-    
     
     func setupWindow(window: NSWindow) {
         let screen = window.screen ?? NSScreen.main!
@@ -193,8 +191,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
         window.setFrame(frame, display: true)
-//        window.level = .floating
-        window.collectionBehavior = .canJoinAllSpaces
+        if self.userDefaultsManager.canWindowFloat {
+            window.level = .floating
+        }
+        if userDefaultsManager.windowOnAllDesktops {
+            window.collectionBehavior = .canJoinAllSpaces
+        }
         NSApplication.shared.activate(ignoringOtherApps: true)
 
         
@@ -210,14 +212,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             
             let screen = window.screen ?? NSScreen.main!
 
-            let windowWidth: CGFloat = CGFloat(userDefaultsManager.windowWidth)
-            let windowHeight: CGFloat = CGFloat(userDefaultsManager.windowHeight)
+            let windowWidth: CGFloat = userDefaultsManager.windowWidth
+            let windowHeight: CGFloat = userDefaultsManager.windowHeight
             
             let xPosition = screen.visibleFrame.maxX - windowWidth
             let yPosition = screen.visibleFrame.minY
             
             let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
             window.setFrame(frame, display: true)
+            
+            if self.userDefaultsManager.canWindowFloat {
+                window.level = .floating
+            }
         }
     }
     
@@ -226,7 +232,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             NSApplication.shared.activate(ignoringOtherApps: true)
             if let window = self.window {
                 window.makeKeyAndOrderFront(nil)
-                window.collectionBehavior = .canJoinAllSpaces
+                if self.userDefaultsManager.windowOnAllDesktops {
+                    window.collectionBehavior = .canJoinAllSpaces
+                }
+                if self.userDefaultsManager.canWindowFloat {
+                    window.level = .floating
+                }
                 NSApplication.shared.activate(ignoringOtherApps: true)
             }
         }
@@ -307,6 +318,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         return newImage
     }
     
+    func applicationWillTerminate(_ notification: Notification) {
+        // Remove observers
+//        NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)
+        if userDefaultsManager.hideWindowWhenNotSelected {
+            NotificationCenter.default.removeObserver(self, name: NSWindow.didResignKeyNotification, object: nil)
+        }
+    }
 }
 
 extension KeyboardShortcuts.Name {
@@ -425,13 +443,20 @@ class UserDefaultsManager {
     var showMenuIcon: Bool
     var pauseCopying: Bool
     
+    var noDuplicates: Bool
+    var maxStoreCount: Int
+    var canCopyFilesOrFolders: Bool
+    var canCopyImages: Bool
+    
     var pasteWithoutFormatting: Bool
     
     var pasteWithoutFormattingShortcut: KeyboardShortcut
     var toggleWindowShortcut: KeyboardShortcut
     var resetWindowShortcut: KeyboardShortcut
-    var openSearch: KeyboardShortcut
-    var deleteSelectedGroupOrItem: KeyboardShortcut
+    var openSearchShortcut: KeyboardShortcut
+    var deleteSelectedItemShortcut: KeyboardShortcut
+    var scrollUpShortcut: KeyboardShortcut
+    var scrollDownShortcut: KeyboardShortcut
     
     init() {
         let decoder = JSONDecoder()
@@ -444,11 +469,21 @@ class UserDefaultsManager {
         self.windowLocation = UserDefaults.standard.string(forKey: "windowLocation") ?? "bottomRight"
         self.windowPopOut = UserDefaults.standard.bool(forKey: "windowPopOut")
         self.canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
-        self.hideWindowWhenNotSelected = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
+        if self.canWindowFloat {
+            self.hideWindowWhenNotSelected = false
+        }
+        else {
+            self.hideWindowWhenNotSelected = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
+        }
         self.windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
 
         self.showMenuIcon = UserDefaults.standard.bool(forKey: "showMenuIcon")
         self.pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
+        
+        self.maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
+        self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
+        self.canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
+        self.canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
 
         self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
         
@@ -470,16 +505,28 @@ class UserDefaultsManager {
             self.resetWindowShortcut = KeyboardShortcut(modifiers: ["option"], key: "r")
         }
         
-        if let data = UserDefaults.standard.data(forKey: "openSearch") {
-            self.openSearch = try! decoder.decode(KeyboardShortcut.self, from: data)
+        if let data = UserDefaults.standard.data(forKey: "openSearchShortcut") {
+            self.openSearchShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
         } else {
-            self.openSearch = KeyboardShortcut(modifiers: ["cmd"], key: "f")
+            self.openSearchShortcut = KeyboardShortcut(modifiers: ["cmd"], key: "f")
         }
         
-        if let data = UserDefaults.standard.data(forKey: "deleteSelectedGroupOrItem") {
-            self.deleteSelectedGroupOrItem = try! decoder.decode(KeyboardShortcut.self, from: data)
+        if let data = UserDefaults.standard.data(forKey: "deleteSelectedItemShortcut") {
+            self.deleteSelectedItemShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
         } else {
-            self.deleteSelectedGroupOrItem = KeyboardShortcut(modifiers: ["cmd"],key: "d")
+            self.deleteSelectedItemShortcut = KeyboardShortcut(modifiers: ["cmd"], key: "d")
+        }
+        
+        if let data = UserDefaults.standard.data(forKey: "scrollUpShortcut") {
+            self.scrollUpShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
+        } else {
+            self.scrollUpShortcut = KeyboardShortcut(modifiers: ["cmd"], key: "upArrow")
+        }
+        
+        if let data = UserDefaults.standard.data(forKey: "scrollDownShortcut") {
+            self.scrollDownShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
+        } else {
+            self.scrollDownShortcut = KeyboardShortcut(modifiers: ["cmd"], key: "downArrow")
         }
     }
 }

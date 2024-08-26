@@ -29,17 +29,13 @@ class ClipboardManager: ObservableObject {
         ClipboardType.group,
         ClipboardType.selectAll
     ]
-        
-    var clipboardMonitor: ClipboardMonitor?
     
-    // User Defaults
-    private var noDuplicates: Bool
+    let userDefaultsManager = UserDefaultsManager.shared
+    
+    var clipboardMonitor: ClipboardMonitor?
 
     init() {
         self.clipboardMonitor = ClipboardMonitor()
-        
-        // User Defaults
-        self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
     }
     
     func search(fetchedClipboardGroups: FetchedResults<ClipboardGroup>, searchText: String, selectedTypes: Set<UUID>) -> [ClipboardGroup] {
@@ -444,4 +440,81 @@ class ClipboardManager: ObservableObject {
             objectWillChange.send()
         }
     }
+    
+//    func getKeyboardKey(key: Int) -> String {
+//        /*
+//         esc53
+//         F1122
+//         F2120
+//         F399
+//         F4118
+//         F596
+//         F697
+//         F798
+//         F8100
+//         F9101
+//         F10109
+//         F11103
+//         tab48?
+//         `50
+//         118
+//         219
+//         320
+//         421
+//         523
+//         622
+//         726
+//         828
+//         925
+//         029
+//         [27
+//         ]24
+//         delete51
+//         '12
+//         ,13
+//         .14
+//         p15
+//         y17
+//         f16
+//         g32
+//         c34
+//         r31
+//         l35
+//         /33
+//         =30
+//         \42
+//         a0
+//         o1
+//         e2
+//         u3
+//         i5
+//         d4
+//         h38
+//         t40
+//         n37
+//         s41
+//         -39
+//         return36
+//         ;6
+//         q7
+//         j8
+//         k9
+//         x11
+//         b45
+//         m46
+//         w43
+//         v47
+//         z44
+//         space49
+//         enter52
+//         left123
+//         up126
+//         down125
+//         right124
+//         */
+//    }
+    
+//    func getAppleKeyCode(key: String) -> Int {
+//        
+//    }
 }

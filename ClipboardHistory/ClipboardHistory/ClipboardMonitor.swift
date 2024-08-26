@@ -14,25 +14,17 @@ import AppKit
 import CryptoKit
 
 class ClipboardMonitor: ObservableObject {
+    let userDefaultsManager = UserDefaultsManager.shared
+    
     private var checkTimer: Timer?
     private var lastChangeCount: Int = NSPasteboard.general.changeCount
     
-    private var noDuplicates: Bool
-    private var maxGroupCount: Int
-    private var maxItemCount: Int
-    private var canCopyFilesOrFolders: Bool
-    private var canCopyImages: Bool
-    
+    private var maxItemCount: Int    
     
     @Published var tmpFolderPath = FileManager.default.temporaryDirectory
     
     init() {
-        self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
-        self.maxGroupCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
-        self.maxItemCount = self.maxGroupCount * 2
-        
-        self.canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
-        self.canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
+        self.maxItemCount = userDefaultsManager.maxStoreCount * 2
     }
                 
     func startMonitoring() {
@@ -64,7 +56,7 @@ class ClipboardMonitor: ObservableObject {
                 if let items = pasteboard.pasteboardItems, !items.isEmpty {
                     let group = ClipboardGroup(context: childContext)
                     group.timeStamp = Date()
-                    group.count = Int16(min(items.count, self.maxItemCount))
+                    group.count = Int16(min(items.count, self.userDefaultsManager.maxStoreCount))
                     
                     var operationsPending = 0
                     var counter = 0
@@ -74,7 +66,7 @@ class ClipboardMonitor: ObservableObject {
                         }
                         // Check for file URLs first
                         if let urlString = item.string(forType: .fileURL), let fileUrl = URL(string: urlString) {
-                            if self.canCopyImages || self.canCopyFilesOrFolders {
+                            if self.userDefaultsManager.canCopyImages || self.userDefaultsManager.canCopyFilesOrFolders {
                                 operationsPending += 1
                                 self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { completion in
                                     defer {
@@ -90,7 +82,7 @@ class ClipboardMonitor: ObservableObject {
                             }
                         }
                         else if let imageData = pasteboard.data(forType: .tiff), let image = NSImage(data: imageData) {
-                            if self.canCopyImages {
+                            if self.userDefaultsManager.canCopyImages {
                                 self.processImageData(image: image, inGroup: group, context: childContext)
                             }
                         }
@@ -136,7 +128,7 @@ class ClipboardMonitor: ObservableObject {
             item.filePath = fileUrl.path
             item.group = group
             
-            if self.canCopyImages && imageExtensions.contains(fileExtension) {
+            if self.userDefaultsManager.canCopyImages && imageExtensions.contains(fileExtension) {
                 if let image = NSImage(contentsOf: fileUrl) {
                     if let tiffRep = image.tiffRepresentation {
                         let imageHash = self.hashImageData(tiffRep)
@@ -150,7 +142,7 @@ class ClipboardMonitor: ObservableObject {
                 }
                 completion(false)
             }
-            else if self.canCopyFilesOrFolders {
+            else if self.userDefaultsManager.canCopyFilesOrFolders {
                 do {
                     item.imageData = nil
                     item.imageHash = nil
@@ -363,7 +355,7 @@ class ClipboardMonitor: ObservableObject {
             do {
                 var groups = try childContext.fetch(fetchRequest)
                 
-                if let group = groups.first, self.noDuplicates {
+                if let group = groups.first, self.userDefaultsManager.noDuplicates {
                     self.cleanUpDuplicates(for: group, childContext: childContext)
                 }
 
@@ -371,7 +363,7 @@ class ClipboardMonitor: ObservableObject {
                 
                 var groupCount = groups.count
                 
-                while groupCount > self.maxGroupCount {
+                while groupCount > self.userDefaultsManager.maxStoreCount {
                     if let oldestGroup = groups.last {
                         self.deleteGroupAndItems(oldestGroup, childContext: childContext)
                         groupCount -= 1
@@ -493,7 +485,7 @@ class ClipboardMonitor: ObservableObject {
         childContext.performAndWait {
             let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
             fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
-            fetchRequest.fetchLimit = maxGroupCount
+            fetchRequest.fetchLimit = self.userDefaultsManager.maxStoreCount
             
             do {
                 let results = try childContext.fetch(fetchRequest)
