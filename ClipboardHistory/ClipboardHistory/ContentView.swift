@@ -44,6 +44,7 @@ struct ContentView: View {
     
     @State private var scrollToTop: Bool = false
     @State private var scrollToBottom: Bool = false
+    @State private var justScrolledToTop: Bool = true
     
     @State private var imageSizeMultiple: CGFloat = 1
     
@@ -119,19 +120,21 @@ struct ContentView: View {
                     
                     
                         Button(action: {
-                            if !atTopOfList {
+                            if !atTopOfList && !justScrolledToTop {
                                 scrollToTop = true
+                                justScrolledToTop = true
                             }
-                            else {
+                            else if atTopOfList || justScrolledToTop {
                                 scrollToBottom = true
+                                justScrolledToTop = false
                             }
                         }) {
-                            Image(systemName: !atTopOfList ? "arrow.up.circle" : "arrow.down.circle")
+                            Image(systemName: (!atTopOfList && !justScrolledToTop) ? "arrow.up.circle" : "arrow.down.circle")
                                 .foregroundColor(.white)
                                 .padding(.trailing, 5)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        .help(!atTopOfList ? "Scroll to Top" : "Scroll to Bottom")
+                        .help(!atTopOfList && !justScrolledToTop ? "Scroll to Top" : "Scroll to Bottom")
                     }
                     
                 }
@@ -195,6 +198,7 @@ struct ContentView: View {
                                 withAnimation() {
                                     scrollView.scrollTo(selectList.first?.group.objectID, anchor: .top)
                                     scrollToTop = false
+                                    justScrolledToTop = true
                                     clipboardManager.selectedGroup = selectList.first
                                 }
                             }
@@ -204,6 +208,7 @@ struct ContentView: View {
                                 withAnimation() {
                                     scrollView.scrollTo(selectList.last?.group.objectID)
                                     scrollToBottom = false
+                                    justScrolledToTop = false
                                     clipboardManager.selectedGroup = selectList.last
                                 }
                             }
@@ -393,6 +398,7 @@ struct ContentView: View {
                     
                     if event.modifierFlags.contains(.command) {
                         scrollToTop = true
+                        justScrolledToTop = true
                     }
                     else {
                         if let currIndex = currentIndex, currIndex - 1 >= 0 {
@@ -459,6 +465,7 @@ struct ContentView: View {
                     
                     if event.modifierFlags.contains(.command) {
                         scrollToBottom = true
+                        justScrolledToTop = false
                     }
                     else {
                         if let currIndex = currentIndex, currIndex < selectList.count - 1 {
