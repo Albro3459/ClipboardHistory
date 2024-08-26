@@ -25,12 +25,25 @@ extension ClipboardGroup {
         
         let typePriority: [String: Int] = [
             "text": 1,
+            
             "image": 2,
-            "file": 3,
-            "folder": 4,
-            "alias": 5,
-            "removable": 6,
-            "symlink": 7
+            "file": 2,
+            "zipFile": 2,
+            "dmgFile": 2,
+            "randomFile": 2,
+            
+            "app": 7,
+            "calendarApp": 7,
+            "photoBoothApp": 7,
+            "settingsApp": 7,
+            
+            "execFile": 11,
+            
+            "folder": 12,
+            "alias": 12,
+            "removable": 12
+//            ,
+//            "symlink": 12
         ]
         
         return set.sorted { itemA, itemB in
@@ -67,6 +80,16 @@ extension ClipboardGroup {
     private func findExpandedState(for inputGroup: ClipboardGroup, selectList: [SelectedGroup]) -> Bool {
         // if this group was already in selectList, return its isExpanded
         return selectList.first(where: { $0.group == inputGroup })?.isExpanded ?? false
+    }
+    
+    
+}
+
+extension ClipboardGroup {
+    static func isDupe(groupA: ClipboardGroup, groupB: ClipboardGroup) -> Bool {
+        return groupA.count == groupB.count &&
+//                groupA.itemsArray.elementsEqual(groupB.itemsArray)
+            zip(groupA.itemsArray, groupB.itemsArray).allSatisfy { ClipboardItem.isEqual(itemA: $0, itemB: $1) }
     }
 }
 

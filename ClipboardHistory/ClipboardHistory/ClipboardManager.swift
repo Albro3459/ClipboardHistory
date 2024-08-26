@@ -29,11 +29,109 @@ class ClipboardManager: ObservableObject {
         ClipboardType.group,
         ClipboardType.selectAll
     ]
-        
+    
+    let userDefaultsManager = UserDefaultsManager.shared
+    
     var clipboardMonitor: ClipboardMonitor?
 
     init() {
         self.clipboardMonitor = ClipboardMonitor()
+    }
+    
+    func search(fetchedClipboardGroups: FetchedResults<ClipboardGroup>, searchText: String, selectedTypes: Set<UUID>) -> [ClipboardGroup] {
+        
+        let selectedTypeNames: [String] = selectedTypes.map { id in
+            ClipboardType.getTypeName(by: id)
+        }
+        
+        return fetchedClipboardGroups.filter { group in
+            let typeMatch: Bool
+            if selectedTypes.isEmpty || selectedTypeNames.contains("Select All") || selectedTypes.count == self.types.count {
+                typeMatch = true // No filtering by type when none or all are selected.
+                //                return true
+            }
+            else if selectedTypeNames.contains("Groups") && group.count > 1 {
+                typeMatch = true
+                //                return true
+            }
+            else {
+                typeMatch = group.itemsArray.contains { item in
+                    if selectedTypeNames.contains("Files / Folders") {
+                        // images are files too
+                        return item.type?.localizedCaseInsensitiveContains("file") ?? false ||
+                        item.type?.localizedCaseInsensitiveContains("folder") ?? false ||
+                        item.type?.localizedCaseInsensitiveContains("image") ?? false
+                    }
+                    else if selectedTypeNames.contains("Images") {
+                        // files can be images if they have an imageHash
+                        return item.imageHash != nil ||
+                        item.type?.localizedCaseInsensitiveContains("image") ?? false
+                    }
+                    else {
+                        // Check against other types.
+                        return selectedTypeNames.contains(where: { typeName in
+                            item.type?.localizedCaseInsensitiveContains(typeName) ?? false
+                        })
+                    }
+                }
+            }
+            
+            if searchText.isEmpty {
+                return typeMatch
+                //                return true
+            }
+            else {
+                // Further filter by searchText if it is not empty.
+                var searchTextMatch = false
+                let searchText = searchText.lowercased()
+                
+                if ["file", "fil", "fi", "doc", "docu", "docum", "docume", "documen", "document", "pd", "pdf"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("image") ?? false })
+                }
+                else if ["zip", "rar", "tar"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("zipFile") ?? false })
+                }
+                else if ["group", "grou", "gro", "gr"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.count > 1
+                }
+                else if ["image", "ima", "im", "pic", "pict", "pictu", "pictur", "picture"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.imageHash != nil }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("image") ?? false })
+                }
+                else if ["text", "tex", "te", "tx", "txt", "note", "not"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("text") ?? false })
+                }
+                else if ["folder", "fol", "fo", "dir", "dire", "direc", "direct", "directo", "director", "directory"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("folder") ?? false })
+                }
+                else if ["alias", "alia", "ali"/*, "symlink", "symlin", "symli", "syml", "sym", "lin", "link"*/].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("alias") ?? false })
+                }
+                else if ["app", "ap"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("calendarApp") ?? false }) ||
+                                        group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("photoBoothApp") ?? false }) ||
+                                        group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("settingsApp") ?? false }) ||
+                                        group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("app") ?? false }) ||
+                                        group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                                        group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains("app") ?? false }) ||
+                                        group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains(searchText) ?? false })
+                }
+//                else if ["symlink", "symlin", "symli", "syml", "sym", "lin", "link", "ali", "alia", "alias"].contains(where: { searchText.hasPrefix($0) }) {
+//                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("symlink") ?? false })
+//                }
+                else {
+                    searchTextMatch = group.itemsArray.contains( where: {
+                        ($0.type?.lowercased().contains(searchText) ?? false) ||
+                        ($0.content?.lowercased().contains(searchText) ?? false)
+                    })
+                }
+                return searchTextMatch && typeMatch
+            }
+        }
     }
     
     // copying a group with just 1 item
@@ -52,9 +150,8 @@ class ClipboardManager: ObservableObject {
                 if copied(item: item) {
                     pasteboard.setString(content, forType: .string)
                 }
-
             }
-        case "image", "file", "folder", "alias":
+        case "image", "file", "zipFile", "dmgFile", "randomFile", "execFile", "folder", "alias", "app":
             if let filePath = item.filePath {
                 let url = URL(fileURLWithPath: filePath)
                 if copied(item: item) {
@@ -83,7 +180,7 @@ class ClipboardManager: ObservableObject {
                 if copied(item: item) {
                     pasteboard.setString(content, forType: .string)
                 }            }
-        case "image", "file", "folder", "alias":
+        case "image", "file", "zipFile", "dmgFile", "randomFile", "execFile", "folder", "alias", "app":
             if let filePath = item.filePath {
                 let url = URL(fileURLWithPath: filePath)
                 if copied(item: item) {
@@ -103,7 +200,7 @@ class ClipboardManager: ObservableObject {
             return
         }
         if items.count == 1, selectedItem == nil {
-            copySingleGroup()
+            self.copySingleGroup()
             return
         }
 
@@ -120,7 +217,7 @@ class ClipboardManager: ObservableObject {
                 if let content = item.content {
                     array.append(content as NSString)
                 }
-            case "image", "file", "folder", "alias":
+            case "image", "file", "zipFile", "dmgFile", "randomFile", "execFile", "folder", "alias", "app":
                 if let filePath = item.filePath {
                     let url = URL(fileURLWithPath: filePath)
                     print(url.path)
@@ -184,12 +281,14 @@ class ClipboardManager: ObservableObject {
             let index = GetGroupIndex(group: selectedGroup, selectList: selectList)
             
             for item in group.itemsArray {
-                deleteItem(item: item, viewContext: viewContext, isCalledByGroup: true)
+                deleteItem(item: item, viewContext: viewContext, shouldSave: false)
             }
             
             viewContext.delete(group)
             
             if selectList.count > 1 {
+                // only if user wants this setting on
+//                self.selectedGroup = selectList[0]
                 if selectList.count == 2 {
                     self.selectedGroup = selectList[0]
                 }
@@ -219,7 +318,7 @@ class ClipboardManager: ObservableObject {
         }
     }
     
-    func deleteItem(item: ClipboardItem, viewContext: NSManagedObjectContext, isCalledByGroup: Bool) {
+    func deleteItem(item: ClipboardItem, viewContext: NSManagedObjectContext, shouldSave: Bool) {
         
         if let selectGroup = self.selectedGroup, item.group == selectGroup.group {
             //cleaning up tmp image files first
@@ -271,7 +370,7 @@ class ClipboardManager: ObservableObject {
             
             viewContext.delete(item)
             
-            if !isCalledByGroup {
+            if shouldSave {
                 do {
                     try viewContext.save()
                 } catch {
@@ -292,7 +391,6 @@ class ClipboardManager: ObservableObject {
                 if !selectList.isEmpty {
                     selectedGroup = selectList[0]
                     if let group = selectedGroup?.group, group.count == 1 {
-                        //                        print("here")
                         selectedGroup?.selectedItem = selectedGroup?.group.itemsArray.first
                     }
                     currentIndex = 0
@@ -342,4 +440,81 @@ class ClipboardManager: ObservableObject {
             objectWillChange.send()
         }
     }
+    
+//    func getKeyboardKey(key: Int) -> String {
+//        /*
+//         esc53
+//         F1122
+//         F2120
+//         F399
+//         F4118
+//         F596
+//         F697
+//         F798
+//         F8100
+//         F9101
+//         F10109
+//         F11103
+//         tab48?
+//         `50
+//         118
+//         219
+//         320
+//         421
+//         523
+//         622
+//         726
+//         828
+//         925
+//         029
+//         [27
+//         ]24
+//         delete51
+//         '12
+//         ,13
+//         .14
+//         p15
+//         y17
+//         f16
+//         g32
+//         c34
+//         r31
+//         l35
+//         /33
+//         =30
+//         \42
+//         a0
+//         o1
+//         e2
+//         u3
+//         i5
+//         d4
+//         h38
+//         t40
+//         n37
+//         s41
+//         -39
+//         return36
+//         ;6
+//         q7
+//         j8
+//         k9
+//         x11
+//         b45
+//         m46
+//         w43
+//         v47
+//         z44
+//         space49
+//         enter52
+//         left123
+//         up126
+//         down125
+//         right124
+//         */
+//    }
+    
+//    func getAppleKeyCode(key: String) -> Int {
+//        
+//    }
 }

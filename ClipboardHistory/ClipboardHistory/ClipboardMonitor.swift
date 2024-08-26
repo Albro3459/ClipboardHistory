@@ -14,14 +14,19 @@ import AppKit
 import CryptoKit
 
 class ClipboardMonitor: ObservableObject {
+    let userDefaultsManager = UserDefaultsManager.shared
+    
     private var checkTimer: Timer?
     private var lastChangeCount: Int = NSPasteboard.general.changeCount
     
-    private var maxGroupCount: Int = 50
-    private var maxItemCount: Int = 150
+    private var maxItemCount: Int    
     
     @Published var tmpFolderPath = FileManager.default.temporaryDirectory
     
+    init() {
+        self.maxItemCount = userDefaultsManager.maxStoreCount * 2
+    }
+                
     func startMonitoring() {
         checkTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(checkClipboard), userInfo: nil, repeats: true)
     }
@@ -51,7 +56,7 @@ class ClipboardMonitor: ObservableObject {
                 if let items = pasteboard.pasteboardItems, !items.isEmpty {
                     let group = ClipboardGroup(context: childContext)
                     group.timeStamp = Date()
-                    group.count = Int16(min(items.count, self.maxItemCount))
+                    group.count = Int16(min(items.count, self.userDefaultsManager.maxStoreCount))
                     
                     var operationsPending = 0
                     var counter = 0
@@ -61,21 +66,25 @@ class ClipboardMonitor: ObservableObject {
                         }
                         // Check for file URLs first
                         if let urlString = item.string(forType: .fileURL), let fileUrl = URL(string: urlString) {
-                            operationsPending += 1
-                            self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { completion in
-                                defer {
-                                    operationsPending -= 1
-                                    if operationsPending == 0 {
-                                        self.saveClipboardGroup(childContext: childContext)
+                            if self.userDefaultsManager.canCopyImages || self.userDefaultsManager.canCopyFilesOrFolders {
+                                operationsPending += 1
+                                self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { completion in
+                                    defer {
+                                        operationsPending -= 1
+                                        if operationsPending == 0 {
+                                            self.saveClipboardGroup(childContext: childContext)
+                                        }
                                     }
-                                }
-                                if !completion {
-                                    print("Failed to process file at URL: \(fileUrl)")
+                                    if !completion {
+                                        print("Failed to process file at URL: \(fileUrl)")
+                                    }
                                 }
                             }
                         }
                         else if let imageData = pasteboard.data(forType: .tiff), let image = NSImage(data: imageData) {
-                            self.processImageData(image: image, inGroup: group, context: childContext)
+                            if self.userDefaultsManager.canCopyImages {
+                                self.processImageData(image: image, inGroup: group, context: childContext)
+                            }
                         }
                         else if let content = pasteboard.string(forType: .string) {
                             let item = ClipboardItem(context: childContext)
@@ -89,11 +98,6 @@ class ClipboardMonitor: ObservableObject {
                         }
                         counter += 1
                     }
-                    //                let itemsArray = group.itemsArray
-                    //                for item in itemsArray {
-                    //                    let content = item.content
-                    //                }
-                    //
                     if operationsPending == 0 {
                         self.saveClipboardGroup(childContext: childContext)
                     }
@@ -104,7 +108,17 @@ class ClipboardMonitor: ObservableObject {
     
     private func processFileFolder(fileUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext,
                                    completion: @escaping (Bool) -> Void) {
-        let imageExtensions = ["tiff", "jpeg", "jpg", "png", "svg", "gif"]
+        let acceptableFileTypes = [
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "pages", "numbers", "key",
+            "txt", "rtf", "odt", "md", "csv",
+            "jpeg", "jpg", "png", "gif", "tiff", "tif", "bmp", "heic", "svg", "webp",
+            "mp3", "aac", "wav", "aiff", "flac", "m4a",
+            "mp4", "mov", "m4v", "avi", "mkv", "wmv", "flv", "webm",
+            "html", "htm", "css", "xml", "json", "plist"
+        ]
+        let imageExtensions = ["tiff", "jpeg", "jpg", "png", "svg", "gif", "icns"]
+        let zipExtensions = ["zip", "tar", "tar.gz", "tgz", "tar.bz2", "tbz2", "7z", "rar"]
+        let dmgExtension = "dmg"
 
         let fileExtension = fileUrl.pathExtension.lowercased()
         
@@ -114,7 +128,7 @@ class ClipboardMonitor: ObservableObject {
             item.filePath = fileUrl.path
             item.group = group
             
-            if imageExtensions.contains(fileExtension) {
+            if self.userDefaultsManager.canCopyImages && imageExtensions.contains(fileExtension) {
                 if let image = NSImage(contentsOf: fileUrl) {
                     if let tiffRep = image.tiffRepresentation {
                         let imageHash = self.hashImageData(tiffRep)
@@ -128,17 +142,32 @@ class ClipboardMonitor: ObservableObject {
                 }
                 completion(false)
             }
-            else {
+            else if self.userDefaultsManager.canCopyFilesOrFolders {
                 do {
                     item.imageData = nil
                     item.imageHash = nil
                     
-                    let resourceValues = try fileUrl.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isAliasFileKey, .isUbiquitousItemKey, .volumeIsRemovableKey])
+                    let resourceValues = try fileUrl.resourceValues(forKeys: [.isDirectoryKey, /*.isSymbolicLinkKey,*/ .isAliasFileKey, .isUbiquitousItemKey, .volumeIsRemovableKey, .isExecutableKey])
                     
-                    if let isDirectory = resourceValues.isDirectory, isDirectory {
+                    if let isDirectory = resourceValues.isDirectory, isDirectory ||  fileUrl.path == "/Applications/Safari.app" {
                         if let volumeIsRemovable = resourceValues.volumeIsRemovable, volumeIsRemovable {
                             item.type = "removable"
                             print("removable")
+                        }
+                        else if fileExtension == "app" {
+                            if let appIcon = self.extractAppIcon(for: fileUrl), let appIconImageData = appIcon.tiffRepresentation {
+                                item.type = "app"
+                                item.imageData = appIconImageData
+                            }
+                            else if item.content == "Calendar.app" {
+                                item.type = "calendarApp"
+                            }
+                            else if item.content == "Photo Booth.app" {
+                                item.type = "photoBoothApp"
+                            }
+                            else if item.content == "System Settings.app" {
+                                item.type = "settingsApp"
+                            }
                         }
                         else {
                             item.type = "folder"
@@ -146,12 +175,12 @@ class ClipboardMonitor: ObservableObject {
                         group.addToItems(item)
                         completion(true)
                     }
-                    else if let isSymbolicLink = resourceValues.isSymbolicLink, isSymbolicLink {
-                        // haven't tested these
-                        item.type = "symlink"
-                        group.addToItems(item)
-                        completion(true)
-                    }
+//                    else if let isSymbolicLink = resourceValues.isSymbolicLink, isSymbolicLink {
+//                        // haven't tested these
+//                        item.type = "symlink"
+//                        group.addToItems(item)
+//                        completion(true)
+//                    }
                     else if let isAliasFile = resourceValues.isAliasFile, isAliasFile {
                         item.type = "alias"
                         // here is where I check for the alias's actual file/folder and deteminie if it is a file, folder, image or something else
@@ -178,16 +207,54 @@ class ClipboardMonitor: ObservableObject {
                         group.addToItems(item)
                         completion(true)
                     }
+                    else if let isExecutable = resourceValues.isExecutable, isExecutable {
+                        item.type = "execFile"
+                        item.imageData = nil
+                        item.imageHash = nil
+                        group.addToItems(item)
+                        completion(true)
+                    }
                     else {
-                        // regular file
-                        self.generateThumbnail(for: fileUrl.path) { thumbnail in
-                            if let thumbnail = thumbnail {
-                                item.type = "file"
-                                item.imageData = thumbnail.tiffRepresentation
-                                item.imageHash = nil
-                                group.addToItems(item)
-                                completion(true)
+                        // regular file                        
+                        if zipExtensions.contains(fileExtension) {
+                            item.type = "zipFile"
+                            item.imageData = nil
+                            item.imageHash = nil
+                            group.addToItems(item)
+                            completion(true)
+                        }
+                        else if fileExtension == dmgExtension {
+                            item.type = "dmgFile"
+                            item.imageData = nil
+                            item.imageHash = nil
+                            group.addToItems(item)
+                            completion(true)
+                        }
+                        else if acceptableFileTypes.contains(fileExtension) {
+                            self.generateThumbnail(for: fileUrl.path) { thumbnail in
+                                if let thumbnail = thumbnail {
+                                    item.type = "file"
+                                    item.imageData = thumbnail.tiffRepresentation
+                                    item.imageHash = nil
+                                    group.addToItems(item)
+                                    completion(true)
+                                }
+                                else {
+                                    // thumbnail failed, not a typical file
+                                    item.type = "randomFile"
+                                    item.imageData = nil
+                                    item.imageHash = nil
+                                    group.addToItems(item)
+                                    completion(true)
+                                }
                             }
+                        }
+                        else {
+                            item.type = "randomFile"
+                            item.imageData = nil
+                            item.imageHash = nil
+                            group.addToItems(item)
+                            completion(true)
                         }
                     }
                 }
@@ -243,34 +310,37 @@ class ClipboardMonitor: ObservableObject {
     
     func findItems(content: String?, type: String?, imageHash: String?, filePath: String?, context: NSManagedObjectContext?) -> [ClipboardItem] {
         let context = context ?? PersistenceController.shared.container.viewContext
-        let fetchRequest: NSFetchRequest<ClipboardItem> = ClipboardItem.fetchRequest()
+        var results: [ClipboardItem] = []
         
-        var predicates: [NSPredicate] = []
-        
-        if let content = content {
-            predicates.append(NSPredicate(format: "content == %@", content))
+        context.performAndWait {
+            let fetchRequest: NSFetchRequest<ClipboardItem> = ClipboardItem.fetchRequest()
+            
+            var predicates: [NSPredicate] = []
+            
+            if let content = content {
+                predicates.append(NSPredicate(format: "content == %@", content))
+            }
+            if let type = type {
+                predicates.append(NSPredicate(format: "type == %@", type))
+            }
+            if let imageHash = imageHash {
+                predicates.append(NSPredicate(format: "imageHash == %@", imageHash))
+            }
+            if let filePath = filePath {
+                predicates.append(NSPredicate(format: "filePath == %@", filePath))
+            }
+            
+            fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+            
+            fetchRequest.fetchLimit = self.maxItemCount
+            
+            do {
+                results = try context.fetch(fetchRequest)
+            } catch {
+                print("Fetch failed: \(error.localizedDescription)")
+            }
         }
-        if let type = type {
-            predicates.append(NSPredicate(format: "type == %@", type))
-        }
-        if let imageHash = imageHash {
-            predicates.append(NSPredicate(format: "imageHash == %@", imageHash))
-        }
-        if let filePath = filePath {
-            predicates.append(NSPredicate(format: "filePath == %@", filePath))
-        }
-        
-        fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
-        
-        fetchRequest.fetchLimit = maxItemCount
-
-        do {
-            let results = try context.fetch(fetchRequest)
-            return results
-        } catch {
-            print("Fetch failed: \(error.localizedDescription)")
-            return []
-        }
+        return results
     }
     
     private func saveClipboardGroup(childContext: NSManagedObjectContext) {
@@ -285,22 +355,19 @@ class ClipboardMonitor: ObservableObject {
             do {
                 var groups = try childContext.fetch(fetchRequest)
                 
-                //            for group in groups {
-                //                let itemsArray = group.itemsArray
-                //                let content = itemsArray.first?.content
-                //                print(content)
-                //            }
+                if let group = groups.first, self.userDefaultsManager.noDuplicates {
+                    self.cleanUpDuplicates(for: group, childContext: childContext)
+                }
+
+                self.cleanUpExtraItems(childContext: childContext, inputGroups: groups)
                 
-                self.cleanUpExtraGroups(childContext: childContext, inputGroups: groups)
-                //
                 var groupCount = groups.count
                 
-                while groupCount > self.maxGroupCount {
-                    
+                while groupCount > self.userDefaultsManager.maxStoreCount {
                     if let oldestGroup = groups.last {
                         self.deleteGroupAndItems(oldestGroup, childContext: childContext)
                         groupCount -= 1
-                        groups.removeFirst()
+                        groups.removeLast()
                     }
                 }
                 
@@ -413,8 +480,40 @@ class ClipboardMonitor: ObservableObject {
         return shouldSave
     }
     
-    private func cleanUpExtraGroups(childContext: NSManagedObjectContext, inputGroups: [ClipboardGroup]?) {
-        childContext.perform {
+    func cleanUpDuplicates(for group: ClipboardGroup, childContext: NSManagedObjectContext) {
+        
+        childContext.performAndWait {
+            let fetchRequest: NSFetchRequest<ClipboardGroup> = ClipboardGroup.fetchRequest()
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timeStamp", ascending: false)]
+            fetchRequest.fetchLimit = self.userDefaultsManager.maxStoreCount
+            
+            do {
+                let results = try childContext.fetch(fetchRequest)
+                
+                if results.count < 2 { // less than 2 means there wasnt anything copied before, so save it
+                    return
+                }
+                else {
+                    
+                    let foundDupe = results.contains(where: { $0 != results.first && ClipboardGroup.isDupe(groupA: group, groupB: $0) })
+                    
+                    if foundDupe && results.count > 1 {
+                        for result in results where  result != results.first {
+                            if ClipboardGroup.isDupe(groupA: group, groupB: result) {
+                                childContext.delete(result)
+                            }
+                        }
+                    }
+                }
+                
+            } catch {
+                print("Fetch failed: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func cleanUpExtraItems(childContext: NSManagedObjectContext, inputGroups: [ClipboardGroup]?) {
+        childContext.performAndWait {
             var groups: [ClipboardGroup]
             
             if let existingGroups = inputGroups {
@@ -454,7 +553,7 @@ class ClipboardMonitor: ObservableObject {
     }
     
     func deleteGroupAndItems(_ group: ClipboardGroup, childContext: NSManagedObjectContext) {
-        childContext.perform {
+        childContext.performAndWait {
             if let items = group.items as? Set<ClipboardItem> {
                 for item in items {
                     self.deleteItem(item, childContext: childContext)
@@ -465,17 +564,19 @@ class ClipboardMonitor: ObservableObject {
     }
     
     func deleteItem(_ item: ClipboardItem, childContext: NSManagedObjectContext) {
-        let folderPath = tmpFolderPath
-        if let filePath = item.filePath, filePath.contains(folderPath.path) {
-            // if the file is not still in the clipboard history
-            let items = self.findItems(content: nil, type: nil, imageHash: item.imageHash, filePath: filePath, context: childContext)
-            
-            // only want to delete file if its the only copy left
-            if items.count < 2 {
-                self.deleteTmpImage(filePath: filePath)
+        childContext.performAndWait {
+            let folderPath = self.tmpFolderPath
+            if let filePath = item.filePath, filePath.contains(folderPath.path) {
+                // if the file is not still in the clipboard history
+                let items = self.findItems(content: nil, type: nil, imageHash: item.imageHash, filePath: filePath, context: childContext)
+                
+                // only want to delete file if its the only copy left
+                if items.count < 2 {
+                    self.deleteTmpImage(filePath: filePath)
+                }
             }
+            childContext.delete(item)
         }
-        childContext.delete(item)
     }
     
     private func generateThumbnail(for filePath: String?, completion: @escaping (NSImage?) -> Void) {
@@ -502,7 +603,7 @@ class ClipboardMonitor: ObservableObject {
         }
     }
         
-    func createImageFile(imageData: Data?) -> URL? {
+    private func createImageFile(imageData: Data?) -> URL? {
         guard let image = NSImage(data: imageData!) else {
             print("Failed to create image from TIFF data.")
             return nil
@@ -526,7 +627,7 @@ class ClipboardMonitor: ObservableObject {
         }
     }
 
-    func convertNSImageToPNG(image: NSImage) -> Data? {
+    private func convertNSImageToPNG(image: NSImage) -> Data? {
         guard let tiffData = image.tiffRepresentation,
               let bitmapImage = NSBitmapImageRep(data: tiffData) else {
             return nil
@@ -534,7 +635,7 @@ class ClipboardMonitor: ObservableObject {
         return bitmapImage.representation(using: .png, properties: [:])
     }
     
-    func saveImageDataToFile(imageData: Data, filePath: String, fileType: NSBitmapImageRep.FileType) -> URL? {
+    private func saveImageDataToFile(imageData: Data, filePath: String, fileType: NSBitmapImageRep.FileType) -> URL? {
         let folderPath: URL
         do {
 //            let documentsURL = try fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
@@ -583,9 +684,36 @@ class ClipboardMonitor: ObservableObject {
     }
     
     // creates a comparaple hash to quickly compare images
-    func hashImageData(_ data: Data) -> String {
+    private func hashImageData(_ data: Data) -> String {
         let hash = SHA256.hash(data: data)
         return hash.compactMap { String(format: "%02x", $0) }.joined()
+    }
+    
+    private func extractAppIcon(for fileUrl: URL) -> NSImage? {
+        let contentsUrl = fileUrl.appendingPathComponent("Contents")
+        let plistUrl = contentsUrl.appendingPathComponent("Info.plist")
+        
+        guard let plist = NSDictionary(contentsOf: plistUrl),
+              let iconName = plist["CFBundleIconFile"] as? String else {
+            return nil
+        }
+
+        let iconExtension = (iconName as NSString).pathExtension.isEmpty ? "icns" : (iconName as NSString).pathExtension
+        let iconFileName = (iconName as NSString).deletingPathExtension
+        let appResourcesIconUrl = contentsUrl.appendingPathComponent("Resources").appendingPathComponent(iconFileName).appendingPathExtension(iconExtension)
+
+        return NSImage(contentsOf: appResourcesIconUrl)
+        
+//        // find appIcon in its resources folder
+//        if let appIcon = NSImage(contentsOf: appResourcesIconUrl) {
+//            return appIcon
+//        }
+//        
+//        // if icon isn't found, check the system resources (typically default apps might store icon here)
+//        let systemResourcesUrl = URL(fileURLWithPath: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/")
+//        let systemIconUrl = systemResourcesUrl.appendingPathComponent(iconFileName).appendingPathExtension(iconExtension)
+//
+//        return NSImage(contentsOf: systemIconUrl)
     }
     
     deinit {
