@@ -112,12 +112,21 @@ class ClipboardManager: ObservableObject {
                 else if ["folder", "fol", "fo", "dir", "dire", "direc", "direct", "directo", "director", "directory"].contains(where: { searchText.hasPrefix($0) }) {
                     searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("folder") ?? false })
                 }
-                else if ["alias", "alia", "ali", "symlink", "symlin", "symli", "syml", "sym", "lin", "link"].contains(where: { searchText.hasPrefix($0) }) {
+                else if ["alias", "alia", "ali"/*, "symlink", "symlin", "symli", "syml", "sym", "lin", "link"*/].contains(where: { searchText.hasPrefix($0) }) {
                     searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("alias") ?? false })
                 }
-                else if ["symlink", "symlin", "symli", "syml", "sym", "lin", "link", "ali", "alia", "alias"].contains(where: { searchText.hasPrefix($0) }) {
-                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("symlink") ?? false })
+                else if ["app", "ap"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("calendarApp") ?? false }) ||
+                                        group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("photoBoothApp") ?? false }) ||
+                                        group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("settingsApp") ?? false }) ||
+                                        group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("app") ?? false }) ||
+                                        group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                                        group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains("app") ?? false }) ||
+                                        group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains(searchText) ?? false })
                 }
+//                else if ["symlink", "symlin", "symli", "syml", "sym", "lin", "link", "ali", "alia", "alias"].contains(where: { searchText.hasPrefix($0) }) {
+//                    searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("symlink") ?? false })
+//                }
                 else {
                     searchTextMatch = group.itemsArray.contains( where: {
                         ($0.type?.lowercased().contains(searchText) ?? false) ||
@@ -146,7 +155,7 @@ class ClipboardManager: ObservableObject {
                     pasteboard.setString(content, forType: .string)
                 }
             }
-        case "image", "file", "zipFile", "dmgFile", "randomFile", "folder", "alias":
+        case "image", "file", "zipFile", "dmgFile", "randomFile", "execFile", "folder", "alias", "app":
             if let filePath = item.filePath {
                 let url = URL(fileURLWithPath: filePath)
                 if copied(item: item) {
@@ -175,7 +184,7 @@ class ClipboardManager: ObservableObject {
                 if copied(item: item) {
                     pasteboard.setString(content, forType: .string)
                 }            }
-        case "image", "file", "zipFile", "dmgFile", "randomFile", "folder", "alias":
+        case "image", "file", "zipFile", "dmgFile", "randomFile", "execFile", "folder", "alias", "app":
             if let filePath = item.filePath {
                 let url = URL(fileURLWithPath: filePath)
                 if copied(item: item) {
@@ -212,7 +221,7 @@ class ClipboardManager: ObservableObject {
                 if let content = item.content {
                     array.append(content as NSString)
                 }
-            case "image", "file", "zipFile", "dmgFile", "randomFile", "folder", "alias":
+            case "image", "file", "zipFile", "dmgFile", "randomFile", "execFile", "folder", "alias", "app":
                 if let filePath = item.filePath {
                     let url = URL(fileURLWithPath: filePath)
                     print(url.path)

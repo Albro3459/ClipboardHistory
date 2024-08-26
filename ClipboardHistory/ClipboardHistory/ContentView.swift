@@ -760,7 +760,41 @@ struct ClipboardGroupView: View {
                 }
                 .padding(.all, 10)
             }
-            else if item.type == "image" || item.type == "file",
+            else if item.type == "image" || item.type == "app",
+                    let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: 80, maxHeight: (item.type == "app" ? 70 : 60), alignment: .center)
+                        .cornerRadius(8)
+                        .clipped()
+                    
+            }
+            else if item.type == "calendarApp" || item.type == "settingsApp" || item.type == "photoBoothApp" {
+                switch item.type {
+                case "calendarApp":
+                    Image("CalendarIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 70)
+                case "settingsApp":
+                    Image("SystemSettingsIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 70)
+                case "photoBoothApp":
+                    Image("PhotoBoothIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 70)
+                default:
+                    Image("FolderThumbnail")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 60)
+                }
+            }
+            else if item.type == "file",
                     let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
                     Image(nsImage: nsImage)
                         .resizable()
@@ -774,28 +808,33 @@ struct ClipboardGroupView: View {
                         .clipped()
                     
             }
-            else if item.type == "zipFile" || item.type == "dmgFile" || item.type == "randomFile" {
+            else if item.type == "zipFile" || item.type == "dmgFile" || item.type == "randomFile" || item.type == "execFile" {
                 switch item.type {
                 case "zipFile":
                     Image("ZipFileThumbnail")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 49)
+                        .frame(height: 60)
                 case "dmgFile":
                     Image("DmgFileThumbnail")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 49)
+                        .frame(height: 60)
                 case "randomFile":
                     Image("RandomFileThumbnail")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 49)
+                        .frame(height: 60)
+                case "execFile":
+                    Image("ExecFileThumbnail")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 60)
                 default:
                     Image("RandomFileThumbnail")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 49)
+                        .frame(height: 60)
                 }
             }
             else if item.type == "folder", let content = item.content {
@@ -941,7 +980,53 @@ struct ClipboardItemView: View {
                             .lineLimit(3)
                     }
                 }
-                else if item.type == "image" || item.type == "file",
+                else if item.type == "image" || item.type == "app",
+                                let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: (item.type == "app" ? 80 : 70) * imageSizeMultiple)
+                        .cornerRadius(8)
+                        .clipped()
+                    
+                    if let content = item.content {
+                        Text(content)
+                            .font(.subheadline)
+                            .bold()
+                            .lineLimit(1)
+                    }
+                }
+                else if item.type == "calendarApp" || item.type == "settingsApp" || item.type == "photoBoothApp" {
+                    switch item.type {
+                    case "calendarApp":
+                        Image("CalendarIcon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 80 * imageSizeMultiple)
+                    case "settingsApp":
+                        Image("SystemSettingsIcon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 80 * imageSizeMultiple)
+                    case "photoBoothApp":
+                        Image("PhotoBoothIcon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 80 * imageSizeMultiple)
+                    default:
+                        Image("RandomFileThumbnail")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 70 * imageSizeMultiple)
+                    }
+                    if let content = item.content {
+                        Text(content)
+                            .font(.subheadline)
+                            .bold()
+                            .lineLimit(1)
+                    }
+                }
+                else if item.type == "file",
                                 let imageData = item.imageData, let nsImage = NSImage(data: imageData) {
                     Image(nsImage: nsImage)
                         .resizable()
@@ -961,7 +1046,7 @@ struct ClipboardItemView: View {
                             .lineLimit(1)
                     }
                 }
-                else if item.type == "zipFile" || item.type == "dmgFile" || item.type == "randomFile" {
+                else if item.type == "zipFile" || item.type == "dmgFile" || item.type == "randomFile" || item.type == "execFile" {
                     switch item.type {
                     case "zipFile":
                         Image("ZipFileThumbnail")
@@ -970,6 +1055,16 @@ struct ClipboardItemView: View {
                             .frame(height: 49)
                     case "dmgFile":
                         Image("DmgFileThumbnail")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 49)
+                    case "randomFile":
+                        Image("RandomFileThumbnail")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 49)
+                    case "execFile":
+                        Image("ExecFileThumbnail")
                             .resizable()
                             .scaledToFit()
                             .frame(height: 49)
@@ -1097,7 +1192,7 @@ struct ClipboardItemView: View {
                             .help("Open File")
                         }
                     }
-                } else if let type = item.type, type == "folder" || type == "removable" || type == "zipFile" || type == "dmgFile" || type == "randomFile" {
+                } else if let type = item.type, type == "folder" || type == "removable" || type == "zipFile" || type == "dmgFile" || type == "randomFile" || type == "execFile" {
                     Button(action: {
                         self.openFolder(filePath: filePath)
                     }) {
@@ -1109,7 +1204,7 @@ struct ClipboardItemView: View {
                     .buttonStyle(BorderlessButtonStyle())
                     .padding(.trailing, 5)
                     .help("Open \(type.contains("file") ? "File" : "Folder")")
-                } else if item.type == "file" || item.type == "image" {
+                } else if item.type == "file" || item.type == "image" || item.type == "app" || item.type == "calendarApp" || item.type == "settingsApp" || item.type == "photoBoothApp" {
                     Button(action: {
                     self.openFile(filePath: filePath)
                     }) {
@@ -1120,7 +1215,7 @@ struct ClipboardItemView: View {
                     }
                     .buttonStyle(BorderlessButtonStyle())
                     .padding(.trailing, 5)
-                    .help("Open \(item.type == "image" ? "Image" : "File")")
+                    .help("Open \(item.type == "image" ? "Image" : (item.type == "app" ? "App" : "File"))")
                 }
             }
             

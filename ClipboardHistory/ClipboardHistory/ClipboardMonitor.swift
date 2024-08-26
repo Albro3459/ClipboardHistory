@@ -124,7 +124,7 @@ class ClipboardMonitor: ObservableObject {
             "mp4", "mov", "m4v", "avi", "mkv", "wmv", "flv", "webm",
             "html", "htm", "css", "xml", "json", "plist"
         ]
-        let imageExtensions = ["tiff", "jpeg", "jpg", "png", "svg", "gif"]
+        let imageExtensions = ["tiff", "jpeg", "jpg", "png", "svg", "gif", "icns"]
         let zipExtensions = ["zip", "tar", "tar.gz", "tgz", "tar.bz2", "tbz2", "7z", "rar"]
         let dmgExtension = "dmg"
 
@@ -155,12 +155,27 @@ class ClipboardMonitor: ObservableObject {
                     item.imageData = nil
                     item.imageHash = nil
                     
-                    let resourceValues = try fileUrl.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isAliasFileKey, .isUbiquitousItemKey, .volumeIsRemovableKey])
+                    let resourceValues = try fileUrl.resourceValues(forKeys: [.isDirectoryKey, /*.isSymbolicLinkKey,*/ .isAliasFileKey, .isUbiquitousItemKey, .volumeIsRemovableKey, .isExecutableKey])
                     
-                    if let isDirectory = resourceValues.isDirectory, isDirectory {
+                    if let isDirectory = resourceValues.isDirectory, isDirectory ||  fileUrl.path == "/Applications/Safari.app" {
                         if let volumeIsRemovable = resourceValues.volumeIsRemovable, volumeIsRemovable {
                             item.type = "removable"
                             print("removable")
+                        }
+                        else if fileExtension == "app" {
+                            if let appIcon = self.extractAppIcon(for: fileUrl), let appIconImageData = appIcon.tiffRepresentation {
+                                item.type = "app"
+                                item.imageData = appIconImageData
+                            }
+                            else if item.content == "Calendar.app" {
+                                item.type = "calendarApp"
+                            }
+                            else if item.content == "Photo Booth.app" {
+                                item.type = "photoBoothApp"
+                            }
+                            else if item.content == "System Settings.app" {
+                                item.type = "settingsApp"
+                            }
                         }
                         else {
                             item.type = "folder"
@@ -168,12 +183,12 @@ class ClipboardMonitor: ObservableObject {
                         group.addToItems(item)
                         completion(true)
                     }
-                    else if let isSymbolicLink = resourceValues.isSymbolicLink, isSymbolicLink {
-                        // haven't tested these
-                        item.type = "symlink"
-                        group.addToItems(item)
-                        completion(true)
-                    }
+//                    else if let isSymbolicLink = resourceValues.isSymbolicLink, isSymbolicLink {
+//                        // haven't tested these
+//                        item.type = "symlink"
+//                        group.addToItems(item)
+//                        completion(true)
+//                    }
                     else if let isAliasFile = resourceValues.isAliasFile, isAliasFile {
                         item.type = "alias"
                         // here is where I check for the alias's actual file/folder and deteminie if it is a file, folder, image or something else
@@ -197,6 +212,13 @@ class ClipboardMonitor: ObservableObject {
                                 }
                             }
                         }
+                        group.addToItems(item)
+                        completion(true)
+                    }
+                    else if let isExecutable = resourceValues.isExecutable, isExecutable {
+                        item.type = "execFile"
+                        item.imageData = nil
+                        item.imageHash = nil
                         group.addToItems(item)
                         completion(true)
                     }
@@ -589,7 +611,7 @@ class ClipboardMonitor: ObservableObject {
         }
     }
         
-    func createImageFile(imageData: Data?) -> URL? {
+    private func createImageFile(imageData: Data?) -> URL? {
         guard let image = NSImage(data: imageData!) else {
             print("Failed to create image from TIFF data.")
             return nil
@@ -613,7 +635,7 @@ class ClipboardMonitor: ObservableObject {
         }
     }
 
-    func convertNSImageToPNG(image: NSImage) -> Data? {
+    private func convertNSImageToPNG(image: NSImage) -> Data? {
         guard let tiffData = image.tiffRepresentation,
               let bitmapImage = NSBitmapImageRep(data: tiffData) else {
             return nil
@@ -621,7 +643,7 @@ class ClipboardMonitor: ObservableObject {
         return bitmapImage.representation(using: .png, properties: [:])
     }
     
-    func saveImageDataToFile(imageData: Data, filePath: String, fileType: NSBitmapImageRep.FileType) -> URL? {
+    private func saveImageDataToFile(imageData: Data, filePath: String, fileType: NSBitmapImageRep.FileType) -> URL? {
         let folderPath: URL
         do {
 //            let documentsURL = try fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
@@ -670,9 +692,36 @@ class ClipboardMonitor: ObservableObject {
     }
     
     // creates a comparaple hash to quickly compare images
-    func hashImageData(_ data: Data) -> String {
+    private func hashImageData(_ data: Data) -> String {
         let hash = SHA256.hash(data: data)
         return hash.compactMap { String(format: "%02x", $0) }.joined()
+    }
+    
+    private func extractAppIcon(for fileUrl: URL) -> NSImage? {
+        let contentsUrl = fileUrl.appendingPathComponent("Contents")
+        let plistUrl = contentsUrl.appendingPathComponent("Info.plist")
+        
+        guard let plist = NSDictionary(contentsOf: plistUrl),
+              let iconName = plist["CFBundleIconFile"] as? String else {
+            return nil
+        }
+
+        let iconExtension = (iconName as NSString).pathExtension.isEmpty ? "icns" : (iconName as NSString).pathExtension
+        let iconFileName = (iconName as NSString).deletingPathExtension
+        let appResourcesIconUrl = contentsUrl.appendingPathComponent("Resources").appendingPathComponent(iconFileName).appendingPathExtension(iconExtension)
+
+        return NSImage(contentsOf: appResourcesIconUrl)
+        
+//        // find appIcon in its resources folder
+//        if let appIcon = NSImage(contentsOf: appResourcesIconUrl) {
+//            return appIcon
+//        }
+//        
+//        // if icon isn't found, check the system resources (typically default apps might store icon here)
+//        let systemResourcesUrl = URL(fileURLWithPath: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/")
+//        let systemIconUrl = systemResourcesUrl.appendingPathComponent(iconFileName).appendingPathExtension(iconExtension)
+//
+//        return NSImage(contentsOf: systemIconUrl)
     }
     
     deinit {

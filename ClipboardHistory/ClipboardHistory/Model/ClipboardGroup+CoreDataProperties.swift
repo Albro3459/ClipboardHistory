@@ -25,15 +25,25 @@ extension ClipboardGroup {
         
         let typePriority: [String: Int] = [
             "text": 1,
+            
             "image": 2,
-            "file": 3,
-            "zipFile": 4,
-            "dmgFile": 5,
-            "randomFile": 6,
-            "folder": 7,
-            "alias": 8,
-            "removable": 9,
-            "symlink": 10
+            "file": 2,
+            "zipFile": 2,
+            "dmgFile": 2,
+            "randomFile": 2,
+            
+            "app": 7,
+            "calendarApp": 7,
+            "photoBoothApp": 7,
+            "settingsApp": 7,
+            
+            "execFile": 11,
+            
+            "folder": 12,
+            "alias": 12,
+            "removable": 12
+//            ,
+//            "symlink": 12
         ]
         
         return set.sorted { itemA, itemB in
