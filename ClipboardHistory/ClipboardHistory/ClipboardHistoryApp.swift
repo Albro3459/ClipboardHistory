@@ -16,15 +16,12 @@ struct ClipboardHistoryApp: App {
     
     let persistenceController = PersistenceController.shared
     var clipboardMonitor: ClipboardMonitor?
-    
-//    let userDefaultsManager = UserDefaultsManager.shared
-    
+        
     @State private var hideTitle = false
     
     init() {
         //have to register first!!
         self.registerUserDefaults()
-        let userDefaultsManager = UserDefaultsManager.shared
 
         
         self.clipboardMonitor = ClipboardMonitor()
@@ -66,7 +63,7 @@ struct ClipboardHistoryApp: App {
             "canCopyFilesOrFolders": true,
             "canCopyImages": true,
             
-            "pasteWithoutFormatting": false,
+            "pasteWithoutFormatting": true,
             
             "pasteWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd", "shift"], key: "v")),
             "toggleWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd", "shift"], key: "c")),

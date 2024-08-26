@@ -47,6 +47,8 @@
 
 /* Begin PBXFileReference section */
 		60038DDE2BFCD04C00AC3CA8 /* SearchBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBarView.swift; sourceTree = "<group>"; };
+		604B0A622C7C2DCF00839CEA /* ClipboardHistory_Release.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = ClipboardHistory_Release.entitlements; sourceTree = "<group>"; };
+		604B0A632C7C2DCF00839CEA /* ClipboardHistory_Debug.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = ClipboardHistory_Debug.entitlements; sourceTree = "<group>"; };
 		60639F1B2C5440280031CBE2 /* ClipboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardManager.swift; sourceTree = "<group>"; };
 		6072ABB72BF3157A0091E218 /* ClipboardHistory.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClipboardHistory.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6072ABBA2BF3157A0091E218 /* ClipboardHistoryApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryApp.swift; sourceTree = "<group>"; };
@@ -55,7 +57,6 @@
 		6072ABC12BF3157B0091E218 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		6072ABC32BF3157B0091E218 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
 		6072ABC62BF3157B0091E218 /* ClipboardHistory.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ClipboardHistory.xcdatamodel; sourceTree = "<group>"; };
-		6072ABC82BF3157B0091E218 /* ClipboardHistory.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ClipboardHistory.entitlements; sourceTree = "<group>"; };
 		6072ABCD2BF3157B0091E218 /* ClipboardHistoryTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClipboardHistoryTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6072ABD12BF3157B0091E218 /* ClipboardHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryTests.swift; sourceTree = "<group>"; };
 		6072ABD72BF3157B0091E218 /* ClipboardHistoryUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClipboardHistoryUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -124,9 +125,10 @@
 				6072ABF02BF7DD4A0091E218 /* Model */,
 				6072ABBA2BF3157A0091E218 /* ClipboardHistoryApp.swift */,
 				6072ABBC2BF3157A0091E218 /* ContentView.swift */,
+				604B0A632C7C2DCF00839CEA /* ClipboardHistory_Debug.entitlements */,
+				604B0A622C7C2DCF00839CEA /* ClipboardHistory_Release.entitlements */,
 				6072ABBE2BF3157B0091E218 /* Assets.xcassets */,
 				6072ABC32BF3157B0091E218 /* Persistence.swift */,
-				6072ABC82BF3157B0091E218 /* ClipboardHistory.entitlements */,
 				6072ABC52BF3157B0091E218 /* ClipboardHistory.xcdatamodeld */,
 				6072ABC02BF3157B0091E218 /* Preview Content */,
 				6072ABEE2BF7D6CF0091E218 /* ClipboardMonitor.swift */,
@@ -483,7 +485,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_ENTITLEMENTS = ClipboardHistory/ClipboardHistory.entitlements;
+				CODE_SIGN_ENTITLEMENTS = ClipboardHistory/ClipboardHistory_Debug.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -501,7 +503,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = myclipboardhistory.ClipboardHistory;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -515,7 +517,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_ENTITLEMENTS = ClipboardHistory/ClipboardHistory.entitlements;
+				CODE_SIGN_ENTITLEMENTS = ClipboardHistory/ClipboardHistory_Release.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -533,7 +535,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = myclipboardhistory.ClipboardHistory;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

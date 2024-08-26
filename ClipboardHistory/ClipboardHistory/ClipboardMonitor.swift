@@ -116,7 +116,17 @@ class ClipboardMonitor: ObservableObject {
     
     private func processFileFolder(fileUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext,
                                    completion: @escaping (Bool) -> Void) {
+        let acceptableFileTypes = [
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "pages", "numbers", "key",
+            "txt", "rtf", "odt", "md", "csv",
+            "jpeg", "jpg", "png", "gif", "tiff", "tif", "bmp", "heic", "svg", "webp",
+            "mp3", "aac", "wav", "aiff", "flac", "m4a",
+            "mp4", "mov", "m4v", "avi", "mkv", "wmv", "flv", "webm",
+            "html", "htm", "css", "xml", "json", "plist"
+        ]
         let imageExtensions = ["tiff", "jpeg", "jpg", "png", "svg", "gif"]
+        let zipExtensions = ["zip", "tar", "tar.gz", "tgz", "tar.bz2", "tbz2", "7z", "rar"]
+        let dmgExtension = "dmg"
 
         let fileExtension = fileUrl.pathExtension.lowercased()
         
@@ -191,15 +201,46 @@ class ClipboardMonitor: ObservableObject {
                         completion(true)
                     }
                     else {
-                        // regular file
-                        self.generateThumbnail(for: fileUrl.path) { thumbnail in
-                            if let thumbnail = thumbnail {
-                                item.type = "file"
-                                item.imageData = thumbnail.tiffRepresentation
-                                item.imageHash = nil
-                                group.addToItems(item)
-                                completion(true)
+                        // regular file                        
+                        if zipExtensions.contains(fileExtension) {
+                            item.type = "zipFile"
+                            item.imageData = nil
+                            item.imageHash = nil
+                            group.addToItems(item)
+                            completion(true)
+                        }
+                        else if fileExtension == dmgExtension {
+                            item.type = "dmgFile"
+                            item.imageData = nil
+                            item.imageHash = nil
+                            group.addToItems(item)
+                            completion(true)
+                        }
+                        else if acceptableFileTypes.contains(fileExtension) {
+                            self.generateThumbnail(for: fileUrl.path) { thumbnail in
+                                if let thumbnail = thumbnail {
+                                    item.type = "file"
+                                    item.imageData = thumbnail.tiffRepresentation
+                                    item.imageHash = nil
+                                    group.addToItems(item)
+                                    completion(true)
+                                }
+                                else {
+                                    // thumbnail failed, not a typical file
+                                    item.type = "randomFile"
+                                    item.imageData = nil
+                                    item.imageHash = nil
+                                    group.addToItems(item)
+                                    completion(true)
+                                }
                             }
+                        }
+                        else {
+                            item.type = "randomFile"
+                            item.imageData = nil
+                            item.imageHash = nil
+                            group.addToItems(item)
+                            completion(true)
                         }
                     }
                 }

@@ -27,10 +27,13 @@ extension ClipboardGroup {
             "text": 1,
             "image": 2,
             "file": 3,
-            "folder": 4,
-            "alias": 5,
-            "removable": 6,
-            "symlink": 7
+            "zipFile": 4,
+            "dmgFile": 5,
+            "randomFile": 6,
+            "folder": 7,
+            "alias": 8,
+            "removable": 9,
+            "symlink": 10
         ]
         
         return set.sorted { itemA, itemB in

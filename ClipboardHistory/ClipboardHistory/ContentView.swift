@@ -621,7 +621,7 @@ struct ClipboardGroupView: View {
                         // icon view for each item in group
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: -20) { // Negative spacing for overlapping
-                                ForEach(Array(group.itemsArray.prefix(10).indices), id: \.self) { index in
+                                ForEach(Array(group.itemsArray.prefix(3).indices), id: \.self) { index in
                                     let item = group.itemsArray[index]
                                     itemIconView(item)
                                         .zIndex(Double(10 - index)) // Ensure the first item is on top
@@ -773,6 +773,30 @@ struct ClipboardGroupView: View {
                         )
                         .clipped()
                     
+            }
+            else if item.type == "zipFile" || item.type == "dmgFile" || item.type == "randomFile" {
+                switch item.type {
+                case "zipFile":
+                    Image("ZipFileThumbnail")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 49)
+                case "dmgFile":
+                    Image("DmgFileThumbnail")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 49)
+                case "randomFile":
+                    Image("RandomFileThumbnail")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 49)
+                default:
+                    Image("RandomFileThumbnail")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 49)
+                }
             }
             else if item.type == "folder", let content = item.content {
                 if content == "/" {
@@ -937,6 +961,31 @@ struct ClipboardItemView: View {
                             .lineLimit(1)
                     }
                 }
+                else if item.type == "zipFile" || item.type == "dmgFile" || item.type == "randomFile" {
+                    switch item.type {
+                    case "zipFile":
+                        Image("ZipFileThumbnail")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 49)
+                    case "dmgFile":
+                        Image("DmgFileThumbnail")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 49)
+                    default:
+                        Image("RandomFileThumbnail")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 49)
+                    }
+                    if let content = item.content {
+                        Text(content)
+                            .font(.subheadline)
+                            .bold()
+                            .lineLimit(1)
+                    }
+                }
                 else if item.type == "folder", let content = item.content {
                     if content == "/" {
                         //main drive
@@ -1025,7 +1074,9 @@ struct ClipboardItemView: View {
                             Button(action: {
                                 self.openFolder(filePath: resolvedUrl.path)
                             }) {
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
+//                                Image(systemName: "rectangle.portrait.and.arrow.right")
+//                                    .foregroundColor(.white)
+                                Image(systemName: "folder")
                                     .foregroundColor(.white)
                             }
                             .buttonStyle(BorderlessButtonStyle())
@@ -1035,29 +1086,36 @@ struct ClipboardItemView: View {
                             Button(action: {
                                 self.openFile(filePath: resolvedUrl.path)
                             }) {
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
+//                                Image(systemName: "rectangle.portrait.and.arrow.right")
+//                                    .foregroundColor(.white)
+                                Image(systemName: "folder")
                                     .foregroundColor(.white)
+
                             }
                             .buttonStyle(BorderlessButtonStyle())
                             .padding(.trailing, 5)
                             .help("Open File")
                         }
                     }
-                } else if item.type == "folder" || item.type == "removable" {
+                } else if let type = item.type, type == "folder" || type == "removable" || type == "zipFile" || type == "dmgFile" || type == "randomFile" {
                     Button(action: {
                         self.openFolder(filePath: filePath)
                     }) {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
+//                        Image(systemName: "rectangle.portrait.and.arrow.right")
+//                            .foregroundColor(.white)
+                        Image(systemName: "folder")
                             .foregroundColor(.white)
                     }
                     .buttonStyle(BorderlessButtonStyle())
                     .padding(.trailing, 5)
-                    .help("Open Folder")
+                    .help("Open \(type.contains("file") ? "File" : "Folder")")
                 } else if item.type == "file" || item.type == "image" {
                     Button(action: {
                     self.openFile(filePath: filePath)
                     }) {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
+//                        Image(systemName: "rectangle.portrait.and.arrow.right")
+//                            .foregroundColor(.white)
+                        Image(systemName: "folder")
                             .foregroundColor(.white)
                     }
                     .buttonStyle(BorderlessButtonStyle())

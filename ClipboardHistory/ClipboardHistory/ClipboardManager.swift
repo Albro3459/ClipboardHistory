@@ -40,7 +40,6 @@ class ClipboardManager: ObservableObject {
         
         // User Defaults
         self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
-        print(self.noDuplicates)
     }
     
     func search(fetchedClipboardGroups: FetchedResults<ClipboardGroup>, searchText: String, selectedTypes: Set<UUID>) -> [ClipboardGroup] {
@@ -95,6 +94,11 @@ class ClipboardManager: ObservableObject {
                     group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
                     group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("image") ?? false })
                 }
+                else if ["zip", "rar", "tar"].contains(where: { searchText.hasPrefix($0) }) {
+                    searchTextMatch = group.itemsArray.contains(where: { $0.content?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains(searchText) ?? false }) ||
+                    group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("zipFile") ?? false })
+                }
                 else if ["group", "grou", "gro", "gr"].contains(where: { searchText.hasPrefix($0) }) {
                     searchTextMatch = group.count > 1
                 }
@@ -142,7 +146,7 @@ class ClipboardManager: ObservableObject {
                     pasteboard.setString(content, forType: .string)
                 }
             }
-        case "image", "file", "folder", "alias":
+        case "image", "file", "zipFile", "dmgFile", "randomFile", "folder", "alias":
             if let filePath = item.filePath {
                 let url = URL(fileURLWithPath: filePath)
                 if copied(item: item) {
@@ -171,7 +175,7 @@ class ClipboardManager: ObservableObject {
                 if copied(item: item) {
                     pasteboard.setString(content, forType: .string)
                 }            }
-        case "image", "file", "folder", "alias":
+        case "image", "file", "zipFile", "dmgFile", "randomFile", "folder", "alias":
             if let filePath = item.filePath {
                 let url = URL(fileURLWithPath: filePath)
                 if copied(item: item) {
@@ -208,7 +212,7 @@ class ClipboardManager: ObservableObject {
                 if let content = item.content {
                     array.append(content as NSString)
                 }
-            case "image", "file", "folder", "alias":
+            case "image", "file", "zipFile", "dmgFile", "randomFile", "folder", "alias":
                 if let filePath = item.filePath {
                     let url = URL(fileURLWithPath: filePath)
                     print(url.path)
