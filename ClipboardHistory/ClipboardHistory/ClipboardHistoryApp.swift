@@ -69,12 +69,6 @@ struct ClipboardHistoryApp: App {
             "pasteWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd", "shift"], key: "v")),
             "toggleWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd", "shift"], key: "c")),
             "resetWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["option"], key: "r")),
-            
-            //in-app shortcuts
-            "openSearchShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd"], key: "f")), // TODO
-            "deleteSelectedItemShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd"], key: "d")), // TODO
-            "scrollUpShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd"], key: "upArrow")), // TODO
-            "scrollDownShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd"], key: "downArrow")) // TODO
         ]
         
         UserDefaults.standard.register(defaults: defaults)
@@ -455,8 +449,7 @@ class UserDefaultsManager {
     var resetWindowShortcut: KeyboardShortcut
     var openSearchShortcut: KeyboardShortcut
     var deleteSelectedItemShortcut: KeyboardShortcut
-    var scrollUpShortcut: KeyboardShortcut
-    var scrollDownShortcut: KeyboardShortcut
+    var clearItemsShortcut: KeyboardShortcut
     
     init() {
         let decoder = JSONDecoder()
@@ -517,16 +510,10 @@ class UserDefaultsManager {
             self.deleteSelectedItemShortcut = KeyboardShortcut(modifiers: ["cmd"], key: "d")
         }
         
-        if let data = UserDefaults.standard.data(forKey: "scrollUpShortcut") {
-            self.scrollUpShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
+        if let data = UserDefaults.standard.data(forKey: "clearItemsShortcut") {
+            self.clearItemsShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
         } else {
-            self.scrollUpShortcut = KeyboardShortcut(modifiers: ["cmd"], key: "upArrow")
-        }
-        
-        if let data = UserDefaults.standard.data(forKey: "scrollDownShortcut") {
-            self.scrollDownShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
-        } else {
-            self.scrollDownShortcut = KeyboardShortcut(modifiers: ["cmd"], key: "downArrow")
+            self.clearItemsShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "d")
         }
     }
 }

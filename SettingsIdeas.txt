@@ -30,15 +30,24 @@ Ideas for what options should be available in settings
     - cmd + shift + c: open and close window
     - cmd + shift + v: paste without formatting
 
-    - cmd + f: open search
-    - cmd + delete: delete selected item
-
-
  - unchangeable shortcuts:
+    - cmd + f: open search
+    
     - right arrow: expand group
     - left arrow: contract group
     - up arrow: move up
     - down arrow: move down
+
+    - cmd + c: copy
+    - enter || return: copy
+
+    - cmd + enter: open item
+
+    - cmd + delete: delete selected item
+    - cmd + shift + delete: clear all items
+
+    - cmd + [: open all groups
+    - cmd + ]: close all groups
 
     - cmd + up: scroll to top
     - page up: scroll to top

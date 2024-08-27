@@ -432,6 +432,16 @@ class ClipboardManager: ObservableObject {
         }
     }
     
+    func expandAll(for list: [SelectedGroup]) {
+        for selectedGroup in list {
+            if selectedGroup.group.count > 1 {
+                selectedGroup.isExpanded = true
+            }
+        }
+        print("expanded groups")
+        objectWillChange.send()
+    }
+    
     func contract(for group: SelectedGroup) {
         if let currentGroup = selectedGroup, currentGroup == group {
             currentGroup.isExpanded = false
@@ -441,77 +451,67 @@ class ClipboardManager: ObservableObject {
         }
     }
     
+    func contractAll(for list: [SelectedGroup]) {
+        for selectedGroup in list {
+            selectedGroup.isExpanded = false
+        }
+        print("contracted groups")
+        objectWillChange.send()
+    }
+    
+    func openFolder(filePath: String) {
+        let fileURL = URL(fileURLWithPath: filePath)
+        NSWorkspace.shared.activateFileViewerSelecting([fileURL])
+    }
+    
+    func openFile(filePath: String) {
+        // if file is tmp image, copy to desktop, then open
+            // else, open the file
+        
+        
+        let fileURL = URL(fileURLWithPath: filePath)
+        let fileName = fileURL.lastPathComponent
+        
+        let regexPattern = "^Image \\d{4}-\\d{2}-\\d{2} at \\d{1,2}\\.\\d{2}\\.\\d{2} (AM|PM)\\.png$"
+        
+        do {
+            let regex = try NSRegularExpression(pattern: regexPattern)
+            let range = NSRange(location: 0, length: fileName.utf16.count)
+            
+            if let clipboardMonitor = clipboardMonitor, regex.firstMatch(in: fileName, options: [], range: range) != nil && fileURL.path.hasPrefix(clipboardMonitor.tmpFolderPath.path) {
+                                // File matches the regex pattern, copy it to the desktop
+                let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
+                let destinationURL = desktopURL.appendingPathComponent(fileName)
+                
+                
+                do {
+                    try FileManager.default.copyItem(at: fileURL, to: destinationURL)
+                    print("File copied to Desktop: \(destinationURL.path)")
+                    // Check if the file exists and open it
+                    if FileManager.default.fileExists(atPath: destinationURL.path) {
+                        NSWorkspace.shared.open(destinationURL)
+                    } else {
+                        print("File does not exist at path: \(destinationURL.path)")
+                    }
+                } catch {
+                    print("Failed to copy file to Desktop: \(error)")
+                }
+            }
+            else {
+                // Check if the file exists and open it
+                if FileManager.default.fileExists(atPath: filePath) {
+                    NSWorkspace.shared.open(fileURL)
+                } else {
+                    print("File does not exist at path: \(filePath)")
+                }
+            }
+        } catch {
+            print("Invalid regex pattern: \(error)")
+        }
+    }
+    
 //    func getKeyboardKey(key: Int) -> String {
-//        /*
-//         esc53
-//         F1122
-//         F2120
-//         F399
-//         F4118
-//         F596
-//         F697
-//         F798
-//         F8100
-//         F9101
-//         F10109
-//         F11103
-//         tab48?
-//         `50
-//         118
-//         219
-//         320
-//         421
-//         523
-//         622
-//         726
-//         828
-//         925
-//         029
-//         [27
-//         ]24
-//         delete51
-//         '12
-//         ,13
-//         .14
-//         p15
-//         y17
-//         f16
-//         g32
-//         c34
-//         r31
-//         l35
-//         /33
-//         =30
-//         \42
-//         a0
-//         o1
-//         e2
-//         u3
-//         i5
-//         d4
-//         h38
-//         t40
-//         n37
-//         s41
-//         -39
-//         return36
-//         ;6
-//         q7
-//         j8
-//         k9
-//         x11
-//         b45
-//         m46
-//         w43
-//         v47
-//         z44
-//         space49
-//         enter52
-//         left123
-//         up126
-//         down125
-//         right124
-//         */
+//        
 //    }
     
 //    func getAppleKeyCode(key: String) -> Int {

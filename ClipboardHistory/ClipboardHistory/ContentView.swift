@@ -368,8 +368,16 @@ struct ContentView: View {
                     }
                 case 51:
                     // Handle Command + Del
-                    if event.modifierFlags.contains(.command) {
-                        if !isFocused || !isSelectingCategory {
+                    if !isFocused || !isSelectingCategory {
+
+                        if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) {
+                            DispatchQueue.main.async {
+                                self.showingAlert = true
+                                activeAlert = .clear
+                            }
+                            return nil
+                        }
+                        else if event.modifierFlags.contains(.command) {
                             DispatchQueue.main.async {
                                 self.showingAlert = true
                                 activeAlert = .delete
@@ -545,6 +553,22 @@ struct ContentView: View {
                     // Handle End or Page Down Key action
                     scrollToBottom = true
                     return nil
+                case 33:
+                    // handle cmd + [
+                    if !isFocused || !isSelectingCategory {
+                        if event.modifierFlags.contains(.command) {
+                            clipboardManager.expandAll(for: selectList)
+                            return nil
+                        }
+                    }
+                case 30:
+                    // handle cmd + ]
+                    if !isFocused || !isSelectingCategory {
+                        if event.modifierFlags.contains(.command) {
+                            clipboardManager.contractAll(for: selectList)
+                            return nil
+                        }
+                    }
                 default:
                     break
                 }
@@ -827,6 +851,41 @@ struct ClipboardGroupView: View {
                         if !isSearchFocused || !isSelectingCategory {
                             if event.modifierFlags.contains(.command) {
                                 // this is where I would open the file/folder
+                                if let selectedGroup = clipboardManager.selectedGroup {
+                                    
+                                    // single item group
+                                    var itemToOpen: ClipboardItem?
+                                    if selectedGroup.group.count == 1 && clipboardManager.selectedItem == nil, let item = selectedGroup.group.itemsArray.first {
+                                        itemToOpen = item
+                                    }
+                                    // item in group
+                                    else if let item = clipboardManager.selectedItem {
+                                        itemToOpen = item
+                                    }
+                                    
+                                    if let itemToOpen = itemToOpen {
+                                        if let filePath = itemToOpen.filePath {
+                                            if itemToOpen.type == "alias" {
+                                                if let resolvedUrl = clipboardManager.clipboardMonitor?.resolveAlias(fileUrl: URL(fileURLWithPath: filePath)),
+                                                   let resourceValues = try? resolvedUrl.resourceValues(forKeys: [.isDirectoryKey, .isAliasFileKey]) {
+                                                    if resourceValues.isAliasFile == true || resourceValues.isDirectory == true {
+                                                        clipboardManager.openFolder(filePath: resolvedUrl.path)
+                                                        return nil
+                                                    } else {
+                                                        clipboardManager.openFile(filePath: resolvedUrl.path)
+                                                        return nil
+                                                    }
+                                                }
+                                            } else if let type = itemToOpen.type, type == "folder" || type == "removable" || type == "zipFile" || type == "dmgFile" || type == "randomFile" || type == "execFile" {
+                                                clipboardManager.openFolder(filePath: filePath)
+                                                return nil
+                                            } else if itemToOpen.type == "file" || itemToOpen.type == "image" || itemToOpen.type == "app" || itemToOpen.type == "calendarApp" || itemToOpen.type == "settingsApp" || itemToOpen.type == "photoBoothApp" {
+                                                clipboardManager.openFile(filePath: filePath)
+                                                return nil
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             else {
                                 if clipboardManager.selectedItem != nil {
@@ -1118,7 +1177,7 @@ struct ClipboardItemView: View {
                         
                         if resourceValues.isAliasFile == true || resourceValues.isDirectory == true {
                             Button(action: {
-                                self.openFolder(filePath: resolvedUrl.path)
+                                clipboardManager.openFolder(filePath: resolvedUrl.path)
                             }) {
 //                                Image(systemName: "rectangle.portrait.and.arrow.right")
 //                                    .foregroundColor(.white)
@@ -1130,7 +1189,7 @@ struct ClipboardItemView: View {
                             .help("Open Folder")
                         } else {
                             Button(action: {
-                                self.openFile(filePath: resolvedUrl.path)
+                                clipboardManager.openFile(filePath: resolvedUrl.path)
                             }) {
 //                                Image(systemName: "rectangle.portrait.and.arrow.right")
 //                                    .foregroundColor(.white)
@@ -1145,7 +1204,7 @@ struct ClipboardItemView: View {
                     }
                 } else if let type = item.type, type == "folder" || type == "removable" || type == "zipFile" || type == "dmgFile" || type == "randomFile" || type == "execFile" {
                     Button(action: {
-                        self.openFolder(filePath: filePath)
+                        clipboardManager.openFolder(filePath: filePath)
                     }) {
 //                        Image(systemName: "rectangle.portrait.and.arrow.right")
 //                            .foregroundColor(.white)
@@ -1157,7 +1216,7 @@ struct ClipboardItemView: View {
                     .help("Open \(type.contains("file") ? "File" : "Folder")")
                 } else if item.type == "file" || item.type == "image" || item.type == "app" || item.type == "calendarApp" || item.type == "settingsApp" || item.type == "photoBoothApp" {
                     Button(action: {
-                    self.openFile(filePath: filePath)
+                        clipboardManager.openFile(filePath: filePath)
                     }) {
 //                        Image(systemName: "rectangle.portrait.and.arrow.right")
 //                            .foregroundColor(.white)
@@ -1248,57 +1307,6 @@ struct ClipboardItemView: View {
             else {
                 clipboardManager.selectedItem = nil
             }
-        }
-    }
-    
-    private func openFolder(filePath: String) {
-        let fileURL = URL(fileURLWithPath: filePath)
-        NSWorkspace.shared.activateFileViewerSelecting([fileURL])
-    }
-    
-    private func openFile(filePath: String) {
-        // if file is tmp image, copy to desktop, then open
-            // else, open the file
-        
-        
-        let fileURL = URL(fileURLWithPath: filePath)
-        let fileName = fileURL.lastPathComponent
-        
-        let regexPattern = "^Image \\d{4}-\\d{2}-\\d{2} at \\d{1,2}\\.\\d{2}\\.\\d{2} (AM|PM)\\.png$"
-        
-        do {
-            let regex = try NSRegularExpression(pattern: regexPattern)
-            let range = NSRange(location: 0, length: fileName.utf16.count)
-            
-            if regex.firstMatch(in: fileName, options: [], range: range) != nil && fileURL.path.hasPrefix(clipboardManager.clipboardMonitor?.tmpFolderPath.path ?? "") {
-                                // File matches the regex pattern, copy it to the desktop
-                let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
-                let destinationURL = desktopURL.appendingPathComponent(fileName)
-                
-                
-                do {
-                    try FileManager.default.copyItem(at: fileURL, to: destinationURL)
-                    print("File copied to Desktop: \(destinationURL.path)")
-                    // Check if the file exists and open it
-                    if FileManager.default.fileExists(atPath: destinationURL.path) {
-                        NSWorkspace.shared.open(destinationURL)
-                    } else {
-                        print("File does not exist at path: \(destinationURL.path)")
-                    }
-                } catch {
-                    print("Failed to copy file to Desktop: \(error)")
-                }
-            }
-            else {
-                // Check if the file exists and open it
-                if FileManager.default.fileExists(atPath: filePath) {
-                    NSWorkspace.shared.open(fileURL)
-                } else {
-                    print("File does not exist at path: \(filePath)")
-                }
-            }
-        } catch {
-            print("Invalid regex pattern: \(error)")
         }
     }
 }
