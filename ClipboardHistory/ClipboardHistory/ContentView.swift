@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreData
 import KeyboardShortcuts
+import Combine
 
 enum ActiveAlert {
     case clear, delete
@@ -26,6 +27,7 @@ struct ContentView: View {
     @EnvironmentObject var clipboardManager: ClipboardManager
     
     let userDefaultsManager = UserDefaultsManager.shared
+    let menuManager = MenuManager.shared
         
     @State private var showingAlert = false
     @State private var activeAlert: ActiveAlert = .clear
@@ -45,7 +47,11 @@ struct ContentView: View {
     
     @State private var imageSizeMultiple: CGFloat = 1
     
+    @State private var copyStatusChanged: Bool = false    
+    @State private var showCopyFailedFeedback: Bool = false
+    
     @State private var windowWidth: CGFloat = 0
+    @State private var windowHeight: CGFloat = 0
     
     @State private var selectList: [SelectedGroup] = []
     
@@ -55,6 +61,21 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
+            GeometryReader { geometry in
+                Color.clear
+                    .frame(height: 1)
+                    .onAppear {
+                        self.windowWidth = geometry.size.width
+                        self.windowHeight = geometry.size.height
+                    }
+                    .onChange(of: geometry.size.width) { old, new in
+                        self.windowWidth = new
+                    }
+                    .onChange(of: geometry.size.height) { old, new in
+                        self.windowHeight = new
+                    }
+            }
+            .zIndex(-10)
             
             Rectangle()
                 .foregroundColor(.clear)
@@ -84,12 +105,73 @@ struct ContentView: View {
                 }
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .animation(.easeInOut, value: clipboardManager.isCopied)
-                .position(x: 50, y: -211)
+                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
+                .position(x: 90/2, y: -(self.windowHeight/2 - 24))
                 .frame(width: 90, height: 24)
                 .zIndex(5)
             
                 
                 Color.white.opacity(0.1).flash(duration: 0.3)
+            }
+            
+            if self.copyStatusChanged, let monitor = clipboardManager.clipboardMonitor {
+                ZStack(alignment: .center) {
+                    
+                    ZStack(alignment: .top) {
+                        Rectangle()
+                            .foregroundColor(Color(.darkGray))
+                            .cornerRadius(8)
+                        Rectangle()
+                            .foregroundColor(Color(.darkGray))
+                            .frame(height: 10)
+                            .zIndex(1)
+                    }
+                    Text("Copying \(monitor.isCopyingPaused ? "Paused" : "Resumed")!")
+                        .font(.subheadline)
+                        .bold()
+                        
+                        .cornerRadius(8)
+                        .frame(alignment: .center)
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.easeInOut, value: monitor.isCopyingPaused)
+                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
+                .position(x: 110/2, y: -(self.windowHeight/2 - 24))
+                .frame(width: 110, height: 24)
+                .zIndex(5)
+            
+                
+                Color.white.opacity(0.1).flash(duration: 0.3)
+            }
+            
+            // when copying fails due to copying being paused
+            if let monitor = clipboardManager.clipboardMonitor, self.showCopyFailedFeedback || monitor.showCopyFailedFeedback {
+                ZStack(alignment: .center) {
+                    
+                    ZStack(alignment: .top) {
+                        Rectangle()
+                            .foregroundColor(Color(.red))
+                            .cornerRadius(8)
+                        Rectangle()
+                            .foregroundColor(Color(.red))
+                            .frame(height: 10)
+                            .zIndex(1)
+                    }
+                    Text("Copying is Paused!")
+                        .font(.subheadline)
+                        .bold()
+                        .cornerRadius(8)
+                        .frame(alignment: .center)
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.easeInOut, value: self.showCopyFailedFeedback)
+                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
+                .position(x: 120/2, y: -(self.windowHeight/2 - 24) )
+                .frame(width: 120, height: 24)
+                .zIndex(5)
+            
+                
+                Color.red.opacity(0.1).flash(duration: 0.3)
             }
             
             VStack {
@@ -145,12 +227,6 @@ struct ContentView: View {
                         Color.clear.onChange(of: geometry.frame(in: .named("ScrollViewArea")).minY) { oldValue, newValue in
                             atTopOfList = newValue >= 0
 //                             print(atTopOfList)
-                        }
-                        .onAppear {
-                            self.windowWidth = geometry.size.width
-                        }
-                        .onChange(of: geometry.size.width) { old, new in
-                            self.windowWidth = new
                         }
                     }
                     .frame(height: 0)
@@ -298,6 +374,24 @@ struct ContentView: View {
             .onChange(of: isFocused) {
                 isSearchFocused = isFocused
             }
+            .onReceive(clipboardManager.clipboardMonitor?.copyFailedStateChange ?? PassthroughSubject<Void, Never>()) { _ in
+                // needed because this change wont update unless app is active
+                if let monitor = clipboardManager.clipboardMonitor {
+                    self.showCopyFailedFeedback = monitor.showCopyFailedFeedback
+                }
+            }
+            .onReceive(clipboardManager.clipboardMonitor?.copyStatusStateChange ?? PassthroughSubject<Void, Never>()) { _ in
+                // needed because this change wont update unless app is active
+                if let monitor = clipboardManager.clipboardMonitor {
+//                    let status = monitor.isCopyingPaused
+//                    DispatchQueue.main.async {
+                        self.copyStatusChanged = monitor.showCopyStateChangedPopUp
+//                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+//                            self.copyStatusChanged = !status
+//                        }
+                    
+                }
+            }
         }
     }
     
@@ -394,6 +488,16 @@ struct ContentView: View {
                         }
                          return nil // no more beeps
                     }
+                case 35:
+                    // Handle Command + Shift + P
+                    if event.modifierFlags.contains(.command) {
+                        if event.modifierFlags.contains(.shift) {
+                            self.menuManager.toggleCopying()
+                            
+                            return nil // no more beeps
+                        }
+                    }
+                    
                 case 53:
                     // Escape key
                     DispatchQueue.main.async {

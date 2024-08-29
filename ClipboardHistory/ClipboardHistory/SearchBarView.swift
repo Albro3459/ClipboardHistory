@@ -132,7 +132,7 @@ struct ClipboardType: Identifiable {
 }
 
 struct TypeDropDownMenu: View {
-    @EnvironmentObject var cm: ClipboardManager
+    @EnvironmentObject var clipboardManager: ClipboardManager
     
     @Binding var multiSelection: Set<UUID>
     @State private var isSelectAll: Bool = false
@@ -155,7 +155,7 @@ struct TypeDropDownMenu: View {
 //            .zIndex(2)
             
             
-            List(cm.types, id: \.id, selection: $multiSelection) { type in
+            List(clipboardManager.types, id: \.id, selection: $multiSelection) { type in
                 HStack {
                     Spacer()  // Pushes the text to the center
                     Text(type.name)
@@ -177,7 +177,7 @@ struct TypeDropDownMenu: View {
                                 isSelectAll = true
                             }
                         }
-                        else if multiSelection.count == cm.types.count {
+                        else if multiSelection.count == clipboardManager.types.count {
                             if !isSelectAll {
                                 multiSelection.removeAll()
                             }
@@ -191,7 +191,7 @@ struct TypeDropDownMenu: View {
                     }
                     else {
                         if multiSelection.contains(type.id) {
-                            if multiSelection.count == cm.types.count {
+                            if multiSelection.count == clipboardManager.types.count {
                                 deselectingFromAll = true
                                 isSelectAll = false
                                 
@@ -224,7 +224,7 @@ struct TypeDropDownMenu: View {
                 }
             }
             .onChange(of: multiSelection.count) {
-                if multiSelection.count == cm.types.count-1 && !multiSelection.contains(ClipboardType.selectAll.id) {
+                if multiSelection.count == clipboardManager.types.count-1 && !multiSelection.contains(ClipboardType.selectAll.id) {
                     isSelectAll = true
                 }
             }

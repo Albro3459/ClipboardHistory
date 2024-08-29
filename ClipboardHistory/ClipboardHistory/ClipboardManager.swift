@@ -17,6 +17,8 @@ import CoreData
 
 
 class ClipboardManager: ObservableObject {
+    static let shared = ClipboardManager()
+    
     @Published var selectedItem: ClipboardItem?
     @Published var selectedGroup: SelectedGroup?
     
@@ -32,9 +34,9 @@ class ClipboardManager: ObservableObject {
     
     let userDefaultsManager = UserDefaultsManager.shared
     
-    var clipboardMonitor: ClipboardMonitor?
+    @Published var clipboardMonitor: ClipboardMonitor?
 
-    init() {
+    private init() {
         self.clipboardMonitor = ClipboardMonitor()
     }
     
@@ -144,6 +146,10 @@ class ClipboardManager: ObservableObject {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         
+        if let monitor = clipboardMonitor {
+            monitor.isInternalCopy = true
+        }
+        
         switch item.type {
         case "text":
             if let content = item.content {
@@ -162,7 +168,6 @@ class ClipboardManager: ObservableObject {
         default:
             print("unsupported item for copying: \(item.type ?? "nil type")")
         }
-       
     }
            
     // copying an item out of a group
@@ -173,6 +178,10 @@ class ClipboardManager: ObservableObject {
         }
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
+        
+        if let monitor = clipboardMonitor {
+            monitor.isInternalCopy = true
+        }
         
         switch item.type {
         case "text":
@@ -203,10 +212,13 @@ class ClipboardManager: ObservableObject {
             self.copySingleGroup()
             return
         }
-
         
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
+        
+        if let monitor = clipboardMonitor {
+            monitor.isInternalCopy = true
+        }
         
         var array: [NSPasteboardWriting] = []
         
@@ -237,7 +249,6 @@ class ClipboardManager: ObservableObject {
                 
             }
         }
-        
     }
             
     func copied(item: ClipboardItem?) -> Bool {

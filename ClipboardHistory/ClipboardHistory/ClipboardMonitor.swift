@@ -14,29 +14,68 @@ import AppKit
 import CryptoKit
 
 class ClipboardMonitor: ObservableObject {
+    @Published var tmpFolderPath = FileManager.default.temporaryDirectory
+    
     let userDefaultsManager = UserDefaultsManager.shared
+    
+    var copyFailedStateChange = PassthroughSubject<Void, Never>()
+    var copyStatusStateChange = PassthroughSubject<Void, Never>()
+
     
     private var checkTimer: Timer?
     private var lastChangeCount: Int = NSPasteboard.general.changeCount
     
-    private var maxItemCount: Int    
+    // User defaults
+    private var maxItemCount: Int
+    var isCopyingPaused: Bool
+    @Published var showCopyStateChangedPopUp = false
     
-    @Published var tmpFolderPath = FileManager.default.temporaryDirectory
+    var isInternalCopy: Bool = false
+    var isPasteNoFormattingCopy: Bool = false
+    @Published var showCopyFailedFeedback: Bool = false
+    
     
     init() {
         self.maxItemCount = userDefaultsManager.maxStoreCount * 2
+        self.isCopyingPaused = userDefaultsManager.pauseCopying
+        
+        startMonitoring()
     }
-                
+    
     func startMonitoring() {
         checkTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(checkClipboard), userInfo: nil, repeats: true)
     }
     
     @objc private func checkClipboard() {
         DispatchQueue.main.async {
-            let pasteboard = NSPasteboard.general
-            if pasteboard.changeCount != self.lastChangeCount {
+            if self.isCopyingPaused && !self.isInternalCopy && !self.isPasteNoFormattingCopy {
+                let pasteboard = NSPasteboard.general
+                if pasteboard.changeCount != self.lastChangeCount {
+                    self.lastChangeCount = pasteboard.changeCount
+                    
+                    self.showCopyFailedFeedback = true
+                    self.copyFailedStateChange.send()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                        self.showCopyFailedFeedback = false
+                        self.copyFailedStateChange.send()
+                    }
+                }
+            }
+            else if !self.isCopyingPaused || self.isInternalCopy {
+                let pasteboard = NSPasteboard.general
+                if pasteboard.changeCount != self.lastChangeCount {
+                    self.lastChangeCount = pasteboard.changeCount
+                    self.processDataFromClipboard()
+                    
+                    self.isInternalCopy = false
+                }
+            }
+            else if self.isCopyingPaused || self.isPasteNoFormattingCopy {
+                // have to update change count to avoid showing error popup in content view
+                let pasteboard = NSPasteboard.general
                 self.lastChangeCount = pasteboard.changeCount
-                self.processDataFromClipboard()
+                
+                self.isPasteNoFormattingCopy = false
             }
         }
     }
@@ -714,6 +753,17 @@ class ClipboardMonitor: ObservableObject {
 //        let systemIconUrl = systemResourcesUrl.appendingPathComponent(iconFileName).appendingPathExtension(iconExtension)
 //
 //        return NSImage(contentsOf: systemIconUrl)
+    }
+    
+    func sendCopyStatusCangeStateChangeToUI() {
+        DispatchQueue.main.async {
+            self.showCopyStateChangedPopUp = true
+            self.copyStatusStateChange.send()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                self.showCopyStateChangedPopUp = false
+                self.copyStatusStateChange.send()
+            }
+        }
     }
     
     deinit {

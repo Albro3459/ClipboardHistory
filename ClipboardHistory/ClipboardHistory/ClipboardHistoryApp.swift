@@ -15,7 +15,7 @@ struct ClipboardHistoryApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     let persistenceController = PersistenceController.shared
-    var clipboardMonitor: ClipboardMonitor?
+//    var clipboardMonitor: ClipboardMonitor?
         
     @State private var hideTitle = false
     
@@ -24,8 +24,8 @@ struct ClipboardHistoryApp: App {
         self.registerUserDefaults()
 
         
-        self.clipboardMonitor = ClipboardMonitor()
-        self.clipboardMonitor?.startMonitoring()
+//        self.clipboardMonitor = ClipboardMonitor()
+//        self.clipboardMonitor?.startMonitoring()
     }
     
     var body: some Scene {
@@ -33,6 +33,8 @@ struct ClipboardHistoryApp: App {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(appDelegate.clipboardManager)
+                .environmentObject(appDelegate.windowManager!)
+                .environmentObject(appDelegate.menuManager!)
         }
         
     }
@@ -44,8 +46,6 @@ struct ClipboardHistoryApp: App {
         
         let defaults: [String: Any] = [
             "darkMode": true, // TODO
-            "openOnStartup": true, // TODO
-            
             "windowWidth": 300,
             "windowHeight": 500,
             "windowLocation": "bottomRight", // TODO
@@ -55,7 +55,6 @@ struct ClipboardHistoryApp: App {
             "hideWindowWhenNotSelected": false,
             "windowOnAllDesktops": true,
             
-            "showMenuIcon": true, // TODO ehh idk i think it should stay there
             "pauseCopying": false, // TODO
             
             "maxStoreCount": 50,
@@ -79,31 +78,52 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var window: NSWindow?
     var statusBarItem: NSStatusItem?
     
-    var clipboardManager = ClipboardManager()
-    let userDefaultsManager = UserDefaultsManager.shared
+    let userDefaultsManager: UserDefaultsManager?
+    let windowManager: WindowManager?
+    let menuManager: MenuManager?
+    
+    let clipboardManager = ClipboardManager.shared
     
     private var lastToggleTime: Date?
     private var lastPasteNoFormatTime: Date?
     
-    
+    private var isAppCopyingPaused: Bool?
+        
     override init() {
+        self.userDefaultsManager = UserDefaultsManager.shared
+        self.windowManager = WindowManager.shared
+        self.menuManager = MenuManager.shared
+        
+        if let userDefaultsManager = userDefaultsManager {
+            self.isAppCopyingPaused = userDefaultsManager.pauseCopying
+        }
+        
         super.init()
         setupGlobalHotKey()
     }
 
     func setupGlobalHotKey() {
+        
+        let now = Date()
+        if let lastToggleTime = lastToggleTime, now.timeIntervalSince(lastToggleTime) < 0.33 {
+                        print("Toggle too fast, ignoring.")
+            return
+        }
+        self.lastToggleTime = now
+        
+        
         KeyboardShortcuts.onKeyDown(for: .toggleWindow) {
-            self.toggleWindow()
+            self.windowManager?.toggleWindow()
         }
         
-        if userDefaultsManager.pasteWithoutFormatting {
+        if let userDefaultsManager = userDefaultsManager, userDefaultsManager.pasteWithoutFormatting {
             KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
                 self.pasteNoFormatting()
             }
         }
         
         KeyboardShortcuts.onKeyUp(for: .resetWindow) {
-            self.resetWindow()
+            self.windowManager?.resetWindow()
         }
         
     }
@@ -113,150 +133,61 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         setupGlobalHotKey()
         
         if let window = NSApplication.shared.windows.first {
-            setupWindow(window: window)
+            self.windowManager?.setupWindow(window: window)
                    
-            self.window = window
-            
-            window.collectionBehavior = [] // No special behavior
+//            self.window = window
+//            
+//            window.collectionBehavior = [] // No special behavior
             
 //            NotificationCenter.default.addObserver(self, selector: #selector(windowDidBecomeKey(_:)), name: NSWindow.didBecomeKeyNotification, object: nil)
-            if userDefaultsManager.hideWindowWhenNotSelected {
-                NotificationCenter.default.addObserver(self, selector: #selector(windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
+            if let userDefaultsManager = userDefaultsManager, userDefaultsManager.hideWindowWhenNotSelected {
+                NotificationCenter.default.addObserver(self, selector: #selector(windowManager?.windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
             }
         }
         
-        setupStatusBar()
+        menuManager?.setupStatusBar()
     }
-    
-    @objc func toggleWindow() {
-//                print("Cmd-Shift-C pressed: Toggling window visibility")
-                
-        let now = Date()
-        if let lastToggleTime = lastToggleTime, now.timeIntervalSince(lastToggleTime) < 0.33 {
-            //            print("Toggle too fast, ignoring.")
-            return
-        }
-        self.lastToggleTime = now
-        
-        DispatchQueue.main.async {
-            NSApplication.shared.activate(ignoringOtherApps: true)
-            if let window = self.window {
-                if !window.isKeyWindow {
-                    window.makeKeyAndOrderFront(nil)
-                    if self.userDefaultsManager.windowOnAllDesktops {
-                        window.collectionBehavior = .canJoinAllSpaces
-                    }
-                    if self.userDefaultsManager.canWindowFloat {
-                        window.level = .floating
-                    }
-                    NSApplication.shared.activate(ignoringOtherApps: true)
-                }
-                else {
-                    window.orderOut(nil)
-                }
-            }
-        }
-    }
-    
-    @objc func windowDidResignKey(_ notification: Notification) {
-//        print("Window did resign key (unfocused)")
-        // App lost focus
-        
-        if userDefaultsManager.hideWindowWhenNotSelected {
-            hideWindow()
-        }
-    }
-    
-    @objc func hideWindow() {
-        DispatchQueue.main.async {
-            if let window = self.window {
-                window.orderOut(nil)
-            }
-        }
-    }
-    
-    func setupWindow(window: NSWindow) {
-        let screen = window.screen ?? NSScreen.main!
-        let windowWidth: CGFloat = userDefaultsManager.windowWidth
-        let windowHeight: CGFloat = userDefaultsManager.windowHeight
-                                
-        let xPosition = screen.visibleFrame.maxX - windowWidth
-        let yPosition = screen.visibleFrame.minY
-        
-        let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
-        window.setFrame(frame, display: true)
-        if self.userDefaultsManager.canWindowFloat {
-            window.level = .floating
-        }
-        if userDefaultsManager.windowOnAllDesktops {
-            window.collectionBehavior = .canJoinAllSpaces
-        }
-        NSApplication.shared.activate(ignoringOtherApps: true)
-
-        
-//        window.standardWindowButton(.closeButton)?.isHidden = true
-//        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
-//        window.standardWindowButton(.zoomButton)?.isHidden = true
-    }
-    
-    func resetWindow() {
-        if let window = NSApplication.shared.windows.first {
-            window.makeKeyAndOrderFront(nil)
-            NSApplication.shared.activate(ignoringOtherApps: true)
-            
-            let screen = window.screen ?? NSScreen.main!
-
-            let windowWidth: CGFloat = userDefaultsManager.windowWidth
-            let windowHeight: CGFloat = userDefaultsManager.windowHeight
-            
-            let xPosition = screen.visibleFrame.maxX - windowWidth
-            let yPosition = screen.visibleFrame.minY
-            
-            let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
-            window.setFrame(frame, display: true)
-            
-            if self.userDefaultsManager.canWindowFloat {
-                window.level = .floating
-            }
-        }
-    }
-    
-    @objc func showWindow() {
-        DispatchQueue.main.async {
-            NSApplication.shared.activate(ignoringOtherApps: true)
-            if let window = self.window {
-                window.makeKeyAndOrderFront(nil)
-                if self.userDefaultsManager.windowOnAllDesktops {
-                    window.collectionBehavior = .canJoinAllSpaces
-                }
-                if self.userDefaultsManager.canWindowFloat {
-                    window.level = .floating
-                }
-                NSApplication.shared.activate(ignoringOtherApps: true)
-            }
-        }
-    }
-    
     
     public func pasteNoFormatting() {
-        let pasteboard = NSPasteboard.general
         
-        // Check for file URLs first
-        if let fileUrls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], let _ = fileUrls.first {
-        } else if let imageData = pasteboard.data(forType: .tiff), let _ = NSImage(data: imageData) {
-        } else if let content = pasteboard.string(forType: .string) {
-            updatePasteboard(with: content)
+        DispatchQueue.main.async {
+
+            self.clipboardManager.clipboardMonitor?.isPasteNoFormattingCopy = true
+            
+            let pasteboard = NSPasteboard.general
+            
+            // Check for file URLs first
+            if let fileUrls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], let _ = fileUrls.first {
+            }
+            else if let imageData = pasteboard.data(forType: .tiff), let _ = NSImage(data: imageData) {
+            }
+            else if let content = pasteboard.string(forType: .string) {
+                self.updatePasteboard(with: content)
+            } else if let rtfData = pasteboard.data(forType: .rtf) {
+                // Convert RTF to plain text
+                if let attributedString = NSAttributedString(rtf: rtfData, documentAttributes: nil) {
+                    let plainText = attributedString.string
+                    self.updatePasteboard(with: plainText)
+                }
+            } else if let htmlData = pasteboard.data(forType: .html) {
+                // Convert HTML to plain text
+                if let attributedString = try? NSAttributedString(data: htmlData, options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil) {
+                    let plainText = attributedString.string
+                    self.updatePasteboard(with: plainText)
+                }
+            }
+            
+            self.paste()
         }
-        
-        paste()
     }
     
     private func updatePasteboard(with plainText: String) {
+        
         let pasteboard = NSPasteboard.general
         
         pasteboard.clearContents()
         pasteboard.setString(plainText, forType: .string)
-        paste()
+        self.paste()
     }
     
     func paste() {
@@ -266,7 +197,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         self.lastPasteNoFormatTime = now
         
+        
         DispatchQueue.main.async {
+            
             let cmdFlag = CGEventFlags.maskCommand
             let vCode: CGKeyCode = 9 // Key code for 'V' on a QWERTY keyboard
             
@@ -279,43 +212,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             keyVUp?.flags = cmdFlag
             keyVDown?.post(tap: .cgAnnotatedSessionEventTap)
             keyVUp?.post(tap: .cgAnnotatedSessionEventTap)
-        }
-    }
-    
-    func setupStatusBar() {
-        statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        
-        if let button = statusBarItem?.button {
             
-            if let image = NSImage(named: NSImage.Name("AppIcon")) {
-                image.isTemplate = true
-                button.image = resizeImage(image: image, width: 16, height: 16)
-            } else {
-                button.title = "ClipboardHistory"
-            }
-            button.action = #selector(showWindow)
-            button.target = self
-            //            print("Status bar item set up")
-        } else {
-            //            print("Failed to create status bar item")
         }
-        
     }
     
-    func resizeImage(image: NSImage, width: CGFloat, height: CGFloat) -> NSImage {
-        let newSize = NSMakeSize(width, height)
-        let newImage = NSImage(size: newSize)
-        newImage.lockFocus()
-        image.draw(in: NSRect(origin: .zero, size: newSize))
-        newImage.unlockFocus()
-        newImage.isTemplate = image.isTemplate
-        return newImage
-    }
+    
     
     func applicationWillTerminate(_ notification: Notification) {
         // Remove observers
 //        NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)
-        if userDefaultsManager.hideWindowWhenNotSelected {
+        if let userDefaultsManager = userDefaultsManager, userDefaultsManager.hideWindowWhenNotSelected {
             NotificationCenter.default.removeObserver(self, name: NSWindow.didResignKeyNotification, object: nil)
         }
     }
@@ -336,6 +242,7 @@ extension KeyboardShortcuts.Name {
         let userDefaultsManager = UserDefaultsManager.shared
         return Self("resetWindow", default: .from(userDefaultsManager.resetWindowShortcut))
     }
+    
 }
 
 extension KeyboardShortcuts.Shortcut {
@@ -415,105 +322,5 @@ extension KeyboardShortcuts.Shortcut {
         }()
                 
         return Self(key, modifiers: modifiers)
-    }
-}
-
-
-class UserDefaultsManager {
-    static let shared = UserDefaultsManager()
-
-//  User Defaults
-    var darkMode: Bool
-    var openOnStartup: Bool
-    
-    var windowWidth: CGFloat
-    var windowHeight: CGFloat
-    var windowLocation: String
-    var windowPopOut: Bool  // pop out of the menu button when clicked
-    var canWindowFloat: Bool
-    var hideWindowWhenNotSelected: Bool
-    var windowOnAllDesktops: Bool
-    
-    var showMenuIcon: Bool
-    var pauseCopying: Bool
-    
-    var noDuplicates: Bool
-    var maxStoreCount: Int
-    var canCopyFilesOrFolders: Bool
-    var canCopyImages: Bool
-    
-    var pasteWithoutFormatting: Bool
-    
-    var pasteWithoutFormattingShortcut: KeyboardShortcut
-    var toggleWindowShortcut: KeyboardShortcut
-    var resetWindowShortcut: KeyboardShortcut
-    var openSearchShortcut: KeyboardShortcut
-    var deleteSelectedItemShortcut: KeyboardShortcut
-    var clearItemsShortcut: KeyboardShortcut
-    
-    init() {
-        let decoder = JSONDecoder()
-        
-        self.darkMode = UserDefaults.standard.bool(forKey: "darkMode")
-        self.openOnStartup = UserDefaults.standard.bool(forKey: "openOnStartup")
-        
-        self.windowWidth = CGFloat(UserDefaults.standard.float(forKey: "windowWidth"))
-        self.windowHeight = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
-        self.windowLocation = UserDefaults.standard.string(forKey: "windowLocation") ?? "bottomRight"
-        self.windowPopOut = UserDefaults.standard.bool(forKey: "windowPopOut")
-        self.canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
-        if self.canWindowFloat {
-            self.hideWindowWhenNotSelected = false
-        }
-        else {
-            self.hideWindowWhenNotSelected = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
-        }
-        self.windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
-
-        self.showMenuIcon = UserDefaults.standard.bool(forKey: "showMenuIcon")
-        self.pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
-        
-        self.maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
-        self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
-        self.canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
-        self.canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
-
-        self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
-        
-        if let data = UserDefaults.standard.data(forKey: "pasteWithoutFormattingShortcut") {
-            self.pasteWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
-        } else {
-            self.pasteWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "v")
-        }
-        
-        if let data = UserDefaults.standard.data(forKey: "toggleWindowShortcut") {
-            self.toggleWindowShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
-        } else {
-            self.toggleWindowShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "c")
-        }
-        
-        if let data = UserDefaults.standard.data(forKey: "resetWindowShortcut") {
-            self.resetWindowShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
-        } else {
-            self.resetWindowShortcut = KeyboardShortcut(modifiers: ["option"], key: "r")
-        }
-        
-        if let data = UserDefaults.standard.data(forKey: "openSearchShortcut") {
-            self.openSearchShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
-        } else {
-            self.openSearchShortcut = KeyboardShortcut(modifiers: ["cmd"], key: "f")
-        }
-        
-        if let data = UserDefaults.standard.data(forKey: "deleteSelectedItemShortcut") {
-            self.deleteSelectedItemShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
-        } else {
-            self.deleteSelectedItemShortcut = KeyboardShortcut(modifiers: ["cmd"], key: "d")
-        }
-        
-        if let data = UserDefaults.standard.data(forKey: "clearItemsShortcut") {
-            self.clearItemsShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
-        } else {
-            self.clearItemsShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "d")
-        }
     }
 }

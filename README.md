@@ -3,7 +3,8 @@
 
 * scroll to the very bottom for install instructions
 
-* it is fully built by me, Alex Brodsky, in Swift for Mac OS.
+* it is fully built by me, Alex Brodsky, in Swift for Mac OS 14.4 
+    * I could try lowering the required MacOS version if you want to try the app, email is in bio
 
 * it opens on the bottom right on all the desktop windows
 

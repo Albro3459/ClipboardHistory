@@ -3,8 +3,6 @@ Ideas for what options should be available in settings
 
  - TODO: dark mode (default) or light mode
 
- - TODO: open on startup
-
  - change default window width and height
  - change default window positioning
 
@@ -12,7 +10,6 @@ Ideas for what options should be available in settings
     - should window hide when clicked off
  - should window be available on all desktops
 
- - show menu icon
  - TODO: pause button
  - TODO: can window open out of menu icon
  - TODO: can window open out of menu icon and desktop or just one or the other
