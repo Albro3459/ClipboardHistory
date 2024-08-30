@@ -14,8 +14,8 @@
             filePath = "ClipboardHistory/Managers/MenuManager.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "125"
-            endingLineNumber = "125"
+            startingLineNumber = "127"
+            endingLineNumber = "127"
             landmarkName = "updateMainMenu(isCopyingPaused:)"
             landmarkType = "7">
          </BreakpointContent>

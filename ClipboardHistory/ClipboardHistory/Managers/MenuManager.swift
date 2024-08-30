@@ -108,7 +108,9 @@ class MenuManager: ObservableObject {
         // Help Menu
         let helpMenu = NSMenu(title: "Help")
         let helpMenuItem = NSMenuItem()
-        helpMenu.addItem(NSMenuItem(title: "List of Keyboard Shortcuts", action: nil, keyEquivalent: "/"))
+        let listOfShortcutsItem = NSMenuItem(title: "List of Keyboard Shortcuts", action: #selector(self.openClipboardShortcutsLink), keyEquivalent: "/")
+        listOfShortcutsItem.target = self
+        helpMenu.addItem(listOfShortcutsItem)
         helpMenuItem.submenu = helpMenu
         appMenu.addItem(helpMenuItem)
         
