@@ -17,6 +17,8 @@ class WindowManager: ObservableObject {
     static let shared = WindowManager()
     
     let userDefaultsManager = UserDefaultsManager.shared
+    let clipboardManager = ClipboardManager.shared
+    weak var menuManager: MenuManager?
     
     var window: NSWindow?
     
@@ -44,7 +46,7 @@ class WindowManager: ObservableObject {
                 window.collectionBehavior = .canJoinAllSpaces
             }
             NSApplication.shared.activate(ignoringOtherApps: true)
-            
+                        
             
             //        window.standardWindowButton(.closeButton)?.isHidden = true
             //        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
@@ -71,6 +73,8 @@ class WindowManager: ObservableObject {
             if self.userDefaultsManager.canWindowFloat {
                 window.level = .floating
             }
+            
+            self.menuManager?.updateMainMenu(isCopyingPaused: nil)
         }
     }
     
@@ -89,9 +93,10 @@ class WindowManager: ObservableObject {
                         window.level = .floating
                     }
                     NSApplication.shared.activate(ignoringOtherApps: true)
+                    self.menuManager?.updateMainMenu(isCopyingPaused: nil)
                 }
                 else {
-                    window.orderOut(nil)
+                    self.hideWindow()
                 }
             }
         }
@@ -115,9 +120,11 @@ class WindowManager: ObservableObject {
     
     @objc func hideWindow() {
         DispatchQueue.main.async {
-            if let window = self.window {
-                window.orderOut(nil)
-            }
+//            if let window = self.window {
+//                window.orderOut(nil)
+////                window.miniaturize(nil)
+//            }
+            NSApp.hide(nil)
         }
     }
     

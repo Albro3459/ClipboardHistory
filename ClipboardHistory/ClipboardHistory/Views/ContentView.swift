@@ -136,8 +136,8 @@ struct ContentView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .animation(.easeInOut, value: monitor.isCopyingPaused)
                 // x: frame_width/2  |  y: -(window_height/2 - frame_height)
-                .position(x: 110/2, y: -(self.windowHeight/2 - 24))
-                .frame(width: 110, height: 24)
+                .position(x: (monitor.isCopyingPaused ? 110 : 120)/2, y: -(self.windowHeight/2 - 24))
+                .frame(width: (monitor.isCopyingPaused ? 110 : 120), height: 24)
                 .zIndex(5)
             
                 

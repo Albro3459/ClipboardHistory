@@ -104,6 +104,26 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		604683B72C7FF5C100B2C298 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				60639F1B2C5440280031CBE2 /* ClipboardManager.swift */,
+				604B0A662C7EBD6E00839CEA /* WindowManager.swift */,
+				604B0A682C7FBF9600839CEA /* UserDefaultsManager.swift */,
+				604B0A642C7EBAE500839CEA /* MenuManager.swift */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		604683BA2C7FF67A00B2C298 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				6072ABBC2BF3157A0091E218 /* ContentView.swift */,
+				60038DDE2BFCD04C00AC3CA8 /* SearchBarView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 		6072ABAE2BF3157A0091E218 = {
 			isa = PBXGroup;
 			children = (
@@ -128,21 +148,17 @@
 			isa = PBXGroup;
 			children = (
 				60FCB8722BF80BB700221509 /* Info.plist */,
-				6072ABF02BF7DD4A0091E218 /* Model */,
 				6072ABBA2BF3157A0091E218 /* ClipboardHistoryApp.swift */,
-				6072ABBC2BF3157A0091E218 /* ContentView.swift */,
-				604B0A632C7C2DCF00839CEA /* ClipboardHistory_Debug.entitlements */,
-				604B0A622C7C2DCF00839CEA /* ClipboardHistory_Release.entitlements */,
-				6072ABBE2BF3157B0091E218 /* Assets.xcassets */,
-				6072ABC32BF3157B0091E218 /* Persistence.swift */,
-				604B0A682C7FBF9600839CEA /* UserDefaultsManager.swift */,
-				604B0A642C7EBAE500839CEA /* MenuManager.swift */,
-				6072ABC52BF3157B0091E218 /* ClipboardHistory.xcdatamodeld */,
-				604B0A662C7EBD6E00839CEA /* WindowManager.swift */,
-				6072ABC02BF3157B0091E218 /* Preview Content */,
 				6072ABEE2BF7D6CF0091E218 /* ClipboardMonitor.swift */,
-				60639F1B2C5440280031CBE2 /* ClipboardManager.swift */,
-				60038DDE2BFCD04C00AC3CA8 /* SearchBarView.swift */,
+				6072ABF02BF7DD4A0091E218 /* Models */,
+				604683B72C7FF5C100B2C298 /* Managers */,
+				604683BA2C7FF67A00B2C298 /* Views */,
+				6072ABBE2BF3157B0091E218 /* Assets.xcassets */,
+				604B0A622C7C2DCF00839CEA /* ClipboardHistory_Release.entitlements */,
+				604B0A632C7C2DCF00839CEA /* ClipboardHistory_Debug.entitlements */,
+				6072ABC32BF3157B0091E218 /* Persistence.swift */,
+				6072ABC52BF3157B0091E218 /* ClipboardHistory.xcdatamodeld */,
+				6072ABC02BF3157B0091E218 /* Preview Content */,
 			);
 			path = ClipboardHistory;
 			sourceTree = "<group>";
@@ -172,7 +188,7 @@
 			path = ClipboardHistoryUITests;
 			sourceTree = "<group>";
 		};
-		6072ABF02BF7DD4A0091E218 /* Model */ = {
+		6072ABF02BF7DD4A0091E218 /* Models */ = {
 			isa = PBXGroup;
 			children = (
 				60F263942C6735BC00E5FC7B /* SelectedGroup.swift */,
@@ -182,7 +198,7 @@
 				60F2638F2C645E0C00E5FC7B /* ClipboardGroup+CoreDataProperties.swift */,
 				60E1F0CE2C7AA02B0074F91B /* KeyboardShortcut.swift */,
 			);
-			path = Model;
+			path = Models;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -510,12 +526,14 @@
 				INFOPLIST_FILE = ClipboardHistory/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ClipboardHistory;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_LSUIElement = NO;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "It monitors for shift + cmd + c to open and close the UI for the Clipboard Manager";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.2;
+				MARKETING_VERSION = 2.5;
+				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = myclipboardhistory.ClipboardHistory;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -542,12 +560,14 @@
 				INFOPLIST_FILE = ClipboardHistory/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ClipboardHistory;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_LSUIElement = NO;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "It monitors for shift + cmd + c to open and close the UI for the Clipboard Manager";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.2;
+				MARKETING_VERSION = 2.5;
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = myclipboardhistory.ClipboardHistory;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

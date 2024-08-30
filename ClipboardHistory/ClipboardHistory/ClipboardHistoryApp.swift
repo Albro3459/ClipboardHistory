@@ -15,17 +15,10 @@ struct ClipboardHistoryApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     let persistenceController = PersistenceController.shared
-//    var clipboardMonitor: ClipboardMonitor?
-        
-    @State private var hideTitle = false
-    
+            
     init() {
         //have to register first!!
         self.registerUserDefaults()
-
-        
-//        self.clipboardMonitor = ClipboardMonitor()
-//        self.clipboardMonitor?.startMonitoring()
     }
     
     var body: some Scene {
@@ -33,10 +26,9 @@ struct ClipboardHistoryApp: App {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(appDelegate.clipboardManager)
-                .environmentObject(appDelegate.windowManager!)
-                .environmentObject(appDelegate.menuManager!)
+                .environmentObject(appDelegate.windowManager)
+                .environmentObject(appDelegate.menuManager)
         }
-        
     }
     
     private func registerUserDefaults() {
@@ -45,6 +37,8 @@ struct ClipboardHistoryApp: App {
         let encoder = JSONEncoder()
         
         let defaults: [String: Any] = [
+            "appName": "ClipboardHistory",
+            
             "darkMode": true, // TODO
             "windowWidth": 300,
             "windowHeight": 500,
@@ -55,7 +49,7 @@ struct ClipboardHistoryApp: App {
             "hideWindowWhenNotSelected": false,
             "windowOnAllDesktops": true,
             
-            "pauseCopying": false, // TODO
+            "pauseCopying": false,
             
             "maxStoreCount": 50,
             "noDuplicates": true,
@@ -79,24 +73,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var statusBarItem: NSStatusItem?
     
     let userDefaultsManager: UserDefaultsManager?
-    let windowManager: WindowManager?
-    let menuManager: MenuManager?
+//    let windowManager: WindowManager?
+//    let menuManager: MenuManager?
+    let menuManager = MenuManager.shared
+    let windowManager = WindowManager.shared
+
     
     let clipboardManager = ClipboardManager.shared
     
     private var lastToggleTime: Date?
     private var lastPasteNoFormatTime: Date?
-    
-    private var isAppCopyingPaused: Bool?
-        
+            
     override init() {
         self.userDefaultsManager = UserDefaultsManager.shared
-        self.windowManager = WindowManager.shared
-        self.menuManager = MenuManager.shared
         
-        if let userDefaultsManager = userDefaultsManager {
-            self.isAppCopyingPaused = userDefaultsManager.pauseCopying
-        }
+//        self.windowManager = WindowManager.shared
+//        self.menuManager = MenuManager.shared
+        self.menuManager.windowManager = self.windowManager
+        self.windowManager.menuManager = self.menuManager
         
         super.init()
         setupGlobalHotKey()
@@ -106,14 +100,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         let now = Date()
         if let lastToggleTime = lastToggleTime, now.timeIntervalSince(lastToggleTime) < 0.33 {
-                        print("Toggle too fast, ignoring.")
+//                        print("Toggle too fast, ignoring.")
             return
         }
         self.lastToggleTime = now
         
         
         KeyboardShortcuts.onKeyDown(for: .toggleWindow) {
-            self.windowManager?.toggleWindow()
+            self.windowManager.toggleWindow()
+        }
+        
+        KeyboardShortcuts.onKeyDown(for: .hideWindow) {
+            self.windowManager.hideWindow()
         }
         
         if let userDefaultsManager = userDefaultsManager, userDefaultsManager.pasteWithoutFormatting {
@@ -123,29 +121,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         
         KeyboardShortcuts.onKeyUp(for: .resetWindow) {
-            self.windowManager?.resetWindow()
+            self.windowManager.resetWindow()
         }
         
     }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        
+                
         setupGlobalHotKey()
         
         if let window = NSApplication.shared.windows.first {
-            self.windowManager?.setupWindow(window: window)
+            self.windowManager.setupWindow(window: window)
+            
                    
-//            self.window = window
-//            
-//            window.collectionBehavior = [] // No special behavior
             
 //            NotificationCenter.default.addObserver(self, selector: #selector(windowDidBecomeKey(_:)), name: NSWindow.didBecomeKeyNotification, object: nil)
             if let userDefaultsManager = userDefaultsManager, userDefaultsManager.hideWindowWhenNotSelected {
-                NotificationCenter.default.addObserver(self, selector: #selector(windowManager?.windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
+                NotificationCenter.default.addObserver(self, selector: #selector(windowManager.windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
             }
         }
         
-        menuManager?.setupStatusBar()
+        self.menuManager.setupStatusBar()
+        self.menuManager.setupMainMenu(isCopyingPaused: nil)
+
     }
     
     public func pasteNoFormatting() {
@@ -232,6 +230,8 @@ extension KeyboardShortcuts.Name {
         let userDefaultsManager = UserDefaultsManager.shared
         return Self("toggleWindow", default: .from(userDefaultsManager.toggleWindowShortcut))
     }
+    
+    static var hideWindow = Self("hideWindow", default: .init(.h, modifiers: [.command]))
 
     static var pasteNoFormatting: Self {
         let userDefaultsManager = UserDefaultsManager.shared

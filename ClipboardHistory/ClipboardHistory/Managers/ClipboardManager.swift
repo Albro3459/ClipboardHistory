@@ -18,6 +18,9 @@ import CoreData
 
 class ClipboardManager: ObservableObject {
     static let shared = ClipboardManager()
+    let userDefaultsManager = UserDefaultsManager.shared
+    @Published var clipboardMonitor: ClipboardMonitor?
+    
     
     @Published var selectedItem: ClipboardItem?
     @Published var selectedGroup: SelectedGroup?
@@ -32,9 +35,7 @@ class ClipboardManager: ObservableObject {
         ClipboardType.selectAll
     ]
     
-    let userDefaultsManager = UserDefaultsManager.shared
     
-    @Published var clipboardMonitor: ClipboardMonitor?
 
     private init() {
         self.clipboardMonitor = ClipboardMonitor()

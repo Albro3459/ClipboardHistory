@@ -16,8 +16,9 @@ class UserDefaultsManager {
     static let shared = UserDefaultsManager()
 
 //  User Defaults
-    var darkMode: Bool
+    var appName: String
     
+    var darkMode: Bool
     var windowWidth: CGFloat
     var windowHeight: CGFloat
     var windowLocation: String
@@ -42,8 +43,9 @@ class UserDefaultsManager {
     init() {
         let decoder = JSONDecoder()
         
-        self.darkMode = UserDefaults.standard.bool(forKey: "darkMode")
+        self.appName = UserDefaults.standard.string(forKey: "appName") ?? "test App Name"
         
+        self.darkMode = UserDefaults.standard.bool(forKey: "darkMode")
         self.windowWidth = CGFloat(UserDefaults.standard.float(forKey: "windowWidth"))
         self.windowHeight = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
         self.windowLocation = UserDefaults.standard.string(forKey: "windowLocation") ?? "bottomRight"
