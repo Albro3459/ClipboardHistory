@@ -116,6 +116,11 @@ class MenuManager: ObservableObject {
                 let listOfShortcutsItem = NSMenuItem(title: "List of Keyboard Shortcuts", action: #selector(self.openClipboardShortcutsLink), keyEquivalent: "/")
                 listOfShortcutsItem.target = self
                 helpMenu.addItem(listOfShortcutsItem)
+                
+                let installationGuideItem = NSMenuItem(title: "Installation Guide", action: #selector(self.openInstallationGuideLink), keyEquivalent: ".")
+                installationGuideItem.target = self
+                helpMenu.addItem(installationGuideItem)
+                
                 helpMenuItem.submenu = helpMenu
                 appMenu.addItem(helpMenuItem)
                 
@@ -193,10 +198,16 @@ class MenuManager: ObservableObject {
         settingsWindowManager.setupSettingsWindow()
     }
     
-    // UPDATE ME!!
     @objc func openClipboardShortcutsLink() {
         // Code to open the linkedin window
         if let url = URL(string: "https://github.com/Albro3459/ClipboardHistory/blob/main/ListOfKeyboardShortcuts.md") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    
+    @objc func openInstallationGuideLink() {
+        // Code to open the linkedin window
+        if let url = URL(string: "https://github.com/Albro3459/ClipboardHistory/blob/main/FullInstallationGuide.md") {
             NSWorkspace.shared.open(url)
         }
     }

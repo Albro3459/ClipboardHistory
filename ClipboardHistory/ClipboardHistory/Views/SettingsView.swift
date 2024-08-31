@@ -173,8 +173,10 @@ struct ClipboardSettingsView: View {
                         print("disabling")
                         KeyboardShortcuts.disable(.pasteNoFormatting)
                     }
-                    menuManager.updateMainMenu(isCopyingPaused: pauseCopying)
+                    
                     userDefaultsManager.updateAll(saveShortcuts: false)
+                    
+                    menuManager.updateMainMenu(isCopyingPaused: pauseCopying)
                     
                     DispatchQueue.main.async {
                         self.saved = true
@@ -370,7 +372,7 @@ struct WindowSettingsView: View {
                             //                        Toggle("ONLY Pop Out Window From Menu Bar Icon?", isOn: $onlyPopOutWindow).padding()
                             
                             Toggle("Can Window Float?", isOn: $canWindowFloat).padding()
-                            Toggle("Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelected).padding()
+                            Toggle("**Very Buggy** Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelected).padding()
                             Toggle("Show Window On All Desktops?", isOn: $windowOnAllDesktops).padding()
                         }
                         
@@ -404,7 +406,6 @@ struct WindowSettingsView: View {
                         print("disabling")
                         KeyboardShortcuts.disable(.pasteNoFormatting)
                     }
-                    MenuManager.shared.updateMainMenu(isCopyingPaused: pauseCopying)
                     
                     if hideWindowWhenNotSelected {
                         NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification,object: nil,queue: .main) { notification in
@@ -413,6 +414,8 @@ struct WindowSettingsView: View {
                     }
                     
                     userDefaultsManager.updateAll(saveShortcuts: true)
+                    
+                    MenuManager.shared.updateMainMenu(isCopyingPaused: pauseCopying)
                     
                     DispatchQueue.main.async {
                         self.saved = true
@@ -582,13 +585,14 @@ struct ShortcutsSettingsView: View {
                         print("disabling")
                         KeyboardShortcuts.disable(.pasteNoFormatting)
                     }
-                    MenuManager.shared.updateMainMenu(isCopyingPaused: pauseCopying)
                     
                     userDefaultsManager.pasteWithoutFormattingShortcut = pasteWithoutFormattingShortcut
                     userDefaultsManager.toggleWindowShortcut = toggleWindowShortcut
                     userDefaultsManager.resetWindowShortcut = resetWindowShortcut
                     
                     UserDefaultsManager.shared.updateAll(saveShortcuts: true)
+                    
+                    MenuManager.shared.updateMainMenu(isCopyingPaused: pauseCopying)
                     
                     DispatchQueue.main.async {
                         self.saved = true
