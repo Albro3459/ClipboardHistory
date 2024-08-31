@@ -168,6 +168,7 @@ class WindowManager: ObservableObject {
     @objc func showWindow() {
         DispatchQueue.main.async {
             NSApplication.shared.activate(ignoringOtherApps: true)
+            self.menuManager?.updateMainMenu(isCopyingPaused: nil)
             if let window = self.window {
                 window.makeKeyAndOrderFront(nil)
 //                if self.userDefaultsManager.windowOnAllDesktops {

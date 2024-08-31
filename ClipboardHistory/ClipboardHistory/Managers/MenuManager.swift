@@ -49,7 +49,7 @@ class MenuManager: ObservableObject {
     func setupMainMenu(isCopyingPaused: Bool?) {
         DispatchQueue.main.async {
             NSApp.menu = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 
                 let appMenu = NSMenu()
                 

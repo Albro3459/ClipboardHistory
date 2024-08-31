@@ -475,50 +475,52 @@ class ClipboardManager: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([fileURL])
     }
     
+    // used to also copy temp images to desktop before opening, now thats commented out
     func openFile(filePath: String) {
         // if file is tmp image, copy to desktop, then open
             // else, open the file
         
         
         let fileURL = URL(fileURLWithPath: filePath)
-        let fileName = fileURL.lastPathComponent
-        
-        let regexPattern = "^Image \\d{4}-\\d{2}-\\d{2} at \\d{1,2}\\.\\d{2}\\.\\d{2} (AM|PM)\\.png$"
-        
-        do {
-            let regex = try NSRegularExpression(pattern: regexPattern)
-            let range = NSRange(location: 0, length: fileName.utf16.count)
+//        let fileName = fileURL.lastPathComponent
+//        
+//        let regexPattern = "^Image \\d{4}-\\d{2}-\\d{2} at \\d{1,2}\\.\\d{2}\\.\\d{2} (AM|PM)\\.png$"
+//        
+//        do {
+//            let regex = try NSRegularExpression(pattern: regexPattern)
+//            let range = NSRange(location: 0, length: fileName.utf16.count)
             
-            if let clipboardMonitor = clipboardMonitor, regex.firstMatch(in: fileName, options: [], range: range) != nil && fileURL.path.hasPrefix(clipboardMonitor.tmpFolderPath.path) {
-                                // File matches the regex pattern, copy it to the desktop
-                let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
-                let destinationURL = desktopURL.appendingPathComponent(fileName)
-                
-                
-                do {
-                    try FileManager.default.copyItem(at: fileURL, to: destinationURL)
-                    print("File copied to Desktop: \(destinationURL.path)")
-                    // Check if the file exists and open it
-                    if FileManager.default.fileExists(atPath: destinationURL.path) {
-                        NSWorkspace.shared.open(destinationURL)
-                    } else {
-                        print("File does not exist at path: \(destinationURL.path)")
-                    }
-                } catch {
-                    print("Failed to copy file to Desktop: \(error)")
-                }
-            }
-            else {
+            // copies temp images to Desktop, we are no longer going to use that
+//            if let clipboardMonitor = clipboardMonitor, regex.firstMatch(in: fileName, options: [], range: range) != nil && fileURL.path.hasPrefix(clipboardMonitor.tmpFolderPath.path) {
+//                                // File matches the regex pattern, copy it to the desktop
+//                let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
+//                let destinationURL = desktopURL.appendingPathComponent(fileName)
+//                
+//                
+//                do {
+//                    try FileManager.default.copyItem(at: fileURL, to: destinationURL)
+//                    print("File copied to Desktop: \(destinationURL.path)")
+//                    // Check if the file exists and open it
+//                    if FileManager.default.fileExists(atPath: destinationURL.path) {
+//                        NSWorkspace.shared.open(destinationURL)
+//                    } else {
+//                        print("File does not exist at path: \(destinationURL.path)")
+//                    }
+//                } catch {
+//                    print("Failed to copy file to Desktop: \(error)")
+//                }
+//            }
+//            else {
                 // Check if the file exists and open it
                 if FileManager.default.fileExists(atPath: filePath) {
                     NSWorkspace.shared.open(fileURL)
                 } else {
                     print("File does not exist at path: \(filePath)")
                 }
-            }
-        } catch {
-            print("Invalid regex pattern: \(error)")
-        }
+//            }
+//        } catch {
+//            print("Invalid regex pattern: \(error)")
+//        }
     }
     
     private var lastPasteNoFormatTime: Date?

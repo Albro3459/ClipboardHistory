@@ -163,6 +163,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 //        }
     }
     
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+//        print("Dock icon clicked!")
+        
+        menuManager.updateMainMenu(isCopyingPaused: nil)
+        
+        return true
+    }
+    
+    
+    
+    
+    
 //    @objc func windowDidAppear(_ notification: Notification) {
 //        print("window appeared")
 //        NSApplication.shared.mainMenu = nil
@@ -183,6 +195,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             }
         }
     }
+    
+    
     
     
     
