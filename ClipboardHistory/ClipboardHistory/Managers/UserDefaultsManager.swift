@@ -95,7 +95,6 @@ class UserDefaultsManager {
     }
     
     func saveShortcuts() {
-        print("saving shortcuts")
         if let data = try? encoder.encode(pasteWithoutFormattingShortcut) {
             UserDefaults.standard.set(data, forKey: "pasteWithoutFormattingShortcut")
         }
@@ -113,7 +112,6 @@ class UserDefaultsManager {
     }
     
     func updateAll(saveShortcuts: Bool) {
-        print("update all")
         if saveShortcuts {
             self.saveShortcuts()
         }
@@ -123,7 +121,7 @@ class UserDefaultsManager {
         self.darkMode = UserDefaults.standard.bool(forKey: "darkMode")
         self.windowWidth = CGFloat(UserDefaults.standard.float(forKey: "windowWidth"))
         self.windowHeight = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
-        self.windowLocation = UserDefaults.standard.string(forKey: "windowLocation") ?? "bottomRight"
+        self.windowLocation = UserDefaults.standard.string(forKey: "windowLocation") ?? "Bottom Right"
         self.windowPopOut = UserDefaults.standard.bool(forKey: "windowPopOut")
         self.onlyPopOutWindow = UserDefaults.standard.bool(forKey: "onlyPopOutWindow")
         self.canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
@@ -132,7 +130,6 @@ class UserDefaultsManager {
         }
         else {
             self.hideWindowWhenNotSelected = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
-            print("saved \(self.hideWindowWhenNotSelected)")
         }
         self.windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
 

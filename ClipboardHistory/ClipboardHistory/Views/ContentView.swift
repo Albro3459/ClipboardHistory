@@ -175,7 +175,6 @@ struct ContentView: View {
             }
             
             VStack {
-                
                 HStack {
                     SearchBarView(searchText: $searchText)
                         .focused($isFocused)
@@ -187,19 +186,19 @@ struct ContentView: View {
                             isFocused = false
                         }) {
                             Image(systemName: "line.horizontal.3.decrease.circle")
-                                .foregroundColor(.white)
+                                .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                                 .padding(.trailing, -2)
                         }
                         .buttonStyle(PlainButtonStyle())
                         .popover(isPresented: $isSelectingCategory) {
-                               TypeDropDownMenu(multiSelection: $selectedTypes)
+                            TypeDropDownMenu(multiSelection: $selectedTypes)
                                 .frame(width: 140, height: 165)
                                 .padding(.bottom, -11)
-                           }
-                           .zIndex(1)
-                           .help("Filter Items by Type")
-                    
-                    
+                        }
+                        .zIndex(1)
+                        .help("Filter Items by Type")
+                        
+                        
                         Button(action: {
                             if !atTopOfList && !justScrolledToTop {
                                 scrollToTop = true
@@ -211,7 +210,7 @@ struct ContentView: View {
                             }
                         }) {
                             Image(systemName: (!atTopOfList && !justScrolledToTop) ? "arrow.up.circle" : "arrow.down.circle")
-                                .foregroundColor(.white)
+                                .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                                 .padding(.trailing, 5)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -726,7 +725,8 @@ struct ClipboardGroupView: View {
                 }))
             .id(item.objectID)
             .background(RoundedRectangle(cornerRadius: 8)
-                .fill((clipboardManager.selectedGroup == selectGroup && clipboardManager.selectedItem == nil) ? (isGroupSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5)) : Color(.darkGray).opacity(0.5))
+                .fill((clipboardManager.selectedGroup == selectGroup && clipboardManager.selectedItem == nil) ? 
+                      (isGroupSelected ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5)) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
             )
@@ -760,7 +760,7 @@ struct ClipboardGroupView: View {
                             clipboardManager.toggleExpansion(for: selectGroup)
                         }) {
                             Image(systemName: selectGroup.isExpanded ? "chevron.down.circle" : "chevron.right.circle")
-                                .foregroundColor(.white)
+                                .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                         }
                         .buttonStyle(PlainButtonStyle())
                         .animation(.easeInOut, value: selectGroup.isExpanded)
@@ -788,18 +788,18 @@ struct ClipboardGroupView: View {
                                             .resizable()
                                             .aspectRatio(contentMode: .fit)
                                             .frame(width: 25, height: 25)
-                                            .foregroundStyle(.black)
+                                            .foregroundStyle(UserDefaultsManager.shared.darkMode ? .black : .white)
                                             .opacity(0.65)
                                         
                                         Image(systemName: "circle")
                                             .resizable()
                                             .aspectRatio(contentMode: .fit)
                                             .frame(width: 25, height: 25)
-                                            .foregroundStyle(.white)
+                                            .foregroundStyle(UserDefaultsManager.shared.darkMode ? .white : .black)
                                         
                                         Text("+\(count)")
                                             .font(.system(size: 12))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                                     }
                                     .padding(.top, 18)
                                     .padding(.trailing, 5)
@@ -816,7 +816,7 @@ struct ClipboardGroupView: View {
                             clipboardManager.copySelectedGroup()
                         }) {
                             Image(systemName: "doc.on.doc")
-                                .foregroundColor(.white)
+                                .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                         }
                         .buttonStyle(BorderlessButtonStyle())
                         .help("Copy Item")
@@ -827,7 +827,7 @@ struct ClipboardGroupView: View {
                             showingDeleteAlert = true
                         }) {
                             Image(systemName: "trash")
-                                .foregroundColor(.white)
+                                .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                         }
                         .help("Delete Item")
                         .buttonStyle(BorderlessButtonStyle())
@@ -855,8 +855,7 @@ struct ClipboardGroupView: View {
                     .padding(.bottom, 4)
                     
                     .background(RoundedRectangle(cornerRadius: 8)
-                        .fill((clipboardManager.selectedGroup == selectGroup && clipboardManager.selectedItem == nil) ? (isGroupSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5)) : Color(.darkGray).opacity(0.5))
-
+                        .fill((clipboardManager.selectedGroup == selectGroup && clipboardManager.selectedItem == nil) ? (isGroupSelected ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5)) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
                     )
@@ -1284,9 +1283,9 @@ struct ClipboardItemView: View {
                                 clipboardManager.openFolder(filePath: resolvedUrl.path)
                             }) {
 //                                Image(systemName: "rectangle.portrait.and.arrow.right")
-//                                    .foregroundColor(.white)
+//                                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                                 Image(systemName: "folder")
-                                    .foregroundColor(.white)
+                                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                             }
                             .buttonStyle(BorderlessButtonStyle())
                             .padding(.trailing, 5)
@@ -1296,9 +1295,9 @@ struct ClipboardItemView: View {
                                 clipboardManager.openFile(filePath: resolvedUrl.path)
                             }) {
 //                                Image(systemName: "rectangle.portrait.and.arrow.right")
-//                                    .foregroundColor(.white)
+//                                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                                 Image(systemName: "folder")
-                                    .foregroundColor(.white)
+                                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
 
                             }
                             .buttonStyle(BorderlessButtonStyle())
@@ -1311,9 +1310,9 @@ struct ClipboardItemView: View {
                         clipboardManager.openFolder(filePath: filePath)
                     }) {
 //                        Image(systemName: "rectangle.portrait.and.arrow.right")
-//                            .foregroundColor(.white)
+//                            .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                         Image(systemName: "folder")
-                            .foregroundColor(.white)
+                            .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                     }
                     .buttonStyle(BorderlessButtonStyle())
                     .padding(.trailing, 5)
@@ -1323,9 +1322,9 @@ struct ClipboardItemView: View {
                         clipboardManager.openFile(filePath: filePath)
                     }) {
 //                        Image(systemName: "rectangle.portrait.and.arrow.right")
-//                            .foregroundColor(.white)
+//                            .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                         Image(systemName: "folder")
-                            .foregroundColor(.white)
+                            .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                     }
                     .buttonStyle(BorderlessButtonStyle())
                     .padding(.trailing, 5)
@@ -1344,7 +1343,7 @@ struct ClipboardItemView: View {
                 }
             }) {
                 Image(systemName: "doc.on.doc")
-                    .foregroundColor(.white)
+                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
             }
             .buttonStyle(BorderlessButtonStyle())
             .help("Copy Item")
@@ -1358,7 +1357,7 @@ struct ClipboardItemView: View {
                 showingDeleteAlert = true
             }) {
                 Image(systemName: "trash")
-                    .foregroundColor(.white)
+                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
             }
             .help("Delete Item")
             .buttonStyle(BorderlessButtonStyle())
@@ -1386,7 +1385,7 @@ struct ClipboardItemView: View {
         .padding(.bottom, 4)
         
         .background(RoundedRectangle(cornerRadius: 8)
-            .fill(isPartOfGroup ? (isSelected ? Color(.darkGray) : Color(.darkGray).opacity(0.5)) : Color.clear)
+        .fill(isPartOfGroup ? (isSelected ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray) :                                 (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5)) : Color.clear)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
         )

@@ -25,6 +25,8 @@ class WindowManager: ObservableObject {
     private init() {}
     
     func setupWindow(window: NSWindow) {
+        NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
+        
         self.window = window
         
         if let window = self.window {
@@ -34,8 +36,35 @@ class WindowManager: ObservableObject {
             let windowWidth: CGFloat = userDefaultsManager.windowWidth
             let windowHeight: CGFloat = userDefaultsManager.windowHeight
             
-            let xPosition = screen.visibleFrame.maxX - windowWidth
-            let yPosition = screen.visibleFrame.minY
+            
+            var xPosition: CGFloat
+            var yPosition: CGFloat
+            switch userDefaultsManager.windowLocation {
+            case "Bottom Right":
+                xPosition = screen.visibleFrame.maxX - windowWidth
+                yPosition = screen.visibleFrame.minY
+                
+            case "Bottom Left":
+                xPosition = screen.visibleFrame.minX
+                yPosition = screen.visibleFrame.minY
+                
+            case "Top Right":
+                xPosition = screen.visibleFrame.maxX - windowWidth
+                yPosition = screen.visibleFrame.maxY - windowHeight
+                
+            case "Top Left":
+                xPosition = screen.visibleFrame.minX
+                yPosition = screen.visibleFrame.maxY - windowHeight
+                
+            case "Center":
+                xPosition = screen.visibleFrame.maxX/2 - windowWidth/2
+                yPosition = screen.visibleFrame.maxY/2 - windowHeight/2
+                
+            default:
+                // Default to BottomRight
+                xPosition = screen.visibleFrame.maxX - windowWidth
+                yPosition = screen.visibleFrame.minY
+            }
             
             let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
             window.setFrame(frame, display: true)
@@ -58,6 +87,8 @@ class WindowManager: ObservableObject {
     
     func resetWindow() {
         if let window = NSApplication.shared.windows.first {
+            NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
+
             window.makeKeyAndOrderFront(nil)
             NSApplication.shared.activate(ignoringOtherApps: true)
             
@@ -66,8 +97,35 @@ class WindowManager: ObservableObject {
             let windowWidth: CGFloat = userDefaultsManager.windowWidth
             let windowHeight: CGFloat = userDefaultsManager.windowHeight
             
-            let xPosition = screen.visibleFrame.maxX - windowWidth
-            let yPosition = screen.visibleFrame.minY
+            var xPosition: CGFloat
+            var yPosition: CGFloat
+            switch userDefaultsManager.windowLocation {
+            case "Bottom Right":
+                xPosition = screen.visibleFrame.maxX - windowWidth
+                yPosition = screen.visibleFrame.minY
+                
+            case "Bottom Left":
+                xPosition = screen.visibleFrame.minX
+                yPosition = screen.visibleFrame.minY
+                
+            case "Top Right":
+                xPosition = screen.visibleFrame.maxX - windowWidth
+                yPosition = screen.visibleFrame.maxY - windowHeight
+                
+            case "Top Left":
+                xPosition = screen.visibleFrame.minX
+                yPosition = screen.visibleFrame.maxY - windowHeight
+                
+            case "Center":
+                xPosition = screen.visibleFrame.maxX/2 - windowWidth/2
+                yPosition = screen.visibleFrame.maxY/2 - windowHeight/2
+                
+            default:
+                // Default to BottomRight
+                print("default")
+                xPosition = screen.visibleFrame.maxX - windowWidth
+                yPosition = screen.visibleFrame.minY
+            }
             
             let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
             window.setFrame(frame, display: true)

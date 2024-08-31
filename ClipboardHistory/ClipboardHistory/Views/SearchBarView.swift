@@ -17,7 +17,7 @@ struct SearchBarView: View {
         ZStack(alignment: .leading) {
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.white)
+                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                     .padding(.leading, 8)
                     .onTapGesture {
                         isTextFieldFocused = false
@@ -37,7 +37,6 @@ struct SearchBarView: View {
                         isTextFieldFocused = false
                     }) {
                         Image(systemName: "xmark.circle.fill")
-//                            .foregroundColor(.white)
                             .padding(.trailing, -2)
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -147,7 +146,7 @@ struct TypeDropDownMenu: View {
 //                    .zIndex(1)
                 Text("Filter by type: ")
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                     .padding(.top, 5)
 //                    .zIndex(2)
             }
@@ -159,11 +158,11 @@ struct TypeDropDownMenu: View {
                 HStack {
                     Spacer()  // Pushes the text to the center
                     Text(type.name)
-                        .foregroundColor(.white)
+                        .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                         .fontWeight(type.name == "Select All" ? .bold : .medium)
                     Spacer()  // Ensures the text stays centered
                 }
-                .foregroundColor(.white)
+                .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                 .listRowBackground(Color.gray.opacity(0.25))
                 .listRowSeparator(.hidden)
                 .onTapGesture(count: 1) {

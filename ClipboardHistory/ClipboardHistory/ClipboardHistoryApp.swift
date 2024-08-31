@@ -43,7 +43,7 @@ struct ClipboardHistoryApp: App {
             "darkMode": true, // TODO
             "windowWidth": 300,
             "windowHeight": 500,
-            "windowLocation": "bottomRight", // TODO
+            "windowLocation": "Bottom Right", // TODO
             "windowPopOut": false, // TODO
             "onlyPopOutWindow": false, // TODO
             "canWindowFloat": false,
@@ -143,7 +143,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             
 //            NotificationCenter.default.addObserver(self, selector: #selector(windowDidBecomeKey(_:)), name: NSWindow.didBecomeKeyNotification, object: nil)
             if UserDefaultsManager.shared.hideWindowWhenNotSelected {
-                print("launched")
                 NotificationCenter.default.addObserver(self, selector: #selector(windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
             }
         }

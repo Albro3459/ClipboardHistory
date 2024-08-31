@@ -124,7 +124,7 @@ class MenuManager: ObservableObject {
                 NSApp.mainMenu = appMenu
                 self.appMenu = appMenu
                 
-                print("setup the main menu")
+//                print("setup the main menu")
             }
         }
     }
@@ -189,9 +189,7 @@ class MenuManager: ObservableObject {
     
     @objc private func openSettings() {
         // Code to open the settings window
-        print("open settings")
-//        NSApp.sendAction(Selector(("showCustomSettingsWindow:")), to: nil, from: nil)
-//        NSApp.orderFront
+//        print("open settings")
         settingsWindowManager.setupSettingsWindow()
     }
     
