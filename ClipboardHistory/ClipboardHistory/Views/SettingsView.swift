@@ -164,13 +164,13 @@ struct ClipboardSettingsView: View {
                     UserDefaults.standard.set(canCopyImages, forKey: "canCopyImages")
                     UserDefaults.standard.set(pasteWithoutFormatting, forKey: "pasteWithoutFormatting")
                     if pasteWithoutFormatting {
-                        print("enabling")
+//                        print("enabling")
                         KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
                             clipboardManager.pasteNoFormatting()
                         }
                     }
                     else if !pasteWithoutFormatting {
-                        print("disabling")
+//                        print("disabling")
                         KeyboardShortcuts.disable(.pasteNoFormatting)
                     }
                     
@@ -397,13 +397,13 @@ struct WindowSettingsView: View {
                     UserDefaults.standard.set(windowOnAllDesktops, forKey: "windowOnAllDesktops")
                     
                     if pasteWithoutFormatting {
-                        print("enabling")
+//                        print("enabling")
                         KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
                             ClipboardManager.shared.pasteNoFormatting()
                         }
                     }
                     else if !pasteWithoutFormatting {
-                        print("disabling")
+//                        print("disabling")
                         KeyboardShortcuts.disable(.pasteNoFormatting)
                     }
                     
@@ -576,13 +576,13 @@ struct ShortcutsSettingsView: View {
                 Spacer()
                 Button("Save") {
                     if pasteWithoutFormatting {
-                        print("enabling")
+//                        print("enabling")
                         KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
                             ClipboardManager.shared.pasteNoFormatting()
                         }
                     }
                     else if !pasteWithoutFormatting {
-                        print("disabling")
+//                        print("disabling")
                         KeyboardShortcuts.disable(.pasteNoFormatting)
                     }
                     

@@ -40,10 +40,10 @@ struct ClipboardHistoryApp: App {
         let defaults: [String: Any] = [
             "appName": "ClipboardHistory",
             
-            "darkMode": true, // TODO
+            "darkMode": true,
             "windowWidth": 300,
             "windowHeight": 500,
-            "windowLocation": "Bottom Right", // TODO
+            "windowLocation": "Bottom Right",
             "windowPopOut": false, // TODO
             "onlyPopOutWindow": false, // TODO
             "canWindowFloat": false,
@@ -57,7 +57,7 @@ struct ClipboardHistoryApp: App {
             "canCopyFilesOrFolders": true,
             "canCopyImages": true,
             
-            "pasteWithoutFormatting": true,
+            "pasteWithoutFormatting": false,
             
             // out of app shortcuts
             "pasteWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["command", "shift"], key: "v")),
