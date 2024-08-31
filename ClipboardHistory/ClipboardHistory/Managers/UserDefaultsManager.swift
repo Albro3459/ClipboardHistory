@@ -129,6 +129,7 @@ class UserDefaultsManager {
             self.hideWindowWhenNotSelected = false
         }
         else {
+            print("updated hiding")
             self.hideWindowWhenNotSelected = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
         }
         self.windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")

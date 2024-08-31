@@ -173,11 +173,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         print("Window did resign key (unfocused)")
         // App lost focus
         
-//        if let userDefaultsManager = userDefaultsManager, userDefaultsManager.hideWindowWhenNotSelected {
-        print("working")
         print(UserDefaultsManager.shared.hideWindowWhenNotSelected)
         if UserDefaultsManager.shared.hideWindowWhenNotSelected {
-            windowManager.hideWindow()
+            // Check if the current main window is the settings window
+            if let mainWindow = NSApplication.shared.mainWindow, mainWindow.title == "ClipboardHistory" {
+                print("The main window is the settings window, not hiding it.")
+            } else {
+                windowManager.hideWindow()
+            }
         }
     }
     

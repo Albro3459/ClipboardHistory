@@ -406,6 +406,12 @@ struct WindowSettingsView: View {
                     }
                     MenuManager.shared.updateMainMenu(isCopyingPaused: pauseCopying)
                     
+                    if hideWindowWhenNotSelected {
+                        NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification,object: nil,queue: .main) { notification in
+                            handleWindowDidResignKey(notification)
+                        }
+                    }
+                    
                     userDefaultsManager.updateAll(saveShortcuts: true)
                     
                     DispatchQueue.main.async {
@@ -431,6 +437,21 @@ struct WindowSettingsView: View {
             return floatValue
         }
         return nil
+    }
+    
+    private func handleWindowDidResignKey(_ notification: Notification) {
+        print("Window did resign key (unfocused)")
+        // App lost focus
+        
+        print(UserDefaultsManager.shared.hideWindowWhenNotSelected)
+        if UserDefaultsManager.shared.hideWindowWhenNotSelected {
+            // Check if the current main window is the settings window
+            if let mainWindow = NSApplication.shared.mainWindow, mainWindow.title == "ClipboardHistory" {
+                print("The main window is the settings window, not hiding it.")
+            } else {
+                WindowManager.shared.hideWindow()
+            }
+        }
     }
 }
 
