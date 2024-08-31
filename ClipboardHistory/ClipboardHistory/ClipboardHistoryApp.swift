@@ -15,10 +15,11 @@ struct ClipboardHistoryApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     let persistenceController = PersistenceController.shared
-            
+                    
     init() {
         //have to register first!!
         self.registerUserDefaults()
+                
     }
     
     var body: some Scene {
@@ -59,9 +60,9 @@ struct ClipboardHistoryApp: App {
             "pasteWithoutFormatting": true,
             
             // out of app shortcuts
-            "pasteWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd", "shift"], key: "v")),
-            "toggleWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["cmd", "shift"], key: "c")),
-            "resetWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["option"], key: "r")),
+            "pasteWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["command", "shift"], key: "v")),
+            "toggleWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["command", "shift"], key: "c")),
+            "resetWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["option"], key: "r"))
         ]
         
         UserDefaults.standard.register(defaults: defaults)
@@ -77,8 +78,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 //    let menuManager: MenuManager?
     let menuManager = MenuManager.shared
     let windowManager = WindowManager.shared
-
-    
     let clipboardManager = ClipboardManager.shared
     
     private var lastToggleTime: Date?
@@ -105,30 +104,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         self.lastToggleTime = now
         
+        KeyboardShortcuts.reset(.toggleWindow)
+        KeyboardShortcuts.reset(.resetWindow)
+        KeyboardShortcuts.reset(.hideWindow)
+        KeyboardShortcuts.reset(.toggleWindow)
+        
         
         KeyboardShortcuts.onKeyDown(for: .toggleWindow) {
             self.windowManager.toggleWindow()
-        }
-        
-        KeyboardShortcuts.onKeyDown(for: .hideWindow) {
-            self.windowManager.hideWindow()
-        }
-        
-        if let userDefaultsManager = userDefaultsManager, userDefaultsManager.pasteWithoutFormatting {
-            KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
-                self.pasteNoFormatting()
-            }
         }
         
         KeyboardShortcuts.onKeyUp(for: .resetWindow) {
             self.windowManager.resetWindow()
         }
         
+        KeyboardShortcuts.onKeyDown(for: .hideWindow) {
+            self.windowManager.hideWindow()
+        }
+        
+        if let userDefaultsManager = self.userDefaultsManager, userDefaultsManager.pasteWithoutFormatting {
+            KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
+                self.clipboardManager.pasteNoFormatting()
+            }
+        }
+        else { // otherwise free it up, so I dont consume the keystroke
+            KeyboardShortcuts.disable(.pasteNoFormatting)
+        }
+        
     }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-                
-        setupGlobalHotKey()
+//        setupGlobalHotKey()
         
         if let window = NSApplication.shared.windows.first {
             self.windowManager.setupWindow(window: window)
@@ -136,81 +142,43 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                    
             
 //            NotificationCenter.default.addObserver(self, selector: #selector(windowDidBecomeKey(_:)), name: NSWindow.didBecomeKeyNotification, object: nil)
-            if let userDefaultsManager = userDefaultsManager, userDefaultsManager.hideWindowWhenNotSelected {
-                NotificationCenter.default.addObserver(self, selector: #selector(windowManager.windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
+            if UserDefaultsManager.shared.hideWindowWhenNotSelected {
+                print("launched")
+                NotificationCenter.default.addObserver(self, selector: #selector(windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
             }
         }
         
         self.menuManager.setupStatusBar()
-        self.menuManager.setupMainMenu(isCopyingPaused: nil)
-
+        
+        NSApplication.shared.mainMenu = nil
+//        self.menuManager.setupMainMenu(isCopyingPaused: nil)
+        self.menuManager.updateMainMenu(isCopyingPaused: nil)
+        
+//        // Watch for menu updates
+//        NotificationCenter.default.addObserver(
+//            forName: NSMenu.didAddItemNotification,
+//            object: nil,
+//            queue: .main
+//        ) { _ in
+//            self.menuManager.updateMainMenu(isCopyingPaused: nil)
+//        }
     }
     
-    public func pasteNoFormatting() {
-        
-        DispatchQueue.main.async {
-
-            self.clipboardManager.clipboardMonitor?.isPasteNoFormattingCopy = true
-            
-            let pasteboard = NSPasteboard.general
-            
-            // Check for file URLs first
-            if let fileUrls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], let _ = fileUrls.first {
-            }
-            else if let imageData = pasteboard.data(forType: .tiff), let _ = NSImage(data: imageData) {
-            }
-            else if let content = pasteboard.string(forType: .string) {
-                self.updatePasteboard(with: content)
-            } else if let rtfData = pasteboard.data(forType: .rtf) {
-                // Convert RTF to plain text
-                if let attributedString = NSAttributedString(rtf: rtfData, documentAttributes: nil) {
-                    let plainText = attributedString.string
-                    self.updatePasteboard(with: plainText)
-                }
-            } else if let htmlData = pasteboard.data(forType: .html) {
-                // Convert HTML to plain text
-                if let attributedString = try? NSAttributedString(data: htmlData, options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil) {
-                    let plainText = attributedString.string
-                    self.updatePasteboard(with: plainText)
-                }
-            }
-            
-            self.paste()
-        }
-    }
+//    @objc func windowDidAppear(_ notification: Notification) {
+//        print("window appeared")
+//        NSApplication.shared.mainMenu = nil
+//        self.menuManager.updateMainMenu(isCopyingPaused: nil)
+//    }
     
-    private func updatePasteboard(with plainText: String) {
+    @objc func windowDidResignKey(_ notification: Notification) {
+        print("Window did resign key (unfocused)")
+        // App lost focus
         
-        let pasteboard = NSPasteboard.general
-        
-        pasteboard.clearContents()
-        pasteboard.setString(plainText, forType: .string)
-        self.paste()
-    }
-    
-    func paste() {
-        let now = Date()
-        if let lastPasteNoFormatTime = lastPasteNoFormatTime, now.timeIntervalSince(lastPasteNoFormatTime) < 0.33 {
-            return
-        }
-        self.lastPasteNoFormatTime = now
-        
-        
-        DispatchQueue.main.async {
-            
-            let cmdFlag = CGEventFlags.maskCommand
-            let vCode: CGKeyCode = 9 // Key code for 'V' on a QWERTY keyboard
-            
-            let source = CGEventSource(stateID: .combinedSessionState)
-            source?.setLocalEventsFilterDuringSuppressionState([.permitLocalMouseEvents, .permitSystemDefinedEvents], state: .eventSuppressionStateSuppressionInterval)
-            
-            let keyVDown = CGEvent(keyboardEventSource: source, virtualKey: vCode, keyDown: true)
-            let keyVUp = CGEvent(keyboardEventSource: source, virtualKey: vCode, keyDown: false)
-            keyVDown?.flags = cmdFlag
-            keyVUp?.flags = cmdFlag
-            keyVDown?.post(tap: .cgAnnotatedSessionEventTap)
-            keyVUp?.post(tap: .cgAnnotatedSessionEventTap)
-            
+//        if let userDefaultsManager = userDefaultsManager, userDefaultsManager.hideWindowWhenNotSelected {
+        print("working")
+        print(UserDefaultsManager.shared.hideWindowWhenNotSelected)
+        if UserDefaultsManager.shared.hideWindowWhenNotSelected {
+            windowManager.hideWindow()
         }
     }
     
@@ -249,7 +217,7 @@ extension KeyboardShortcuts.Shortcut {
     static func from(_ customShortcut: KeyboardShortcut) -> Self {
         let modifiers: NSEvent.ModifierFlags = {
             var flags = NSEvent.ModifierFlags()
-            if customShortcut.modifiers.contains("cmd") {
+            if customShortcut.modifiers.contains("command") {
                 flags.insert(.command)
             }
             if customShortcut.modifiers.contains("shift") {

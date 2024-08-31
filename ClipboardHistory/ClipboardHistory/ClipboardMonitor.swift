@@ -42,6 +42,11 @@ class ClipboardMonitor: ObservableObject {
         startMonitoring()
     }
     
+    func reloadVars() {
+        self.maxItemCount = userDefaultsManager.maxStoreCount * 2
+        self.isCopyingPaused = userDefaultsManager.pauseCopying
+    }
+    
     func startMonitoring() {
         checkTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(checkClipboard), userInfo: nil, repeats: true)
     }
@@ -119,10 +124,16 @@ class ClipboardMonitor: ObservableObject {
                                     }
                                 }
                             }
+                            else {
+                                return
+                            }
                         }
                         else if let imageData = pasteboard.data(forType: .tiff), let image = NSImage(data: imageData) {
                             if self.userDefaultsManager.canCopyImages {
                                 self.processImageData(image: image, inGroup: group, context: childContext)
+                            }
+                            else {
+                                return
                             }
                         }
                         else if let content = pasteboard.string(forType: .string) {

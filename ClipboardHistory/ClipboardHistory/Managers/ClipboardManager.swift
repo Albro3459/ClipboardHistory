@@ -35,7 +35,6 @@ class ClipboardManager: ObservableObject {
         ClipboardType.selectAll
     ]
     
-    
 
     private init() {
         self.clipboardMonitor = ClipboardMonitor()
@@ -522,11 +521,74 @@ class ClipboardManager: ObservableObject {
         }
     }
     
-//    func getKeyboardKey(key: Int) -> String {
-//        
-//    }
+    private var lastPasteNoFormatTime: Date?
     
-//    func getAppleKeyCode(key: String) -> Int {
-//        
-//    }
+    public func pasteNoFormatting() {
+        
+        DispatchQueue.main.async {
+
+            self.clipboardMonitor?.isPasteNoFormattingCopy = true
+            
+            let pasteboard = NSPasteboard.general
+            
+            // Check for file URLs first
+            if let fileUrls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], let _ = fileUrls.first {
+            }
+            else if let imageData = pasteboard.data(forType: .tiff), let _ = NSImage(data: imageData) {
+            }
+            else if let content = pasteboard.string(forType: .string) {
+                self.updatePasteboard(with: content)
+            } else if let rtfData = pasteboard.data(forType: .rtf) {
+                // Convert RTF to plain text
+                if let attributedString = NSAttributedString(rtf: rtfData, documentAttributes: nil) {
+                    let plainText = attributedString.string
+                    self.updatePasteboard(with: plainText)
+                }
+            } else if let htmlData = pasteboard.data(forType: .html) {
+                // Convert HTML to plain text
+                if let attributedString = try? NSAttributedString(data: htmlData, options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil) {
+                    let plainText = attributedString.string
+                    self.updatePasteboard(with: plainText)
+                }
+            }
+            
+            self.paste()
+        }
+    }
+    
+    private func updatePasteboard(with plainText: String) {
+        
+        let pasteboard = NSPasteboard.general
+        
+        pasteboard.clearContents()
+        pasteboard.setString(plainText, forType: .string)
+        self.paste()
+    }
+    
+    func paste() {
+        let now = Date()
+        if let lastPasteNoFormatTime = lastPasteNoFormatTime, now.timeIntervalSince(lastPasteNoFormatTime) < 0.33 {
+            return
+        }
+        self.lastPasteNoFormatTime = now
+        
+        
+        DispatchQueue.main.async {
+            
+            let cmdFlag = CGEventFlags.maskCommand
+            let vCode: CGKeyCode = 9 // Key code for 'V' on a QWERTY keyboard
+            
+            let source = CGEventSource(stateID: .combinedSessionState)
+            source?.setLocalEventsFilterDuringSuppressionState([.permitLocalMouseEvents, .permitSystemDefinedEvents], state: .eventSuppressionStateSuppressionInterval)
+            
+            let keyVDown = CGEvent(keyboardEventSource: source, virtualKey: vCode, keyDown: true)
+            let keyVUp = CGEvent(keyboardEventSource: source, virtualKey: vCode, keyDown: false)
+            keyVDown?.flags = cmdFlag
+            keyVUp?.flags = cmdFlag
+            keyVDown?.post(tap: .cgAnnotatedSessionEventTap)
+            keyVUp?.post(tap: .cgAnnotatedSessionEventTap)
+            
+        }
+    }
+
 }

@@ -19,6 +19,7 @@ class MenuManager: ObservableObject {
     let userDefaultsManager = UserDefaultsManager.shared
     let clipboardManager = ClipboardManager.shared
     weak var windowManager: WindowManager?
+    let settingsWindowManager = SettingsWindowManager.shared
     
     var statusBarItem: NSStatusItem?
     
@@ -46,94 +47,103 @@ class MenuManager: ObservableObject {
     }
     
     func setupMainMenu(isCopyingPaused: Bool?) {
-        let appMenu = NSMenu()
-        
-        // First App Menu
-        let mainMenu = NSMenu()
-        let githubItem = NSMenuItem(title: "GitHub", action: #selector(openGitHub), keyEquivalent: ";")
-        githubItem.target = self
-        mainMenu.addItem(githubItem)
-        
-        let linkedinItem = NSMenuItem(title: "Creator's LinkedIn", action: #selector(openLinkedIn), keyEquivalent: "'")
-        linkedinItem.target = self
-        mainMenu.addItem(linkedinItem)
-        
-        mainMenu.addItem(NSMenuItem.separator())
-        
-        let preferencesItem = NSMenuItem(title: "\(userDefaultsManager.appName) Settings...", action: #selector(openSettings), keyEquivalent: ",")
-        preferencesItem.target = self
-        mainMenu.addItem(preferencesItem)
-        
-        let quitItem = NSMenuItem(title: "Quit \(userDefaultsManager.appName)", action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
-        mainMenu.addItem(quitItem)
-        
-        let appMenuTitle = NSMenuItem(title: "ClipboardManager", action: nil, keyEquivalent: "")
-        appMenuTitle.submenu = mainMenu
-        appMenu.addItem(appMenuTitle)
-        
-        
-        // File Menu
-        let fileMenu = NSMenu(title: "File")
-        let pauseResumeItem = NSMenuItem(title: (isCopyingPaused ?? userDefaultsManager.pauseCopying ? "Resume Copying" : "Pause Copying"), action: #selector(toggleCopying), keyEquivalent: "P")
-        pauseResumeItem.keyEquivalentModifierMask = [.command, .shift]
-        pauseResumeItem.target = self
-        fileMenu.addItem(pauseResumeItem)
-        
-        let fileMenuItem = NSMenuItem()
-        fileMenuItem.submenu = fileMenu
-        
-        appMenu.addItem(fileMenuItem)
-        
-        
-        // Window Menu
-        let windowMenu = NSMenu(title: "Window")
-        let toggleWindowItem = NSMenuItem(title: "Show/Hide App", action: #selector(windowManager?.toggleWindow), keyEquivalent: userDefaultsManager.toggleWindowShortcut.toKeyEquivalent() ?? "C")
-        toggleWindowItem.keyEquivalentModifierMask = userDefaultsManager.toggleWindowShortcut.toModifierFlags()
-        toggleWindowItem.target = WindowManager.shared
-        windowMenu.addItem(toggleWindowItem)
-        
-        // keyEquivalent of capital letter tells swift to add Shift to the command!!
-        let hideItem = NSMenuItem(title: "Hide App", action: #selector(windowManager?.hideWindow), keyEquivalent: "h")
-        hideItem.target = WindowManager.shared
-        windowMenu.addItem(hideItem)
-        
-        let windowMenuItem = NSMenuItem()
-        windowMenuItem.submenu = windowMenu
-        
-        appMenu.addItem(windowMenuItem)
-        
-        
-        
-        // Help Menu
-        let helpMenu = NSMenu(title: "Help")
-        let helpMenuItem = NSMenuItem()
-        let listOfShortcutsItem = NSMenuItem(title: "List of Keyboard Shortcuts", action: #selector(self.openClipboardShortcutsLink), keyEquivalent: "/")
-        listOfShortcutsItem.target = self
-        helpMenu.addItem(listOfShortcutsItem)
-        helpMenuItem.submenu = helpMenu
-        appMenu.addItem(helpMenuItem)
-        
-        
-        // Set the main menu
-        NSApp.mainMenu = appMenu
-        self.appMenu = appMenu
+        DispatchQueue.main.async {
+            NSApp.menu = nil
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                
+                let appMenu = NSMenu()
+                
+                // First App Menu
+                let mainMenu = NSMenu()
+                let githubItem = NSMenuItem(title: "GitHub", action: #selector(self.openGitHub), keyEquivalent: ";")
+                githubItem.target = self
+                mainMenu.addItem(githubItem)
+                
+                let linkedinItem = NSMenuItem(title: "Creator's LinkedIn", action: #selector(self.openLinkedIn), keyEquivalent: "'")
+                linkedinItem.target = self
+                mainMenu.addItem(linkedinItem)
+                
+                mainMenu.addItem(NSMenuItem.separator())
+                
+                let preferencesItem = NSMenuItem(title: "Settings...", action: #selector(self.openSettings), keyEquivalent: ",")
+                preferencesItem.target = self
+                mainMenu.addItem(preferencesItem)
+                
+                let quitItem = NSMenuItem(title: "Quit \(self.userDefaultsManager.appName)", action: #selector(self.quitApp), keyEquivalent: "q")
+                quitItem.target = self
+                mainMenu.addItem(quitItem)
+                
+                let appMenuTitle = NSMenuItem(title: "ClipboardManager", action: nil, keyEquivalent: "")
+                appMenuTitle.submenu = mainMenu
+                appMenu.addItem(appMenuTitle)
+                
+                
+                // File Menu
+                let fileMenu = NSMenu(title: "File")
+                let pauseResumeItem = NSMenuItem(title: (isCopyingPaused ?? self.userDefaultsManager.pauseCopying ? "Resume Copying" : "Pause Copying"), action: #selector(self.toggleCopying), keyEquivalent: "P")
+                pauseResumeItem.keyEquivalentModifierMask = [.command, .shift]
+                pauseResumeItem.target = self
+                fileMenu.addItem(pauseResumeItem)
+                
+                let fileMenuItem = NSMenuItem()
+                fileMenuItem.submenu = fileMenu
+                
+                appMenu.addItem(fileMenuItem)
+                
+                
+                // Window Menu
+                let windowMenu = NSMenu(title: "Window")
+                let toggleWindowItem = NSMenuItem(title: "Show/Hide App", action: #selector(self.windowManager?.toggleWindow), keyEquivalent: self.userDefaultsManager.toggleWindowShortcut.toKeyEquivalent() ?? "C")
+                toggleWindowItem.keyEquivalentModifierMask = self.userDefaultsManager.toggleWindowShortcut.toModifierFlags()
+                toggleWindowItem.target = WindowManager.shared
+                windowMenu.addItem(toggleWindowItem)
+                
+                // keyEquivalent of capital letter tells swift to add Shift to the command!!
+                let hideItem = NSMenuItem(title: "Hide App", action: #selector(self.windowManager?.hideWindow), keyEquivalent: "h")
+                hideItem.target = WindowManager.shared
+                windowMenu.addItem(hideItem)
+                
+                let windowMenuItem = NSMenuItem()
+                windowMenuItem.submenu = windowMenu
+                
+                appMenu.addItem(windowMenuItem)
+                
+                
+                
+                // Help Menu
+                let helpMenu = NSMenu(title: "Help")
+                let helpMenuItem = NSMenuItem()
+                let listOfShortcutsItem = NSMenuItem(title: "List of Keyboard Shortcuts", action: #selector(self.openClipboardShortcutsLink), keyEquivalent: "/")
+                listOfShortcutsItem.target = self
+                helpMenu.addItem(listOfShortcutsItem)
+                helpMenuItem.submenu = helpMenu
+                appMenu.addItem(helpMenuItem)
+                
+                
+                // Set the main menu
+                NSApp.mainMenu = appMenu
+                self.appMenu = appMenu
+                
+                print("setup the main menu")
+            }
+        }
     }
     
     func updateMainMenu(isCopyingPaused: Bool?) {
         let isCopyingPaused = isCopyingPaused ?? UserDefaults.standard.bool(forKey: "pauseCopying")
-        if let appMenu = self.appMenu {
-            // updates when isCopyingPaused changes
-            if let fileMenu = appMenu.item(at: 2), let fileSubmenu = fileMenu.submenu, let fileItem = fileSubmenu.items.first {
-                fileItem.title = isCopyingPaused  ? "Resume Copying" : "Pause Copying"
-            }
-            else {
-                
-            }
-        }
-        else {
-            self.setupMainMenu(isCopyingPaused: isCopyingPaused)
-        }
+//        if let appMenu = self.appMenu {
+//            // updates when isCopyingPaused changes
+//            if let fileMenu = appMenu.item(at: 2), let fileSubmenu = fileMenu.submenu, let fileItem = fileSubmenu.items.first {
+//                fileItem.title = isCopyingPaused  ? "Resume Copying" : "Pause Copying"
+//            }
+//            else {
+//                
+//            }
+//        }
+//        else {
+//            self.setupMainMenu(isCopyingPaused: isCopyingPaused)
+//        }
+        self.setupMainMenu(isCopyingPaused: isCopyingPaused)
     }
 
     
@@ -180,6 +190,9 @@ class MenuManager: ObservableObject {
     @objc private func openSettings() {
         // Code to open the settings window
         print("open settings")
+//        NSApp.sendAction(Selector(("showCustomSettingsWindow:")), to: nil, from: nil)
+//        NSApp.orderFront
+        settingsWindowManager.setupSettingsWindow()
     }
     
     // UPDATE ME!!

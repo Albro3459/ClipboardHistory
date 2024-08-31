@@ -38,6 +38,8 @@
 
 ### Tips for using the app:
 
+* see the ListOfKeyboardShortcuts.md file for the full list of keyboard shortcuts
+
 * cmd + shift + c is default for showing/hiding the app
     * also click the menu bar icon to show the app
 

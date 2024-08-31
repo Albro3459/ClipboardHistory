@@ -39,18 +39,20 @@ class WindowManager: ObservableObject {
             
             let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
             window.setFrame(frame, display: true)
-            if self.userDefaultsManager.canWindowFloat {
+//            if self.userDefaultsManager.canWindowFloat {
+            if UserDefaultsManager.shared.canWindowFloat {
                 window.level = .floating
             }
-            if userDefaultsManager.windowOnAllDesktops {
+//            if userDefaultsManager.windowOnAllDesktops {
+            if UserDefaultsManager.shared.windowOnAllDesktops {
                 window.collectionBehavior = .canJoinAllSpaces
             }
             NSApplication.shared.activate(ignoringOtherApps: true)
                         
             
-            //        window.standardWindowButton(.closeButton)?.isHidden = true
-            //        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
-            //        window.standardWindowButton(.zoomButton)?.isHidden = true
+//                    window.standardWindowButton(.closeButton)?.isHidden = true
+//                    window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+//                    window.standardWindowButton(.zoomButton)?.isHidden = true
         }
     }
     
@@ -70,7 +72,8 @@ class WindowManager: ObservableObject {
             let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
             window.setFrame(frame, display: true)
             
-            if self.userDefaultsManager.canWindowFloat {
+//            if self.userDefaultsManager.canWindowFloat {
+            if UserDefaultsManager.shared.canWindowFloat {
                 window.level = .floating
             }
             
@@ -86,10 +89,12 @@ class WindowManager: ObservableObject {
             if let window = self.window {
                 if !window.isKeyWindow {
                     window.makeKeyAndOrderFront(nil)
-                    if self.userDefaultsManager.windowOnAllDesktops {
+//                    if self.userDefaultsManager.windowOnAllDesktops {
+                    if UserDefaultsManager.shared.windowOnAllDesktops {
                         window.collectionBehavior = .canJoinAllSpaces
                     }
-                    if self.userDefaultsManager.canWindowFloat {
+//                    if self.userDefaultsManager.canWindowFloat {
+                    if UserDefaultsManager.shared.canWindowFloat {
                         window.level = .floating
                     }
                     NSApplication.shared.activate(ignoringOtherApps: true)
@@ -107,10 +112,12 @@ class WindowManager: ObservableObject {
             NSApplication.shared.activate(ignoringOtherApps: true)
             if let window = self.window {
                 window.makeKeyAndOrderFront(nil)
-                if self.userDefaultsManager.windowOnAllDesktops {
+//                if self.userDefaultsManager.windowOnAllDesktops {
+                if UserDefaultsManager.shared.windowOnAllDesktops {
                     window.collectionBehavior = .canJoinAllSpaces
                 }
-                if self.userDefaultsManager.canWindowFloat {
+//                if self.userDefaultsManager.canWindowFloat {
+                if UserDefaultsManager.shared.canWindowFloat {
                     window.level = .floating
                 }
                 NSApplication.shared.activate(ignoringOtherApps: true)
@@ -120,21 +127,7 @@ class WindowManager: ObservableObject {
     
     @objc func hideWindow() {
         DispatchQueue.main.async {
-//            if let window = self.window {
-//                window.orderOut(nil)
-////                window.miniaturize(nil)
-//            }
             NSApp.hide(nil)
         }
     }
-    
-    @objc func windowDidResignKey(_ notification: Notification) {
-//        print("Window did resign key (unfocused)")
-        // App lost focus
-        
-        if userDefaultsManager.hideWindowWhenNotSelected {
-            self.hideWindow()
-        }
-    }
-    
 }

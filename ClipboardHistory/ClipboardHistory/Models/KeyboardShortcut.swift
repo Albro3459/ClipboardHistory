@@ -10,13 +10,22 @@ import AppKit
 import Cocoa
 import SwiftUI
 
-struct KeyboardShortcut: Codable {
-    let modifiers: [String] // ["cmd", "shift"], ["option"], etc.
-    let key: String
+struct KeyboardShortcut: Codable, Equatable {
+    var modifiers: [String] // ["cmd", "shift"], ["option"], etc.
+    var key: String
+    
+    static func ==(a: KeyboardShortcut, b: KeyboardShortcut) -> Bool {
+        return a.modifiers == b.modifiers &&
+                a.key == b.key
+    }
+    
+    static func !=(a: KeyboardShortcut, b: KeyboardShortcut) -> Bool {
+        return !(a == b)
+    }
 
     func toModifierFlags() -> NSEvent.ModifierFlags {
         var flags = NSEvent.ModifierFlags()
-        if modifiers.contains("cmd") {
+        if modifiers.contains("command") {
             flags.insert(.command)
         }
         if modifiers.contains("shift") {

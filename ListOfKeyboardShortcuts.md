@@ -1,11 +1,11 @@
-** Here is a list of all the Keyboard Shortcuts:
+ # Here is a list of all the Keyboard Shortcuts:
 
-- changeable shortcuts:
+ ### changeable shortcuts:
     - option + r: reset window
     - cmd + shift + c: open and close window
     - cmd + shift + v: paste without formatting
 
- - unchangeable shortcuts:
+ ### unchangeable shortcuts:
     - menu options:
       - cmd + ;: Opens the GitHub link
       - cmd + ': Opens the LinkedIn link
