@@ -41,6 +41,7 @@ class MenuManager: ObservableObject {
             }
             button.action = #selector(windowManager?.handleStatusItemPressed(_:))
             button.target = windowManager
+            print("setup status bar")
             
         } else {
             print("Failed to create status bar item")

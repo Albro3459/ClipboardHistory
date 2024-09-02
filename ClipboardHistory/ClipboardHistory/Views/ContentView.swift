@@ -352,6 +352,7 @@ struct ContentView: View {
                 initializeSelectList()
             }
             .onChange(of: clipboardGroups.count) { oldValue, newValue in
+                print("change to clipboardGroups Count!!")
                 if clipboardGroups.count == 1 {
                     clipboardManager.selectedGroup = selectList.first
                 }

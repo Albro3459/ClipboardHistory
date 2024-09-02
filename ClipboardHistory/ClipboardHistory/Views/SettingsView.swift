@@ -305,7 +305,7 @@ struct SettingsView: View {
         windowOnAllDesktopsInput = true
         pasteWithoutFormattingShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "v")
         toggleWindowShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "c")
-        resetWindowShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "c")
+        resetWindowShortcutInput = KeyboardShortcut(modifiers: ["option"], key: "r")
         
         UserDefaults.standard.set(false, forKey: "pauseCopying")
         UserDefaults.standard.set(50, forKey: "maxStoreCount")
@@ -377,6 +377,7 @@ struct ClipboardSettingsView: View {
                 ScrollView {
                     Form {
                         VStack {
+                            Spacer()
                             Spacer()
                             Toggle("Pause Copying?", isOn: $pauseCopyingInput).padding()
                             
@@ -575,9 +576,10 @@ struct WindowSettingsView: View {
                             .padding()
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+//            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     private func checkFloatValue(_ inputString: String) -> Float? {
         // Try to convert the string to an float

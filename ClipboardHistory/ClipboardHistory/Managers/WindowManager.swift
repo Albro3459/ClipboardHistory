@@ -21,112 +21,12 @@ class WindowManager: ObservableObject {
     let clipboardManager = ClipboardManager.shared
     weak var menuManager: MenuManager?
     
-    var contentView: ContentView!
-    var finalView: AnyView!
+    var contentView: AnyView!
 
     var window: NSWindow?
     var popover: NSPopover?
     
     private init() {}
-    
-    func setupApp() {
-        self.menuManager?.setupStatusBar()
-        
-//        contentView = ContentView()
-            
-        self.finalView = AnyView(
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
-                .environmentObject(clipboardManager)
-                .environmentObject(self)
-                .environmentObject(menuManager!)
-        )
-                        
-        NSApplication.shared.mainMenu = nil
-//        self.menuManager.setupMainMenu(isCopyingPaused: nil)
-        self.menuManager?.updateMainMenu(isCopyingPaused: nil)
-        
-        
-        
-        if UserDefaultsManager.shared.windowPopOut {
-            print("finished launching popping out")
-            self.setupPopOutWindow()
-        }
-        else {
-            print("window manager shouldnt be here")
-            if let window = NSApplication.shared.windows.first {
-                self.window = window
-                self.setupWindow(window: window)
-                
-//                if UserDefaultsManager.shared.hideWindowWhenNotSelected {
-//                    NotificationCenter.default.addObserver(self, selector: #selector(windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
-//                }
-            }
-        }
-        
-    }
-    
-    func setupWindow(window: NSWindow) {
-        print("setup reg window BAD")
-        NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
-        
-        self.window = window
-        
-        if let window = self.window {
-            window.collectionBehavior = [] // No special behavior
-            
-            let screen = window.screen ?? NSScreen.main!
-            let windowWidth: CGFloat = userDefaultsManager.windowWidth
-            let windowHeight: CGFloat = userDefaultsManager.windowHeight
-            
-            
-            var xPosition: CGFloat
-            var yPosition: CGFloat
-            switch userDefaultsManager.windowLocation {
-            case "Bottom Right":
-                xPosition = screen.visibleFrame.maxX - windowWidth
-                yPosition = screen.visibleFrame.minY
-                
-            case "Bottom Left":
-                xPosition = screen.visibleFrame.minX
-                yPosition = screen.visibleFrame.minY
-                
-            case "Top Right":
-                xPosition = screen.visibleFrame.maxX - windowWidth
-                yPosition = screen.visibleFrame.maxY - windowHeight
-                
-            case "Top Left":
-                xPosition = screen.visibleFrame.minX
-                yPosition = screen.visibleFrame.maxY - windowHeight
-                
-            case "Center":
-                xPosition = screen.visibleFrame.maxX/2 - windowWidth/2
-                yPosition = screen.visibleFrame.maxY/2 - windowHeight/2
-                
-            default:
-                // Default to BottomRight
-                xPosition = screen.visibleFrame.maxX - windowWidth
-                yPosition = screen.visibleFrame.minY
-            }
-            
-            let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
-            window.setFrame(frame, display: true)
-//            if self.userDefaultsManager.canWindowFloat {
-            if UserDefaultsManager.shared.canWindowFloat {
-                window.level = .floating
-            }
-//            if userDefaultsManager.windowOnAllDesktops {
-            if UserDefaultsManager.shared.windowOnAllDesktops {
-                window.collectionBehavior = .canJoinAllSpaces
-            }
-            NSApplication.shared.activate(ignoringOtherApps: true)
-                        
-            
-//                    window.standardWindowButton(.closeButton)?.isHidden = true
-//                    window.standardWindowButton(.miniaturizeButton)?.isHidden = true
-//                    window.standardWindowButton(.zoomButton)?.isHidden = true
-        }
-    }
     
     @objc func handleStatusItemPressed(_ sender: Any?) {
         if userDefaultsManager.windowPopOut {
@@ -139,19 +39,145 @@ class WindowManager: ObservableObject {
         }
     }
     
+    func handleToggleWindow() {
+        if userDefaultsManager.windowPopOut {
+            if self.window != nil {
+                window?.orderOut(nil)
+            }
+            self.window = nil
+            self.togglePopOutWindow(nil)
+        }
+        else {
+            if self.window == nil {
+                self.setupWindow()
+            }
+            else {
+                self.toggleWindow()
+            }
+        }
+    }
+    
     func handleResetWindow() {
         if userDefaultsManager.windowPopOut {
             print("reset: Status Item window reset")
+            if self.window != nil {
+                window?.orderOut(nil)
+            }
+            self.window = nil
             resetPopOutWindow()
         }
         else {
             print("reset: reset window")
-           resetWindow()
+            if window == nil {
+                setupWindow()
+            }
+            else {
+                resetWindow()
+            }
         }
+    }
+    
+    func setupApp() {
+        self.menuManager?.setupStatusBar()
+                    
+        self.contentView = AnyView(
+            ContentView()
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environmentObject(clipboardManager)
+                .environmentObject(self)
+                .environmentObject(menuManager!)
+        )
+                        
+        NSApplication.shared.mainMenu = nil
+//        self.menuManager.setupMainMenu(isCopyingPaused: nil)
+        self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+        
+        if UserDefaultsManager.shared.windowPopOut {
+            print("finished launching popping out")
+            self.setupPopOutWindow()
+        }
+        else {
+            self.setupWindow()
+        }
+    }
+    
+    func setupWindow(/*inputWindow: NSWindow?*/) {
+        print("setup regular window")
+        NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
+        
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: userDefaultsManager.windowWidth, height: userDefaultsManager.windowHeight),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered, defer: false
+        )
+        
+        window.title = userDefaultsManager.appName
+        
+        let hostingController = NSHostingController(rootView: self.contentView)
+        
+        let windowWidth: CGFloat = userDefaultsManager.windowWidth
+        let windowHeight: CGFloat = userDefaultsManager.windowHeight
+        
+        hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
+        window.contentViewController = hostingController
+        
+        let screen = window.screen ?? NSScreen.main!
+        
+        var xPosition: CGFloat
+        var yPosition: CGFloat
+        switch userDefaultsManager.windowLocation {
+        case "Bottom Right":
+            xPosition = screen.visibleFrame.maxX - windowWidth
+            yPosition = screen.visibleFrame.minY
+            
+        case "Bottom Left":
+            xPosition = screen.visibleFrame.minX
+            yPosition = screen.visibleFrame.minY
+            
+        case "Top Right":
+            xPosition = screen.visibleFrame.maxX - windowWidth
+            yPosition = screen.visibleFrame.maxY - windowHeight
+            
+        case "Top Left":
+            xPosition = screen.visibleFrame.minX
+            yPosition = screen.visibleFrame.maxY - windowHeight
+            
+        case "Center":
+            xPosition = screen.visibleFrame.maxX/2 - windowWidth/2
+            yPosition = screen.visibleFrame.maxY/2 - windowHeight/2
+            
+        default:
+            // Default to BottomRight
+            xPosition = screen.visibleFrame.maxX - windowWidth
+            yPosition = screen.visibleFrame.minY
+        }
+        
+        let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
+        window.setFrame(frame, display: true)
+        
+        window.collectionBehavior = [] // No special behavior
+        
+        if UserDefaultsManager.shared.canWindowFloat {
+            window.level = .floating
+        }
+        if UserDefaultsManager.shared.windowOnAllDesktops {
+            window.collectionBehavior = .canJoinAllSpaces
+        }
+        window.makeKeyAndOrderFront(nil)
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        
+        
+        //                    window.standardWindowButton(.closeButton)?.isHidden = true
+        //                    window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        //                    window.standardWindowButton(.zoomButton)?.isHidden = true
+        
+        self.window = window
+        
     }
         
     func resetWindow() {
-        if let window = NSApplication.shared.windows.first {
+//        if let window = NSApplication.shared.windows.first {
+        if let window = self.window {
             NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
 
             window.makeKeyAndOrderFront(nil)
@@ -208,9 +234,10 @@ class WindowManager: ObservableObject {
         //                print("Cmd-Shift-C pressed: Toggling window visibility")
         
         DispatchQueue.main.async {
-            NSApplication.shared.activate(ignoringOtherApps: true)
+//            NSApplication.shared.activate(ignoringOtherApps: true)
             if let window = self.window {
                 if !window.isKeyWindow {
+                    NSApplication.shared.activate(ignoringOtherApps: true)
                     window.makeKeyAndOrderFront(nil)
 //                    if self.userDefaultsManager.windowOnAllDesktops {
                     if UserDefaultsManager.shared.windowOnAllDesktops {
@@ -220,10 +247,10 @@ class WindowManager: ObservableObject {
                     if UserDefaultsManager.shared.canWindowFloat {
                         window.level = .floating
                     }
-                    NSApplication.shared.activate(ignoringOtherApps: true)
                     self.menuManager?.updateMainMenu(isCopyingPaused: nil)
                 }
                 else {
+                    print("hiding")
                     self.hideWindow()
                 }
             }
@@ -246,12 +273,16 @@ class WindowManager: ObservableObject {
                 }
                 NSApplication.shared.activate(ignoringOtherApps: true)
             }
+            else {
+                self.setupWindow()
+            }
         }
     }
     
     @objc func hideWindow() {
         DispatchQueue.main.async {
             NSApp.hide(nil)
+            print("hid")
         }
     }
     
@@ -262,7 +293,7 @@ class WindowManager: ObservableObject {
             self.popover = NSPopover()
         }
                 
-        let hostingController = NSHostingController(rootView: self.finalView)
+        let hostingController = NSHostingController(rootView: self.contentView)
         let windowWidth: CGFloat = userDefaultsManager.windowWidth
         let windowHeight: CGFloat = userDefaultsManager.windowHeight
         hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
@@ -281,7 +312,7 @@ class WindowManager: ObservableObject {
     }
     
     func togglePopOutWindow(_ sender: Any?) {
-        let hostingController = NSHostingController(rootView: self.finalView)
+        let hostingController = NSHostingController(rootView: self.contentView)
         let windowWidth: CGFloat = userDefaultsManager.windowWidth
         let windowHeight: CGFloat = userDefaultsManager.windowHeight
         hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
@@ -330,19 +361,26 @@ class WindowManager: ObservableObject {
     }
     
     func resetPopOutWindow() {
-        let hostingController = NSHostingController(rootView: self.finalView)
-//        let windowWidth: CGFloat = userDefaultsManager.windowWidth
-        let windowWidth: CGFloat = CGFloat(UserDefaults.standard.float(forKey: "windowWidth"))
-
-//        let windowHeight: CGFloat = userDefaultsManager.windowHeight
-        let windowHeight: CGFloat = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
+        if self.popover == nil {
+            self.popover = NSPopover()
+        }
         
+        let hostingController = NSHostingController(rootView: self.contentView)
+        
+        let windowWidth: CGFloat = CGFloat(UserDefaults.standard.float(forKey: "windowWidth"))
+        let windowHeight: CGFloat = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
         hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
+        
         popover?.contentViewController = hostingController
         
         popover?.contentSize = NSSize(width: windowWidth, height: windowHeight)
         
         popover?.behavior = .transient // makes window close when you click outside of it
+        
+        NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
+        popover?.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
+        
+        self.menuManager?.updateMainMenu(isCopyingPaused: nil)
         
         showPopOutWindow()
     }

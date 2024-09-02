@@ -119,21 +119,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         
         KeyboardShortcuts.onKeyDown(for: .toggleWindow) {
-            if UserDefaultsManager.shared.windowPopOut {
-                self.windowManager?.togglePopOutWindow(nil)
-            }
-            else {
-                self.windowManager?.toggleWindow()
-            }
+            self.windowManager?.handleToggleWindow()
         }
         
         KeyboardShortcuts.onKeyUp(for: .resetWindow) {
-            if UserDefaultsManager.shared.windowPopOut {
-                self.windowManager?.resetPopOutWindow()
-            }
-            else {
-                self.windowManager?.resetWindow()
-            }
+            self.windowManager?.handleResetWindow()
         }
         
         KeyboardShortcuts.onKeyDown(for: .hideWindow) {
@@ -170,6 +160,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 //        print("Dock icon clicked!")
         
         menuManager?.updateMainMenu(isCopyingPaused: nil)
+        
+        if UserDefaultsManager.shared.windowPopOut {
+            windowManager?.window = nil
+            if windowManager?.popover == nil {
+                windowManager?.setupPopOutWindow()
+            }
+            else {
+                windowManager?.showPopOutWindow()
+            }
+        }
+        else {
+            if windowManager?.window == nil {
+                windowManager?.setupWindow()
+            }
+            else {
+                windowManager?.showWindow()
+            }
+        }
         
         return true
     }

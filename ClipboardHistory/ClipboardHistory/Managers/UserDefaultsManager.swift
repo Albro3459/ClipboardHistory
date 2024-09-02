@@ -148,6 +148,6 @@ class UserDefaultsManager {
                 
         ClipboardManager.shared.clipboardMonitor?.reloadVars()
         
-        print("done updating")
+//        print("done updating")
     }
 }
