@@ -87,7 +87,7 @@ class WindowManager: ObservableObject {
                 .environmentObject(self)
                 .environmentObject(menuManager!)
         )
-                        
+                                
         NSApplication.shared.mainMenu = nil
 //        self.menuManager.setupMainMenu(isCopyingPaused: nil)
         self.menuManager?.updateMainMenu(isCopyingPaused: nil)
@@ -101,7 +101,7 @@ class WindowManager: ObservableObject {
         }
     }
     
-    func setupWindow(/*inputWindow: NSWindow?*/) {
+    func setupWindow() {
         print("setup regular window")
         NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
         
@@ -286,33 +286,52 @@ class WindowManager: ObservableObject {
         }
     }
     
+    
+    //POPOVER STARTS HERE
+    
     func setupPopOutWindow() {
-        print("setup Pop Out window")
+//        print("setup Pop Out window")
         
         if self.popover == nil {
             self.popover = NSPopover()
         }
                 
-        let hostingController = NSHostingController(rootView: self.contentView)
+        let hostingController = NSHostingController(rootView: self.contentView.focusable(true))
         let windowWidth: CGFloat = userDefaultsManager.windowWidth
         let windowHeight: CGFloat = userDefaultsManager.windowHeight
         hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
         popover?.contentViewController = hostingController
         
-        popover?.behavior = .transient // makes window close when you click outside of it
+//        popover?.behavior = .transient // makes window close when you click outside of it
         
-//        if let button = menuManager?.statusBarItem?.button {
-            NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
+        //testing
+        if let popoverWindow = popover?.contentViewController?.view.window {
+            popoverWindow.alphaValue = 1 // opacity
+//            popoverWindow.makeKey()
+            popoverWindow.makeKeyAndOrderFront(nil)
+            popoverWindow.makeFirstResponder(popoverWindow.contentView)
+        }
+        
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        
+        NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
         popover?.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
             
-            self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+        //#colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
+        self.popover?.backgroundColor = #colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
+
+        self.menuManager?.updateMainMenu(isCopyingPaused: nil)
         
-//            popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-//        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.125) {
+            if let button = self.menuManager?.statusBarItem?.button {
+                self.popover?.show(relativeTo: button.frame, of: button, preferredEdge: .minY)
+                self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+            }
+        }
     }
     
     func togglePopOutWindow(_ sender: Any?) {
-        let hostingController = NSHostingController(rootView: self.contentView)
+        let hostingController = NSHostingController(rootView: self.contentView.focusable(true))
         let windowWidth: CGFloat = userDefaultsManager.windowWidth
         let windowHeight: CGFloat = userDefaultsManager.windowHeight
         hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
@@ -321,7 +340,18 @@ class WindowManager: ObservableObject {
         
         popover?.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
         
-        popover?.behavior = .transient // makes window close when you click outside of it
+//        popover?.behavior = .transient // makes window close when you click outside of it
+        
+        //testing
+        if let popoverWindow = popover?.contentViewController?.view.window {
+//            popoverWindow.alphaValue = 1 //  opacity
+//            popoverWindow.makeKey()
+            popoverWindow.makeKeyAndOrderFront(nil)
+            popoverWindow.makeFirstResponder(popoverWindow.contentView)
+        }
+        
+        //#colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
+        self.popover?.backgroundColor = #colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
         
         NSApplication.shared.activate(ignoringOtherApps: true)
         
@@ -355,6 +385,19 @@ class WindowManager: ObservableObject {
             popover?.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
             
             self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+            
+            //testing
+            if let popoverWindow = popover?.contentViewController?.view.window {
+//                popoverWindow.alphaValue = 1 // opacity
+    //            popoverWindow.makeKey()
+                popoverWindow.makeKeyAndOrderFront(nil)
+                popoverWindow.makeFirstResponder(popoverWindow.contentView)
+            }
+            
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            
+            //#colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
+            self.popover?.backgroundColor = #colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
         
             popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
@@ -365,7 +408,7 @@ class WindowManager: ObservableObject {
             self.popover = NSPopover()
         }
         
-        let hostingController = NSHostingController(rootView: self.contentView)
+        let hostingController = NSHostingController(rootView: self.contentView.focusable(true))
         
         let windowWidth: CGFloat = CGFloat(UserDefaults.standard.float(forKey: "windowWidth"))
         let windowHeight: CGFloat = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
@@ -375,13 +418,76 @@ class WindowManager: ObservableObject {
         
         popover?.contentSize = NSSize(width: windowWidth, height: windowHeight)
         
-        popover?.behavior = .transient // makes window close when you click outside of it
+//        popover?.behavior = .transient // makes window close when you click outside of it
+        
+        //testing
+        if let popoverWindow = popover?.contentViewController?.view.window {
+//            popoverWindow.alphaValue = 1 // opacity
+//            popoverWindow.makeKey()
+            popoverWindow.makeKeyAndOrderFront(nil)
+            popoverWindow.makeFirstResponder(popoverWindow.contentView)
+        }
+        
+        NSApplication.shared.activate(ignoringOtherApps: true)
         
         NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
         popover?.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
         
+        //#colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
+        self.popover?.backgroundColor = #colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
+        
         self.menuManager?.updateMainMenu(isCopyingPaused: nil)
         
         showPopOutWindow()
+    }
+}
+
+// this is how I can get the popover to have a custom background color
+extension NSPopover {
+    
+    private struct Keys {
+        static var backgroundViewKey = "backgroundKey"
+    }
+    
+    private var backgroundView: NSView {
+//        let bgView = objc_getAssociatedObject(self, &Keys.backgroundViewKey) as? NSView
+        let bgView = withUnsafePointer(to: &Keys.backgroundViewKey) { keyPointer in
+            return objc_getAssociatedObject(self, keyPointer) as? NSView
+        }
+        if let view = bgView {
+            return view
+        }
+        
+        let view = NSView()
+//        objc_setAssociatedObject(self, &Keys.backgroundViewKey, view, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        withUnsafePointer(to: &Keys.backgroundViewKey) { keyPointer in
+            objc_setAssociatedObject(self, keyPointer, view, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+        NotificationCenter.default.addObserver(self, selector: #selector(popoverWillOpen(_:)), name: NSPopover.willShowNotification, object: nil)
+        return view
+    }
+    
+    @objc private func popoverWillOpen(_ notification: Notification) {
+        if backgroundView.superview == nil {
+            if let contentView = contentViewController?.view, let frameView = contentView.superview {
+                frameView.wantsLayer = true
+                backgroundView.frame = NSInsetRect(frameView.frame, 1, 1)
+                backgroundView.autoresizingMask = [.width, .height]
+                frameView.addSubview(backgroundView, positioned: .below, relativeTo: contentView)
+            }
+        }
+    }
+    
+    var backgroundColor: NSColor? {
+        get {
+            if let bgColor = backgroundView.layer?.backgroundColor {
+                return NSColor(cgColor: bgColor)
+            }
+            return nil
+        }
+        set {
+            backgroundView.wantsLayer = true
+            backgroundView.layer?.backgroundColor = newValue?.cgColor
+        }
     }
 }

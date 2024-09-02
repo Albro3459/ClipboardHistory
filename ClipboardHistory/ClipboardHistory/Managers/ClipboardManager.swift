@@ -436,38 +436,49 @@ class ClipboardManager: ObservableObject {
     
     func expand(for group: SelectedGroup) {
         if let currentGroup = selectedGroup, currentGroup == group {
-            currentGroup.isExpanded = true
-            print("expanding")
-
-            objectWillChange.send()
+            DispatchQueue.main.async {
+                
+                currentGroup.isExpanded = true
+                print("expanding")
+                
+                self.objectWillChange.send()
+            }
         }
     }
     
     func expandAll(for list: [SelectedGroup]) {
-        for selectedGroup in list {
-            if selectedGroup.group.count > 1 {
-                selectedGroup.isExpanded = true
+        DispatchQueue.main.async {
+            for selectedGroup in list {
+                if selectedGroup.group.count > 1 {
+                    selectedGroup.isExpanded = true
+                }
             }
+            print("expanded groups")
+            self.objectWillChange.send()
         }
-        print("expanded groups")
-        objectWillChange.send()
     }
     
     func contract(for group: SelectedGroup) {
         if let currentGroup = selectedGroup, currentGroup == group {
-            currentGroup.isExpanded = false
-            print("contracting")
-
-            objectWillChange.send()
+            DispatchQueue.main.async {
+                
+                currentGroup.isExpanded = false
+                print("contracting")
+                
+                self.objectWillChange.send()
+            }
         }
     }
     
     func contractAll(for list: [SelectedGroup]) {
-        for selectedGroup in list {
-            selectedGroup.isExpanded = false
+        DispatchQueue.main.async {
+            
+            for selectedGroup in list {
+                selectedGroup.isExpanded = false
+            }
+            print("contracted groups")
+            self.objectWillChange.send()
         }
-        print("contracted groups")
-        objectWillChange.send()
     }
     
     func openFolder(filePath: String) {

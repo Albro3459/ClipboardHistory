@@ -25,14 +25,13 @@ class SettingsWindowManager: ObservableObject {
     private init() {}
     
     func setupSettingsWindow() {
-        if settingsWindow == nil {
+//        if settingsWindow == nil {
             
             settingsWindow = NSWindow(
                             contentRect: NSRect(x: 0, y: 0, width: 500, height: 1000),
                             styleMask: [.titled, .closable, .resizable],
                             backing: .buffered, defer: false)
             
-//            settingsWindow = NSWindow()
             let windowWidth: CGFloat = 500
             let windowHeight: CGFloat = 1000
             
@@ -59,7 +58,7 @@ class SettingsWindowManager: ObservableObject {
             settingsWindow?.isReleasedWhenClosed = false // Keep the window alive
             
             
-        }
+//        }
         
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApplication.shared.activate(ignoringOtherApps: true)

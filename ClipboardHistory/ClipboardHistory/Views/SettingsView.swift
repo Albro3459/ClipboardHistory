@@ -517,7 +517,7 @@ struct WindowSettingsView: View {
                         Spacer()
                         Spacer()
                         Text("Default Window Location: ")
-                            .foregroundColor(windowPopOutInput ? Color.gray : .white)
+                            .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
                         Menu {
                             Button(action: {
                                 windowLocationInput = "Top Left"
@@ -551,7 +551,7 @@ struct WindowSettingsView: View {
                             }
                         } label: {
                             Text((windowLocationInput ?? windowLocation) ?? "Select Window Location")
-                                .foregroundColor(windowLocationInput == nil ? .gray : .primary)
+                                .foregroundColor(windowLocationInput == nil ? .gray : (darkMode ? .white : .primary))
                         }
                         .frame(width: 200)
                         .disabled(windowPopOutInput)
@@ -561,17 +561,17 @@ struct WindowSettingsView: View {
                         
                         
                         Toggle("Can Window Float?", isOn: $canWindowFloatInput)
-                            .foregroundColor(windowPopOutInput ? Color.gray : .white)
+                            .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
                             .disabled(windowPopOutInput)
                             .padding()
                         
                         Toggle("**Very Buggy** Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelectedInput)
-                            .foregroundColor(windowPopOutInput ? Color.gray : .white)
+                            .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
                             .disabled(windowPopOutInput)
                             .padding()
                         
                         Toggle("Show Window On All Desktops?", isOn: $windowOnAllDesktops)
-                            .foregroundColor(windowPopOutInput ? Color.gray : .white)
+                            .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
                             .disabled(windowPopOutInput)
                             .padding()
                     }

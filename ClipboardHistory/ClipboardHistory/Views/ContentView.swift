@@ -30,6 +30,7 @@ struct ContentView: View {
     let menuManager = MenuManager.shared
         
     @State private var showingAlert = false
+    @State private var groupShowingAlert = false
     @State private var activeAlert: ActiveAlert = .clear
 
     @State private var atTopOfList = true
@@ -236,7 +237,7 @@ struct ContentView: View {
                         LazyVStack(spacing: 0) {
                             ForEach(selectList.indices, id: \.self) { index in
                                 if index >= 0 && index < selectList.count {
-                                    ClipboardGroupView(selectGroup: selectList[index], selectList: $selectList, parentShowingAlert: $showingAlert, isSearchFocused: $isSearchFocused, isSelectingCategory: $isSelectingCategory, windowWidth: $windowWidth,
+                                    ClipboardGroupView(selectGroup: selectList[index], selectList: $selectList, parentShowingAlert: $showingAlert, groupShowingAlert: $groupShowingAlert, isSearchFocused: $isSearchFocused, isSelectingCategory: $isSelectingCategory, windowWidth: $windowWidth,
                                                        isGroupSelected: Binding(
                                                         get: { if index >= 0 && index < selectList.count { return self.clipboardManager.selectedGroup == selectList[index] }
                                                             else { return false } },
@@ -351,6 +352,7 @@ struct ContentView: View {
                 setUpKeyboardHandling()
                 initializeSelectList()
             }
+//            .onChange(of: fetchedClipboardGroups)
             .onChange(of: clipboardGroups.count) { oldValue, newValue in
                 print("change to clipboardGroups Count!!")
                 if clipboardGroups.count == 1 {
@@ -396,10 +398,12 @@ struct ContentView: View {
     }
     
     func initializeSelectList() {
+        print("updating select list")
         self.selectList = clipboardGroups.map { clipboardGroup in
             let isExpanded = self.findExpandedState(for: clipboardGroup)
             return SelectedGroup(group: clipboardGroup, isExpanded: isExpanded)
         }
+        print("COUNT: clipboardGroups: \(clipboardGroups.count) | selectList: \(self.selectList.count)\n")
     }
     
     func findExpandedState(for inputGroup: ClipboardGroup) -> Bool {
@@ -445,6 +449,7 @@ struct ContentView: View {
                 }
             }
             if event.type == .keyDown && !self.showingAlert {
+                print("content view showing alert: \(self.showingAlert)\n")
                 switch event.keyCode {
                 case 8:
                     if event.modifierFlags.contains(.command) {
@@ -581,6 +586,7 @@ struct ContentView: View {
                     // Handle down arrow
                     isFocused = false
                     isSelectingCategory = false
+//                    print("down")
                     
                     if event.modifierFlags.contains(.command) {
                         scrollToBottom = true
@@ -695,6 +701,9 @@ struct ClipboardGroupView: View {
     @Binding var selectList: [SelectedGroup]
     
     @Binding var parentShowingAlert: Bool
+    @Binding var groupShowingAlert: Bool
+    @State private var showingDeleteAlert = false
+    @State private var itemShowingDeleteAlert = false
     
     @Binding var isSearchFocused: Bool
     @Binding var isSelectingCategory: Bool
@@ -705,20 +714,17 @@ struct ClipboardGroupView: View {
         
     @State private var imageSizeMultiple: CGFloat = 0.7
         
-    @State private var showingDeleteAlert = false
-        
 //    @State private var isGroupExpanded: Bool = false
     
     @State private var shouldSelectGroup: Bool = true
     
     @State private var shouldShowItemIcon: Bool = true
-//    @State private var currentWidthOfAllIcons: CGFloat = CGFloat(60)
     
     
     var body: some View {
         let group = selectGroup.group
         if group.count == 1, let item = group.itemsArray.first {
-            ClipboardItemView(item: item, selectGroup: selectGroup, selectList: $selectList, isPartOfGroup: false, imageSizeMultiple: $imageSizeMultiple, isSelected: Binding(
+            ClipboardItemView(item: item, selectGroup: selectGroup, selectList: $selectList, isPartOfGroup: false, imageSizeMultiple: $imageSizeMultiple, showingDeleteAlert: $itemShowingDeleteAlert, isSelected: Binding(
                 get: { self.clipboardManager.selectedItem == item },
                 set: { newItem in
                     isGroupSelected = true
@@ -742,6 +748,14 @@ struct ClipboardGroupView: View {
 //                isGroupSelected = true
 //                clipboardManager.selectedGroup = selectGroup
 //            }
+            .onChange(of: self.parentShowingAlert ||  self.showingDeleteAlert || self.itemShowingDeleteAlert) {
+                if self.parentShowingAlert ||  self.showingDeleteAlert || self.itemShowingDeleteAlert {
+                    self.groupShowingAlert = true
+                }
+                else {
+                    self.groupShowingAlert = false
+                }
+            }
             .onAppear {
                 setUpKeyboardHandling()
             }
@@ -881,7 +895,7 @@ struct ClipboardGroupView: View {
                         ScrollViewReader { scrollView in
                             LazyVStack(spacing: 0) {
                                 ForEach(group.itemsArray, id: \.self) { item in
-                                    ClipboardItemView(item: item, selectGroup: selectGroup, selectList: $selectList, isPartOfGroup: true, imageSizeMultiple: $imageSizeMultiple, isSelected: Binding(
+                                    ClipboardItemView(item: item, selectGroup: selectGroup, selectList: $selectList, isPartOfGroup: true, imageSizeMultiple: $imageSizeMultiple, showingDeleteAlert: $itemShowingDeleteAlert, isSelected: Binding(
                                         get: { self.clipboardManager.selectedItem == item
                                         },
                                         set: { newItem in
@@ -895,6 +909,14 @@ struct ClipboardGroupView: View {
                         .padding(.trailing, 15)
                         .padding(.top, -8)
                     }
+                }
+            }
+            .onChange(of: self.parentShowingAlert ||  self.showingDeleteAlert || self.itemShowingDeleteAlert) {
+                if self.parentShowingAlert ||  self.showingDeleteAlert || self.itemShowingDeleteAlert {
+                    self.groupShowingAlert = true
+                }
+                else {
+                    self.groupShowingAlert = false
                 }
             }
             .onAppear {
@@ -918,7 +940,8 @@ struct ClipboardGroupView: View {
             
             if let currSelectGroup = clipboardManager.selectedGroup {
                 
-                if event.type == .keyDown && !parentShowingAlert {
+                if event.type == .keyDown && !self.parentShowingAlert &&  !self.showingDeleteAlert && !self.itemShowingDeleteAlert {
+                    print("Group view showing alert: \(self.parentShowingAlert) or \(self.showingDeleteAlert) or \(self.itemShowingDeleteAlert)")
                     switch event.keyCode {
                     case 124:
                         // right arrow to expand group
@@ -1070,10 +1093,10 @@ struct ClipboardItemView: View {
     var isPartOfGroup: Bool
     
     @Binding var imageSizeMultiple: CGFloat
+    
+    @Binding var showingDeleteAlert: Bool
             
     @Binding var isSelected: Bool
-        
-    @State private var showingDeleteAlert = false
                 
     var body: some View {
         HStack {
