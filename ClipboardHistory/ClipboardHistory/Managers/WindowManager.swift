@@ -138,6 +138,17 @@ class WindowManager: ObservableObject {
            showWindow()
         }
     }
+    
+    func handleResetWindow() {
+        if userDefaultsManager.windowPopOut {
+            print("reset: Status Item window reset")
+            resetPopOutWindow()
+        }
+        else {
+            print("reset: reset window")
+           resetWindow()
+        }
+    }
         
     func resetWindow() {
         if let window = NSApplication.shared.windows.first {
@@ -261,6 +272,7 @@ class WindowManager: ObservableObject {
         
 //        if let button = menuManager?.statusBarItem?.button {
             NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
+        popover?.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
             
             self.menuManager?.updateMainMenu(isCopyingPaused: nil)
         
@@ -274,6 +286,9 @@ class WindowManager: ObservableObject {
         let windowHeight: CGFloat = userDefaultsManager.windowHeight
         hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
         popover?.contentViewController = hostingController
+        popover?.contentSize = NSSize(width: windowWidth, height: windowHeight)
+        
+        popover?.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
         
         popover?.behavior = .transient // makes window close when you click outside of it
         
@@ -303,22 +318,32 @@ class WindowManager: ObservableObject {
         popover?.close()
     }
     
-    func resetPopOutWindow() {
-        
-        let hostingController = NSHostingController(rootView: self.finalView)
-        let windowWidth: CGFloat = userDefaultsManager.windowWidth
-        let windowHeight: CGFloat = userDefaultsManager.windowHeight
-        hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
-        popover?.contentViewController = hostingController
-        
-        popover?.behavior = .transient // makes window close when you click outside of it
-        
+    func showPopOutWindow() {
         if let button = menuManager?.statusBarItem?.button {
-            NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
+            NSApp.appearance = NSAppearance(named: UserDefaults.standard.bool(forKey: "darkMode") ? .darkAqua : .vibrantLight)
+            popover?.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
             
             self.menuManager?.updateMainMenu(isCopyingPaused: nil)
         
             popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
+    }
+    
+    func resetPopOutWindow() {
+        let hostingController = NSHostingController(rootView: self.finalView)
+//        let windowWidth: CGFloat = userDefaultsManager.windowWidth
+        let windowWidth: CGFloat = CGFloat(UserDefaults.standard.float(forKey: "windowWidth"))
+
+//        let windowHeight: CGFloat = userDefaultsManager.windowHeight
+        let windowHeight: CGFloat = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
+        
+        hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
+        popover?.contentViewController = hostingController
+        
+        popover?.contentSize = NSSize(width: windowWidth, height: windowHeight)
+        
+        popover?.behavior = .transient // makes window close when you click outside of it
+        
+        showPopOutWindow()
     }
 }

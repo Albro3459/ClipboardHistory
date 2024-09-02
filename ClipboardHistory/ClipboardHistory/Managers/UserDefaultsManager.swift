@@ -147,5 +147,7 @@ class UserDefaultsManager {
         self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
                 
         ClipboardManager.shared.clipboardMonitor?.reloadVars()
+        
+        print("done updating")
     }
 }

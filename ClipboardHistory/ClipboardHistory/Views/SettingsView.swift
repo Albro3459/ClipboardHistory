@@ -74,6 +74,10 @@ struct SettingsView: View {
     @State private var geoHeight: CGFloat = 0.0
     
     @State private var saved: Bool = false
+    @State private var resetSettings: Bool = false
+    
+    @State private var showingResetAlert: Bool = false
+
     
     var body: some View {
         ZStack {
@@ -122,6 +126,37 @@ struct SettingsView: View {
                 
                 Color.white.opacity(0.1).flash(duration: 0.3)
             }
+            
+            if self.resetSettings {
+                ZStack(alignment: .center) {
+                    
+                    ZStack(alignment: .top) {
+                        Rectangle()
+                            .foregroundColor(darkMode ? Color(.darkGray) : Color.gray)
+                            .cornerRadius(8)
+                        Rectangle()
+                            .foregroundColor(darkMode ? Color(.darkGray) : Color.gray)
+                            .frame(height: 10)
+                            .zIndex(1)
+                    }
+                    Text("Reset Settings to Default!")
+                        .font(.subheadline)
+                        .bold()
+                    
+                        .cornerRadius(8)
+                        .frame(alignment: .center)
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.easeInOut, value: self.resetSettings)
+                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
+                .position(x: 150/2, y: -(self.geoHeight/2 - 8))
+                .frame(width: 150, height: 24)
+                .zIndex(1000)
+                
+                
+                Color.white.opacity(0.1).flash(duration: 0.3)
+            }
+            
             VStack {
                 TabView {
                     ClipboardSettingsView(pauseCopyingInput: $pauseCopyingInput, maxStoreCountInput: $maxStoreCountInput, noDuplicatesInput: $noDuplicatesInput, canCopyFilesOrFoldersInput: $canCopyFilesOrFoldersInput, canCopyImagesInput: $canCopyImagesInput, pasteWithoutFormattingInput: $pasteWithoutFormattingInput)
@@ -139,59 +174,43 @@ struct SettingsView: View {
                             Text("Keyboad Shortcuts")
                         }
                 }
-                
-                Button("Save") {
-                    UserDefaults.standard.set(pauseCopyingInput, forKey: "pauseCopying")
-                    UserDefaults.standard.set(maxStoreCountInput, forKey: "maxStoreCount")
-                    UserDefaults.standard.set(noDuplicatesInput, forKey: "noDuplicates")
-                    UserDefaults.standard.set(canCopyFilesOrFoldersInput, forKey: "canCopyFilesOrFolders")
-                    UserDefaults.standard.set(canCopyImagesInput, forKey: "canCopyImages")
-                    UserDefaults.standard.set(pasteWithoutFormattingInput, forKey: "pasteWithoutFormatting")
-                    
-                    UserDefaults.standard.set(darkModeInput, forKey: "darkMode")
-                    UserDefaults.standard.set(windowWidthInput, forKey: "windowWidth")
-                    UserDefaults.standard.set(windowHeightInput, forKey: "windowHeight")
-                    UserDefaults.standard.set(windowLocationInput, forKey: "windowLocation")
-                    UserDefaults.standard.set(windowPopOutInput, forKey: "windowPopOut")
-                    UserDefaults.standard.set(canWindowFloatInput, forKey: "canWindowFloat")
-                    UserDefaults.standard.set(hideWindowWhenNotSelectedInput, forKey: "hideWindowWhenNotSelected")
-                    UserDefaults.standard.set(windowOnAllDesktopsInput, forKey: "windowOnAllDesktops")
-                    
-                    if pasteWithoutFormatting {
-                        //                        print("enabling")
-                        KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
-                            clipboardManager.pasteNoFormatting()
-                        }
+
+                ZStack {
+                    Button("Reset Settings to Default") {
+                        showingResetAlert = true
                     }
-                    else if !pasteWithoutFormatting {
-                        //                        print("disabling")
-                        KeyboardShortcuts.disable(.pasteNoFormatting)
+                    .padding(.leading, -280)
+//                    .position(x: self.geoWidth - 100, y: self.geoHeight/2 - 150)
+                    .alert(isPresented: $showingResetAlert) {
+                        Alert(
+                            title: Text("Confirm Reset Settings to Default"),
+                            message: Text("Are you sure you want to reset settings to default?"),
+                            primaryButton: .destructive(Text("Reset Settings")) {
+                                self.resetSettingsToDefault()
+                            },
+                            secondaryButton: .cancel()
+                        )
                     }
                     
-                    userDefaultsManager.pasteWithoutFormattingShortcut = pasteWithoutFormattingShortcutInput
-                    userDefaultsManager.toggleWindowShortcut = toggleWindowShortcutInput
-                    userDefaultsManager.resetWindowShortcut = resetWindowShortcutInput
-                    
-                    userDefaultsManager.updateAll(savePasteWithoutFormattingShortcut: pasteWithoutFormatting == pasteWithoutFormattingInput)
-                    
-                    if hideWindowWhenNotSelected {
-                        NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification,object: nil,queue: .main) { notification in
-                            self.handleWindowDidResignKey(notification)
-                        }
+                    Button("Save") {
+                        self.saveSettings()
                     }
+                    .padding(.leading, 500)
                     
-                    menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput)
-                    
-                    DispatchQueue.main.async {
-                        self.saved = true
-                    }
-                    
-                    WindowManager.shared.resetWindow()
                 }
+                .padding(.top, -10)
+                .padding(.bottom, -10)
+
+                
                 .padding()
                 .onChange(of: self.saved) {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         self.saved = false
+                    }
+                }
+                .onChange(of: self.resetSettings) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        self.resetSettings = false
                     }
                 }
             }
@@ -215,6 +234,110 @@ struct SettingsView: View {
                 WindowManager.shared.hideWindow()
             }
         }
+    }
+    
+    private func saveSettings() {
+        UserDefaults.standard.set(pauseCopyingInput, forKey: "pauseCopying")
+        UserDefaults.standard.set(maxStoreCountInput, forKey: "maxStoreCount")
+        UserDefaults.standard.set(noDuplicatesInput, forKey: "noDuplicates")
+        UserDefaults.standard.set(canCopyFilesOrFoldersInput, forKey: "canCopyFilesOrFolders")
+        UserDefaults.standard.set(canCopyImagesInput, forKey: "canCopyImages")
+        UserDefaults.standard.set(pasteWithoutFormattingInput, forKey: "pasteWithoutFormatting")
+        
+        UserDefaults.standard.set(darkModeInput, forKey: "darkMode")
+        UserDefaults.standard.set(windowWidthInput, forKey: "windowWidth")
+        print("settings save:")
+        print(windowWidthInput)
+        print()
+        UserDefaults.standard.set(windowHeightInput, forKey: "windowHeight")
+        UserDefaults.standard.set(windowLocationInput, forKey: "windowLocation")
+        UserDefaults.standard.set(windowPopOutInput, forKey: "windowPopOut")
+        UserDefaults.standard.set(canWindowFloatInput, forKey: "canWindowFloat")
+        UserDefaults.standard.set(hideWindowWhenNotSelectedInput, forKey: "hideWindowWhenNotSelected")
+        UserDefaults.standard.set(windowOnAllDesktopsInput, forKey: "windowOnAllDesktops")
+        
+        if pasteWithoutFormatting {
+            //                        print("enabling")
+            KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
+                clipboardManager.pasteNoFormatting()
+            }
+        }
+        else if !pasteWithoutFormatting {
+            //                        print("disabling")
+            KeyboardShortcuts.disable(.pasteNoFormatting)
+        }
+        
+        userDefaultsManager.pasteWithoutFormattingShortcut = pasteWithoutFormattingShortcutInput
+        userDefaultsManager.toggleWindowShortcut = toggleWindowShortcutInput
+        userDefaultsManager.resetWindowShortcut = resetWindowShortcutInput
+        
+        userDefaultsManager.updateAll(savePasteWithoutFormattingShortcut: pasteWithoutFormatting == pasteWithoutFormattingInput)
+        
+        if hideWindowWhenNotSelected {
+            NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification,object: nil,queue: .main) { notification in
+                self.handleWindowDidResignKey(notification)
+            }
+        }
+        
+        menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput)
+        
+        DispatchQueue.main.async {
+            self.saved = true
+        }
+        
+        WindowManager.shared.handleResetWindow()
+    }
+    
+    private func resetSettingsToDefault() {
+        pauseCopyingInput = false
+        maxStoreCountInput = 50
+        noDuplicatesInput = true
+        canCopyFilesOrFoldersInput = true
+        canCopyImagesInput = true
+        pasteWithoutFormattingInput = false
+        darkModeInput = true
+        windowWidthInput = 300.0
+        windowHeightInput = 500.0
+        windowLocationInput = "Bottom Right"
+        windowPopOutInput = false
+        canWindowFloatInput = false
+        hideWindowWhenNotSelectedInput = false
+        windowOnAllDesktopsInput = true
+        pasteWithoutFormattingShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "v")
+        toggleWindowShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "c")
+        resetWindowShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "c")
+        
+        UserDefaults.standard.set(false, forKey: "pauseCopying")
+        UserDefaults.standard.set(50, forKey: "maxStoreCount")
+        UserDefaults.standard.set(true, forKey: "noDuplicates")
+        UserDefaults.standard.set(true, forKey: "canCopyFilesOrFolders")
+        UserDefaults.standard.set(true, forKey: "canCopyImages")
+        UserDefaults.standard.set(false, forKey: "pasteWithoutFormatting")
+        
+        UserDefaults.standard.set(true, forKey: "darkMode")
+        UserDefaults.standard.set(300.0, forKey: "windowWidth")
+        UserDefaults.standard.set(500.0, forKey: "windowHeight")
+        UserDefaults.standard.set("Bottom Right", forKey: "windowLocation")
+        UserDefaults.standard.set(false, forKey: "windowPopOut")
+        UserDefaults.standard.set(false, forKey: "canWindowFloat")
+        UserDefaults.standard.set(false, forKey: "hideWindowWhenNotSelected")
+        UserDefaults.standard.set(true, forKey: "windowOnAllDesktops")
+        
+        
+        userDefaultsManager.pasteWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["command", "shift"], key: "v")
+        userDefaultsManager.toggleWindowShortcut = KeyboardShortcut(modifiers: ["command", "shift"], key: "c")
+        userDefaultsManager.resetWindowShortcut = KeyboardShortcut(modifiers: ["command", "shift"], key: "c")
+        
+        menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput)
+        
+        userDefaultsManager.updateAll(savePasteWithoutFormattingShortcut: true)
+
+        
+        DispatchQueue.main.async {
+            self.resetSettings = true
+        }
+        
+        WindowManager.shared.handleResetWindow()
     }
 }
 
@@ -277,6 +400,9 @@ struct ClipboardSettingsView: View {
                                     } else {
                                         maxStoreCountInput = 0 // or some other default value if the input is invalid
                                     }
+                                }
+                                .onChange(of: maxStoreCountInput) {
+                                    itemCountInput = "\(maxStoreCountInput)"
                                 }
                                 .onAppear {
                                     itemCountInput = "\(maxStoreCountInput)"
