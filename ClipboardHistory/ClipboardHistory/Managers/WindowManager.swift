@@ -15,16 +15,59 @@ import Combine
 
 class WindowManager: ObservableObject {
     static let shared = WindowManager()
-    
+        
+    let persistenceController = PersistenceController.shared
     let userDefaultsManager = UserDefaultsManager.shared
     let clipboardManager = ClipboardManager.shared
     weak var menuManager: MenuManager?
     
+    var contentView: ContentView!
+    var finalView: AnyView!
+
     var window: NSWindow?
+    var popover: NSPopover?
     
     private init() {}
     
+    func setupApp() {
+        self.menuManager?.setupStatusBar()
+        
+//        contentView = ContentView()
+            
+        self.finalView = AnyView(
+            ContentView()
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environmentObject(clipboardManager)
+                .environmentObject(self)
+                .environmentObject(menuManager!)
+        )
+                        
+        NSApplication.shared.mainMenu = nil
+//        self.menuManager.setupMainMenu(isCopyingPaused: nil)
+        self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+        
+        
+        
+        if UserDefaultsManager.shared.windowPopOut {
+            print("finished launching popping out")
+            self.setupPopOutWindow()
+        }
+        else {
+            print("window manager shouldnt be here")
+            if let window = NSApplication.shared.windows.first {
+                self.window = window
+                self.setupWindow(window: window)
+                
+//                if UserDefaultsManager.shared.hideWindowWhenNotSelected {
+//                    NotificationCenter.default.addObserver(self, selector: #selector(windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
+//                }
+            }
+        }
+        
+    }
+    
     func setupWindow(window: NSWindow) {
+        print("setup reg window BAD")
         NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
         
         self.window = window
@@ -85,6 +128,17 @@ class WindowManager: ObservableObject {
         }
     }
     
+    @objc func handleStatusItemPressed(_ sender: Any?) {
+        if userDefaultsManager.windowPopOut {
+            print("toggle: Status Item Popping out")
+            togglePopOutWindow(sender)
+        }
+        else {
+            print("toggle: showing window")
+           showWindow()
+        }
+    }
+        
     func resetWindow() {
         if let window = NSApplication.shared.windows.first {
             NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
@@ -187,6 +241,84 @@ class WindowManager: ObservableObject {
     @objc func hideWindow() {
         DispatchQueue.main.async {
             NSApp.hide(nil)
+        }
+    }
+    
+    func setupPopOutWindow() {
+        print("setup Pop Out window")
+        
+        if self.popover == nil {
+            self.popover = NSPopover()
+        }
+                
+        let hostingController = NSHostingController(rootView: self.finalView)
+        let windowWidth: CGFloat = userDefaultsManager.windowWidth
+        let windowHeight: CGFloat = userDefaultsManager.windowHeight
+        hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
+        popover?.contentViewController = hostingController
+        
+        popover?.behavior = .transient // makes window close when you click outside of it
+        
+//        if let button = menuManager?.statusBarItem?.button {
+            NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
+            
+            self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+        
+//            popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+//        }
+    }
+    
+    func togglePopOutWindow(_ sender: Any?) {
+        let hostingController = NSHostingController(rootView: self.finalView)
+        let windowWidth: CGFloat = userDefaultsManager.windowWidth
+        let windowHeight: CGFloat = userDefaultsManager.windowHeight
+        hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
+        popover?.contentViewController = hostingController
+        
+        popover?.behavior = .transient // makes window close when you click outside of it
+        
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        
+        self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+        
+        if let popover = popover {
+            if popover.isShown {
+                if let sender = sender {
+                    popover.performClose(sender)
+                }
+                else {
+                    popover.close()
+                }
+            } else {
+                if let button = menuManager?.statusBarItem?.button {
+                    popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+                }
+            }
+        }
+    }
+    
+    func hidePopOutWindow() {
+        self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+        
+        popover?.close()
+    }
+    
+    func resetPopOutWindow() {
+        
+        let hostingController = NSHostingController(rootView: self.finalView)
+        let windowWidth: CGFloat = userDefaultsManager.windowWidth
+        let windowHeight: CGFloat = userDefaultsManager.windowHeight
+        hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
+        popover?.contentViewController = hostingController
+        
+        popover?.behavior = .transient // makes window close when you click outside of it
+        
+        if let button = menuManager?.statusBarItem?.button {
+            NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
+            
+            self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+        
+            popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
     }
 }

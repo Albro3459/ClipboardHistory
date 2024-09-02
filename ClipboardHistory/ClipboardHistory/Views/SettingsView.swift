@@ -11,61 +11,69 @@ import KeyboardShortcuts
 
 struct SettingsView: View {
     let userDefaultsManager = UserDefaultsManager.shared
-    
-    var body: some View {
-        TabView {
-            ClipboardSettingsView()
-                .tabItem {
-                    Text("Clipboard")
-                }
-            
-            WindowSettingsView()
-                .tabItem {
-                    Text("Window")
-                }
-            
-            ShortcutsSettingsView()
-                .tabItem {
-                    Text("Keyboad Shortcuts")
-                }
-        }
-        .frame(width: 580, height: 450)
-        .padding()
-    }
-}
-
-struct ClipboardSettingsView: View {
-    let userDefaultsManager = UserDefaultsManager.shared
     let clipboardManager = ClipboardManager.shared
     let menuManager = MenuManager.shared
-
+    
     @State private var pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
+    @State private var pauseCopyingInput = UserDefaults.standard.bool(forKey: "pauseCopying")
+
     @State private var maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
+    @State private var maxStoreCountInput = UserDefaults.standard.integer(forKey: "maxStoreCount")
+    
     @State private var noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
+    @State private var noDuplicatesInput = UserDefaults.standard.bool(forKey: "noDuplicates")
+    
     @State private var canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
+    @State private var canCopyFilesOrFoldersInput = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
+    
     @State private var canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
+    @State private var canCopyImagesInput = UserDefaults.standard.bool(forKey: "canCopyImages")
+
     @State private var pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
+    @State private var pasteWithoutFormattingInput = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
+
+    
     
     @State private var darkMode = UserDefaults.standard.bool(forKey: "darkMode")
-    @State private var windowWidth = UserDefaults.standard.float(forKey: "windowWidth")
-    @State private var windowHeight = UserDefaults.standard.float(forKey: "windowHeight")
-    @State private var windowLocation = UserDefaults.standard.string(forKey: "windowLocation")
-    @State private var windowPopOut = UserDefaults.standard.bool(forKey: "windowPopOut")
-    @State private var onlyPopOutWindow = UserDefaults.standard.bool(forKey: "onlyPopOutWindow")
-    @State private var canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
-    @State private var hideWindowWhenNotSelected = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
-    @State private var windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
+    @State private var darkModeInput = UserDefaults.standard.bool(forKey: "darkMode")
 
+    @State private var windowWidth = UserDefaults.standard.float(forKey: "windowWidth")
+    @State private var windowWidthInput: Float = UserDefaults.standard.float(forKey: "windowWidth")
+
+    @State private var windowHeight = UserDefaults.standard.float(forKey: "windowHeight")
+    @State private var windowHeightInput: Float = UserDefaults.standard.float(forKey: "windowHeight")
+
+    @State private var windowLocation = UserDefaults.standard.string(forKey: "windowLocation")
+    @State private var windowLocationInput = UserDefaults.standard.string(forKey: "windowLocation")
+    
+    @State private var windowPopOut = UserDefaults.standard.bool(forKey: "windowPopOut")
+    @State private var windowPopOutInput = UserDefaults.standard.bool(forKey: "windowPopOut")
+
+    @State private var canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
+    @State private var canWindowFloatInput = UserDefaults.standard.bool(forKey: "canWindowFloat")
+
+    @State private var hideWindowWhenNotSelected = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
+    @State private var hideWindowWhenNotSelectedInput = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
+
+    @State private var windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
+    @State private var windowOnAllDesktopsInput = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
+    
+    
+    
     @State var pasteWithoutFormattingShortcut: KeyboardShortcut = UserDefaultsManager.shared.pasteWithoutFormattingShortcut
+    @State var pasteWithoutFormattingShortcutInput: KeyboardShortcut = UserDefaultsManager.shared.pasteWithoutFormattingShortcut
+    
     @State var toggleWindowShortcut: KeyboardShortcut = UserDefaultsManager.shared.toggleWindowShortcut
+    @State var toggleWindowShortcutInput: KeyboardShortcut = UserDefaultsManager.shared.toggleWindowShortcut
+
     @State var resetWindowShortcut: KeyboardShortcut = UserDefaultsManager.shared.resetWindowShortcut
+    @State var resetWindowShortcutInput: KeyboardShortcut = UserDefaultsManager.shared.resetWindowShortcut
+
     
     @State private var geoWidth: CGFloat = 0.0
     @State private var geoHeight: CGFloat = 0.0
     
     @State private var saved: Bool = false
-    
-    @State private var itemCountInput: String = ""
     
     var body: some View {
         ZStack {
@@ -90,10 +98,10 @@ struct ClipboardSettingsView: View {
                     
                     ZStack(alignment: .top) {
                         Rectangle()
-                            .foregroundColor(Color(.darkGray))
+                            .foregroundColor(darkMode ? Color(.darkGray) : Color.gray)
                             .cornerRadius(8)
                         Rectangle()
-                            .foregroundColor(Color(.darkGray))
+                            .foregroundColor(darkMode ? Color(.darkGray) : Color.gray)
                             .frame(height: 10)
                             .zIndex(1)
                     }
@@ -107,20 +115,147 @@ struct ClipboardSettingsView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .animation(.easeInOut, value: self.saved)
                 // x: frame_width/2  |  y: -(window_height/2 - frame_height)
-                .position(x: 90/2, y: -(self.geoHeight/2 + 22))
+                .position(x: 90/2, y: -(self.geoHeight/2 - 8))
                 .frame(width: 90, height: 24)
-                .zIndex(5)
+                .zIndex(1000)
                 
                 
                 Color.white.opacity(0.1).flash(duration: 0.3)
             }
+            VStack {
+                TabView {
+                    ClipboardSettingsView(pauseCopyingInput: $pauseCopyingInput, maxStoreCountInput: $maxStoreCountInput, noDuplicatesInput: $noDuplicatesInput, canCopyFilesOrFoldersInput: $canCopyFilesOrFoldersInput, canCopyImagesInput: $canCopyImagesInput, pasteWithoutFormattingInput: $pasteWithoutFormattingInput)
+                        .tabItem {
+                            Text("Clipboard")
+                        }
+                    
+                    WindowSettingsView(darkModeInput: $darkModeInput, windowWidthInput: $windowWidthInput, windowHeightInput: $windowHeightInput, windowLocationInput: $windowLocationInput, windowPopOutInput: $windowPopOutInput, canWindowFloatInput: $canWindowFloatInput, hideWindowWhenNotSelectedInput: $hideWindowWhenNotSelectedInput, windowOnAllDesktopsInput: $windowOnAllDesktopsInput)
+                        .tabItem {
+                            Text("Window")
+                        }
+                    
+                    ShortcutsSettingsView(pasteWithoutFormattingShortcutInput: $pasteWithoutFormattingShortcutInput, toggleWindowShortcutInput: $toggleWindowShortcutInput, resetWindowShortcutInput: $resetWindowShortcutInput)
+                        .tabItem {
+                            Text("Keyboad Shortcuts")
+                        }
+                }
+                
+                Button("Save") {
+                    UserDefaults.standard.set(pauseCopyingInput, forKey: "pauseCopying")
+                    UserDefaults.standard.set(maxStoreCountInput, forKey: "maxStoreCount")
+                    UserDefaults.standard.set(noDuplicatesInput, forKey: "noDuplicates")
+                    UserDefaults.standard.set(canCopyFilesOrFoldersInput, forKey: "canCopyFilesOrFolders")
+                    UserDefaults.standard.set(canCopyImagesInput, forKey: "canCopyImages")
+                    UserDefaults.standard.set(pasteWithoutFormattingInput, forKey: "pasteWithoutFormatting")
+                    
+                    UserDefaults.standard.set(darkModeInput, forKey: "darkMode")
+                    UserDefaults.standard.set(windowWidthInput, forKey: "windowWidth")
+                    UserDefaults.standard.set(windowHeightInput, forKey: "windowHeight")
+                    UserDefaults.standard.set(windowLocationInput, forKey: "windowLocation")
+                    UserDefaults.standard.set(windowPopOutInput, forKey: "windowPopOut")
+                    UserDefaults.standard.set(canWindowFloatInput, forKey: "canWindowFloat")
+                    UserDefaults.standard.set(hideWindowWhenNotSelectedInput, forKey: "hideWindowWhenNotSelected")
+                    UserDefaults.standard.set(windowOnAllDesktopsInput, forKey: "windowOnAllDesktops")
+                    
+                    if pasteWithoutFormatting {
+                        //                        print("enabling")
+                        KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
+                            clipboardManager.pasteNoFormatting()
+                        }
+                    }
+                    else if !pasteWithoutFormatting {
+                        //                        print("disabling")
+                        KeyboardShortcuts.disable(.pasteNoFormatting)
+                    }
+                    
+                    userDefaultsManager.pasteWithoutFormattingShortcut = pasteWithoutFormattingShortcutInput
+                    userDefaultsManager.toggleWindowShortcut = toggleWindowShortcutInput
+                    userDefaultsManager.resetWindowShortcut = resetWindowShortcutInput
+                    
+                    userDefaultsManager.updateAll(savePasteWithoutFormattingShortcut: pasteWithoutFormatting == pasteWithoutFormattingInput)
+                    
+                    if hideWindowWhenNotSelected {
+                        NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification,object: nil,queue: .main) { notification in
+                            self.handleWindowDidResignKey(notification)
+                        }
+                    }
+                    
+                    menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput)
+                    
+                    DispatchQueue.main.async {
+                        self.saved = true
+                    }
+                    
+                    WindowManager.shared.resetWindow()
+                }
+                .padding()
+                .onChange(of: self.saved) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        self.saved = false
+                    }
+                }
+            }
+            .padding(.top, 20)
             
+        }
+        .frame(width: 580, height: 500)
+        .padding()
+    }
+    
+    private func handleWindowDidResignKey(_ notification: Notification) {
+        print("Window did resign key (unfocused)")
+        // App lost focus
+        
+        print(UserDefaultsManager.shared.hideWindowWhenNotSelected)
+        if UserDefaultsManager.shared.hideWindowWhenNotSelected {
+            // Check if the current main window is the settings window
+            if let mainWindow = NSApplication.shared.mainWindow, mainWindow.title == "ClipboardHistory" {
+                print("The main window is the settings window, not hiding it.")
+            } else {
+                WindowManager.shared.hideWindow()
+            }
+        }
+    }
+}
+
+struct ClipboardSettingsView: View {
+    let userDefaultsManager = UserDefaultsManager.shared
+    let clipboardManager = ClipboardManager.shared
+    let menuManager = MenuManager.shared
+
+    @State private var pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
+    @Binding var pauseCopyingInput: Bool
+
+    @State private var maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
+    @Binding var maxStoreCountInput: Int
+    
+    @State private var noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
+    @Binding var noDuplicatesInput: Bool
+    
+    @State private var canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
+    @Binding var canCopyFilesOrFoldersInput: Bool
+    
+    @State private var canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
+    @Binding var canCopyImagesInput: Bool
+    
+    @State private var pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
+    @Binding var pasteWithoutFormattingInput: Bool
+    
+    
+    @State private var geoWidth: CGFloat = 0.0
+    @State private var geoHeight: CGFloat = 0.0
+    
+    @State private var saved: Bool = false
+    
+    @State private var itemCountInput: String = ""
+    
+    var body: some View {
             VStack {
                 ScrollView {
                     Form {
                         VStack {
                             Spacer()
-                            Toggle("Pause Copying?", isOn: $pauseCopying).padding()
+                            Toggle("Pause Copying?", isOn: $pauseCopyingInput).padding()
                             
                             HStack {
                                 Text("Max Number of Items to Store: ")
@@ -137,59 +272,25 @@ struct ClipboardSettingsView: View {
                                 )
                                 .onChange(of: itemCountInput) {
                                     if let checkInt = checkItemCount(itemCountInput) {
-                                        maxStoreCount = min(checkInt, 150) // Ensure maxStoreCount does not exceed 150
-                                        itemCountInput = "\(maxStoreCount)" // Update the text field with the valid value
+                                        maxStoreCountInput = min(checkInt, 150) // Ensure maxStoreCount does not exceed 150
+                                        itemCountInput = "\(maxStoreCountInput)" // Update the text field with the valid value
                                     } else {
-                                        maxStoreCount = 0 // or some other default value if the input is invalid
+                                        maxStoreCountInput = 0 // or some other default value if the input is invalid
                                     }
                                 }
                                 .onAppear {
-                                    itemCountInput = "\(maxStoreCount)"
+                                    itemCountInput = "\(maxStoreCountInput)"
                                 }
                             }
                             
-                            
-                            Toggle("No Duplicate Copies?", isOn: $noDuplicates).padding()
-                            Toggle("Can App Hold Files or Folders?", isOn: $canCopyFilesOrFolders).padding()
-                            Toggle("Can App Hold Images?", isOn: $canCopyImages).padding()
-                            Toggle("Enable Paste Without Formatting?", isOn: $pasteWithoutFormatting).padding()
+                            Toggle("No Duplicate Copies?", isOn: $noDuplicatesInput).padding()
+                            Toggle("Can App Hold Files or Folders?", isOn: $canCopyFilesOrFoldersInput).padding()
+                            Toggle("Can App Hold Images?", isOn: $canCopyImagesInput).padding()
+                            Toggle("Enable Paste Without Formatting?", isOn: $pasteWithoutFormattingInput).padding()
                         }
                     }
                 }
-                Button("Save") {
-                    UserDefaults.standard.set(pauseCopying, forKey: "pauseCopying")
-                    UserDefaults.standard.set(maxStoreCount, forKey: "maxStoreCount")
-                    UserDefaults.standard.set(noDuplicates, forKey: "noDuplicates")
-                    UserDefaults.standard.set(canCopyFilesOrFolders, forKey: "canCopyFilesOrFolders")
-                    UserDefaults.standard.set(canCopyImages, forKey: "canCopyImages")
-                    UserDefaults.standard.set(pasteWithoutFormatting, forKey: "pasteWithoutFormatting")
-                    if pasteWithoutFormatting {
-//                        print("enabling")
-                        KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
-                            clipboardManager.pasteNoFormatting()
-                        }
-                    }
-                    else if !pasteWithoutFormatting {
-//                        print("disabling")
-                        KeyboardShortcuts.disable(.pasteNoFormatting)
-                    }
-                    
-                    userDefaultsManager.updateAll(saveShortcuts: false)
-                    
-                    menuManager.updateMainMenu(isCopyingPaused: pauseCopying)
-                    
-                    DispatchQueue.main.async {
-                        self.saved = true
-                    }
-                }
-                .padding()
-            }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onChange(of: self.saved) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self.saved = false
-                }
-            }
         }
     }
     private func checkItemCount(_ itemCount: String) -> Int? {
@@ -204,235 +305,153 @@ struct ClipboardSettingsView: View {
 struct WindowSettingsView: View {
     let userDefaultsManager = UserDefaultsManager.shared
     
-    @State private var pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
-    @State private var maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
-    @State private var noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
-    @State private var canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
-    @State private var canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
-    @State private var pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
-    
     @State private var darkMode = UserDefaults.standard.bool(forKey: "darkMode")
+    @Binding var darkModeInput: Bool
+    
     @State private var windowWidth = UserDefaults.standard.float(forKey: "windowWidth")
+    @Binding var windowWidthInput: Float
+
     @State private var windowHeight = UserDefaults.standard.float(forKey: "windowHeight")
+    @Binding var windowHeightInput: Float
+
     @State private var windowLocation = UserDefaults.standard.string(forKey: "windowLocation")
+    @Binding var windowLocationInput: String!
+    
     @State private var windowPopOut = UserDefaults.standard.bool(forKey: "windowPopOut")
-    @State private var onlyPopOutWindow = UserDefaults.standard.bool(forKey: "onlyPopOutWindow")
+    @Binding var windowPopOutInput: Bool
+
     @State private var canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
+    @Binding var canWindowFloatInput: Bool
+
     @State private var hideWindowWhenNotSelected = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
+    @Binding var hideWindowWhenNotSelectedInput: Bool
+
     @State private var windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
+    @Binding var windowOnAllDesktopsInput: Bool
+    
 
     @State private var geoWidth: CGFloat = 0.0
     @State private var geoHeight: CGFloat = 0.0
     
     @State private var saved: Bool = false
     
-    @State private var widthInput: Float = UserDefaults.standard.float(forKey: "windowWidth")
     @State private var isEditingWidth = false
 
-    @State private var heightInput: Float = UserDefaults.standard.float(forKey: "windowHeight")
     @State private var isEditingHeight = false
 
-    @State private var windowLocationInput = UserDefaults.standard.string(forKey: "windowLocation")
     @State private var isWindowMenuSelected: Bool = false
     
     var body: some View {
-        ZStack {
-            GeometryReader { geometry in
-                Color.clear
-                    .frame(height: 1)
-                    .onAppear {
-                        self.geoWidth = geometry.size.width
-                        self.geoHeight = geometry.size.height
-                    }
-                    .onChange(of: geometry.size.width) { old, new in
-                        self.geoWidth = new
-                    }
-                    .onChange(of: geometry.size.height) { old, new in
-                        self.geoHeight = new
-                    }
-            }
-            .zIndex(-10)
-            
-            if self.saved {
-                ZStack(alignment: .center) {
-                    
-                    ZStack(alignment: .top) {
-                        Rectangle()
-                            .foregroundColor(Color(.darkGray))
-                            .cornerRadius(8)
-                        Rectangle()
-                            .foregroundColor(Color(.darkGray))
-                            .frame(height: 10)
-                            .zIndex(1)
-                    }
-                    Text("Saved!")
-                        .font(.subheadline)
-                        .bold()
-                    
-                        .cornerRadius(8)
-                        .frame(alignment: .center)
-                }
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .animation(.easeInOut, value: self.saved)
-                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
-                .position(x: 90/2, y: -(self.geoHeight/2 + 22))
-                .frame(width: 90, height: 24)
-                .zIndex(5)
-                
-                
-                Color.white.opacity(0.1).flash(duration: 0.3)
-            }
-            VStack {
-                ScrollView {
-                    Form {
+        VStack {
+            ScrollView {
+                Form {
+                    VStack {
+                        Spacer()
+                        Toggle("Dark Mode On?", isOn: $darkModeInput).padding()
+                        
+                        Text("Window Width: ")
+                        
                         VStack {
-                            Spacer()
-                            Toggle("Dark Mode On?", isOn: $darkMode).padding()
-                            
-                            Text("Window Width: ")
-                            
-                            VStack {
-                                Slider(
-                                    value: $widthInput,
-                                    in: 100...2000,
-                                    onEditingChanged: { editing in
-                                        isEditingWidth = editing
-                                    }
-                                )
-                                Text("\(widthInput, specifier: "%.f")")
-                                    .foregroundColor(isEditingWidth ? .red : .blue)
+                            Slider(
+                                value: $windowWidthInput,
+                                in: 100...2000,
+                                onEditingChanged: { editing in
+                                    isEditingWidth = editing
+                                }
+                            )
+                            Text("\(windowWidthInput, specifier: "%.f")")
+                                .foregroundColor(isEditingWidth ? .red : .blue)
+                        }
+                        .frame(width: 500)
+                        
+                        
+                        Spacer()
+                        Spacer()
+                        
+                        Text("Window Height: ")
+                        
+                        VStack {
+                            Slider(
+                                value: $windowHeightInput,
+                                in: 100...2000,
+                                onEditingChanged: { editing in
+                                    isEditingHeight = editing
+                                }
+                            )
+                            Text("\(windowHeightInput, specifier: "%.f")")
+                                .foregroundColor(isEditingHeight ? .red : .blue)
+                        }
+                        .frame(width: 500)
+                        
+                        Spacer()
+                        
+                        Toggle("Switch Window to Pop Out of Status Bar Icon?", isOn: $windowPopOutInput).padding()
+                        
+                        Spacer()
+                        Spacer()
+                        Text("Default Window Location: ")
+                            .foregroundColor(windowPopOutInput ? Color.gray : .white)
+                        Menu {
+                            Button(action: {
+                                windowLocationInput = "Top Left"
+                                isWindowMenuSelected = true
+                            }) {
+                                Text("Top Left")
                             }
-                            .frame(width: 500)
-                            
-                            
-                            Spacer()
-                            Spacer()
-                            
-                            Text("Window Height: ")
-                            
-                            VStack {
-                                Slider(
-                                    value: $heightInput,
-                                    in: 100...2000,
-                                    onEditingChanged: { editing in
-                                        isEditingHeight = editing
-                                    }
-                                )
-                                Text("\(heightInput, specifier: "%.f")")
-                                    .foregroundColor(isEditingHeight ? .red : .blue)
+                            Button(action: {
+                                windowLocationInput = "Top Right"
+                                isWindowMenuSelected = true
+                            }) {
+                                Text("Top Right")
                             }
-                            .frame(width: 500)
-                            
-                            
-                            
-                            Spacer()
-                            Text("Default Window Location: ")
-                            Menu {
-                                Button(action: {
-                                    windowLocationInput = "Top Left"
-                                    isWindowMenuSelected = true
-                                }) {
-                                    Text("Top Left")
-                                }
-                                Button(action: {
-                                    windowLocationInput = "Top Right"
-                                    isWindowMenuSelected = true
-                                }) {
-                                    Text("Top Right")
-                                }
-                                Button(action: {
-                                    windowLocationInput = "Center"
-                                    isWindowMenuSelected = true
-                                }) {
-                                    Text("Center")
-                                }
-                                Button(action: {
-                                    windowLocationInput = "Bottom Left"
-                                    isWindowMenuSelected = true
-                                }) {
-                                    Text("Bottom Left")
-                                }
-                                Button(action: {
-                                    windowLocationInput = "Bottom Right"
-                                    isWindowMenuSelected = true
-                                }) {
-                                    Text("Bottom Right")
-                                }
-                            } label: {
-                                Text((windowLocationInput ?? windowLocation) ?? "Select Window Location")
-                                    .foregroundColor(windowLocationInput == nil ? .gray : .primary)
+                            Button(action: {
+                                windowLocationInput = "Center"
+                                isWindowMenuSelected = true
+                            }) {
+                                Text("Center")
                             }
-                            .frame(width: 200)
-                            .onAppear {
-                                windowLocationInput = isWindowMenuSelected ? windowLocationInput : windowLocation
+                            Button(action: {
+                                windowLocationInput = "Bottom Left"
+                                isWindowMenuSelected = true
+                            }) {
+                                Text("Bottom Left")
                             }
-                            
-                            
-                            //                        Toggle("Pop Out Window From Menu Bar Icon?", isOn: $windowPopOut).padding()
-                            //                        Toggle("ONLY Pop Out Window From Menu Bar Icon?", isOn: $onlyPopOutWindow).padding()
-                            
-                            Toggle("Can Window Float?", isOn: $canWindowFloat).padding()
-                            Toggle("**Very Buggy** Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelected).padding()
-                            Toggle("Show Window On All Desktops?", isOn: $windowOnAllDesktops).padding()
+                            Button(action: {
+                                windowLocationInput = "Bottom Right"
+                                isWindowMenuSelected = true
+                            }) {
+                                Text("Bottom Right")
+                            }
+                        } label: {
+                            Text((windowLocationInput ?? windowLocation) ?? "Select Window Location")
+                                .foregroundColor(windowLocationInput == nil ? .gray : .primary)
+                        }
+                        .frame(width: 200)
+                        .disabled(windowPopOutInput)
+                        .onAppear {
+                            windowLocationInput = isWindowMenuSelected ? windowLocationInput : windowLocation
                         }
                         
                         
+                        Toggle("Can Window Float?", isOn: $canWindowFloatInput)
+                            .foregroundColor(windowPopOutInput ? Color.gray : .white)
+                            .disabled(windowPopOutInput)
+                            .padding()
+                        
+                        Toggle("**Very Buggy** Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelectedInput)
+                            .foregroundColor(windowPopOutInput ? Color.gray : .white)
+                            .disabled(windowPopOutInput)
+                            .padding()
+                        
+                        Toggle("Show Window On All Desktops?", isOn: $windowOnAllDesktops)
+                            .foregroundColor(windowPopOutInput ? Color.gray : .white)
+                            .disabled(windowPopOutInput)
+                            .padding()
                     }
-                }
-                Button("Save") {
-                    UserDefaults.standard.set(darkMode, forKey: "darkMode")
-                    
-                    windowWidth = widthInput
-                    UserDefaults.standard.set(windowWidth, forKey: "windowWidth")
-                    
-                    windowHeight = heightInput
-                    UserDefaults.standard.set(windowHeight, forKey: "windowHeight")
-                    
-                    windowLocation = windowLocationInput
-                    UserDefaults.standard.set(windowLocation, forKey: "windowLocation")
-                    UserDefaults.standard.set(windowPopOut, forKey: "windowPopOut")
-                    UserDefaults.standard.set(onlyPopOutWindow, forKey: "onlyPopOutWindow")
-                    UserDefaults.standard.set(canWindowFloat, forKey: "canWindowFloat")
-                    UserDefaults.standard.set(hideWindowWhenNotSelected, forKey: "hideWindowWhenNotSelected")
-                    UserDefaults.standard.set(windowOnAllDesktops, forKey: "windowOnAllDesktops")
-                    
-                    if pasteWithoutFormatting {
-//                        print("enabling")
-                        KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
-                            ClipboardManager.shared.pasteNoFormatting()
-                        }
-                    }
-                    else if !pasteWithoutFormatting {
-//                        print("disabling")
-                        KeyboardShortcuts.disable(.pasteNoFormatting)
-                    }
-                    
-                    if hideWindowWhenNotSelected {
-                        NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification,object: nil,queue: .main) { notification in
-                            handleWindowDidResignKey(notification)
-                        }
-                    }
-                    
-                    userDefaultsManager.updateAll(saveShortcuts: true)
-                    
-                    MenuManager.shared.updateMainMenu(isCopyingPaused: pauseCopying)
-                    
-                    DispatchQueue.main.async {
-                        self.saved = true
-                    }
-                    
-                    WindowManager.shared.resetWindow()
-                    
-                }
-                .padding()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onChange(of: self.saved) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self.saved = false
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     private func checkFloatValue(_ inputString: String) -> Float? {
         // Try to convert the string to an float
@@ -458,30 +477,18 @@ struct WindowSettingsView: View {
     }
 }
 
-
 struct ShortcutsSettingsView: View {
     let userDefaultsManager = UserDefaultsManager.shared
-    
-    @State private var pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
-    @State private var maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
-    @State private var noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
-    @State private var canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
-    @State private var canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
-    @State private var pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
-    
-    @State private var darkMode = UserDefaults.standard.bool(forKey: "darkMode")
-    @State private var windowWidth = UserDefaults.standard.float(forKey: "windowWidth")
-    @State private var windowHeight = UserDefaults.standard.float(forKey: "windowHeight")
-    @State private var windowLocation = UserDefaults.standard.string(forKey: "windowLocation")
-    @State private var windowPopOut = UserDefaults.standard.bool(forKey: "windowPopOut")
-    @State private var onlyPopOutWindow = UserDefaults.standard.bool(forKey: "onlyPopOutWindow")
-    @State private var canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
-    @State private var hideWindowWhenNotSelected = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
-    @State private var windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
 
     @State var pasteWithoutFormattingShortcut: KeyboardShortcut = UserDefaultsManager.shared.pasteWithoutFormattingShortcut
+    @Binding var pasteWithoutFormattingShortcutInput: KeyboardShortcut
+    
     @State var toggleWindowShortcut: KeyboardShortcut = UserDefaultsManager.shared.toggleWindowShortcut
+    @Binding var toggleWindowShortcutInput: KeyboardShortcut
+    
     @State var resetWindowShortcut: KeyboardShortcut = UserDefaultsManager.shared.resetWindowShortcut
+    @Binding var resetWindowShortcutInput: KeyboardShortcut
+    
     
     @State private var geoWidth: CGFloat = 0.0
     @State private var geoHeight: CGFloat = 0.0
@@ -489,126 +496,49 @@ struct ShortcutsSettingsView: View {
     @State private var saved: Bool = false
 
     var body: some View {
-        ZStack {
-            GeometryReader { geometry in
-                Color.clear
-                    .frame(height: 1)
-                    .onAppear {
-                        self.geoWidth = geometry.size.width
-                        self.geoHeight = geometry.size.height
-                    }
-                    .onChange(of: geometry.size.width) { old, new in
-                        self.geoWidth = new
-                    }
-                    .onChange(of: geometry.size.height) { old, new in
-                        self.geoHeight = new
-                    }
-            }
-            .zIndex(-10)
-            
-            if self.saved {
-                ZStack(alignment: .center) {
-                    
-                    ZStack(alignment: .top) {
-                        Rectangle()
-                            .foregroundColor(Color(.darkGray))
-                            .cornerRadius(8)
-                        Rectangle()
-                            .foregroundColor(Color(.darkGray))
-                            .frame(height: 10)
-                            .zIndex(1)
-                    }
-                    Text("Saved!")
-                        .font(.subheadline)
-                        .bold()
-                    
-                        .cornerRadius(8)
-                        .frame(alignment: .center)
-                }
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .animation(.easeInOut, value: self.saved)
-                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
-                .position(x: 90/2, y: -(self.geoHeight/2 + 22))
-                .frame(width: 90, height: 24)
-                .zIndex(5)
-                
-                
-                Color.white.opacity(0.1).flash(duration: 0.3)
-            }
-            VStack {
-                ScrollView {
-                    Form {
+        VStack {
+            ScrollView {
+                Form {
+                    VStack {
                         VStack {
-                            VStack {
-                                Spacer()
-                                Text("Paste Without Formatting Shortcut: ")
-                                
-                                Spacer()
-                                
-                                CustomShortcutView(shortcut: $pasteWithoutFormattingShortcut)
-                                
-                            }.padding()
+                            Spacer()
+                            Text("Paste Without Formatting Shortcut: ")
                             
-                            VStack {
-                                Spacer()
-                                Text("Toggle Show/Hide Window Shortcut: ")
-                                
-                                Spacer()
-                                
-                                CustomShortcutView(shortcut: $toggleWindowShortcut)
-                                
-                            }.padding()
+                            Spacer()
                             
-                            VStack {
-                                Spacer()
-                                Text("Reset Window Shortcut: ")
-                                
-                                Spacer()
-                                
-                                CustomShortcutView(shortcut: $resetWindowShortcut)
-                                
-                            }.padding()
+                            CustomShortcutView(shortcut: $pasteWithoutFormattingShortcutInput)
                             
+                        }.padding()
+                        
+                        VStack {
+                            Spacer()
+                            Text("Toggle Show/Hide Window Shortcut: ")
                             
-                        }
+                            Spacer()
+                            
+                            CustomShortcutView(shortcut: $toggleWindowShortcutInput)
+                            
+                        }.padding()
+                        
+                        VStack {
+                            Spacer()
+                            Text("Reset Window Shortcut: ")
+                            
+                            Spacer()
+                            
+                            CustomShortcutView(shortcut: $resetWindowShortcutInput)
+                            
+                        }.padding()
+                        
+                        
                     }
-                }
-                Spacer()
-                Button("Save") {
-                    if pasteWithoutFormatting {
-//                        print("enabling")
-                        KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
-                            ClipboardManager.shared.pasteNoFormatting()
-                        }
-                    }
-                    else if !pasteWithoutFormatting {
-//                        print("disabling")
-                        KeyboardShortcuts.disable(.pasteNoFormatting)
-                    }
-                    
-                    userDefaultsManager.pasteWithoutFormattingShortcut = pasteWithoutFormattingShortcut
-                    userDefaultsManager.toggleWindowShortcut = toggleWindowShortcut
-                    userDefaultsManager.resetWindowShortcut = resetWindowShortcut
-                    
-                    UserDefaultsManager.shared.updateAll(saveShortcuts: true)
-                    
-                    MenuManager.shared.updateMainMenu(isCopyingPaused: pauseCopying)
-                    
-                    DispatchQueue.main.async {
-                        self.saved = true
-                    }
-                }
-                .padding()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onChange(of: self.saved) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self.saved = false
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
+
 
 struct CustomShortcutView : View {
     

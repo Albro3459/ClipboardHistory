@@ -27,6 +27,7 @@ class MenuManager: ObservableObject {
         
     private init() { }
     
+    
     func setupStatusBar() {
         statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
@@ -38,7 +39,7 @@ class MenuManager: ObservableObject {
             } else {
                 button.title = userDefaultsManager.appName
             }
-            button.action = #selector(windowManager?.showWindow)
+            button.action = #selector(windowManager?.handleStatusItemPressed(_:))
             button.target = windowManager
             
         } else {

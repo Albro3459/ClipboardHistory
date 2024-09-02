@@ -89,10 +89,10 @@ struct ContentView: View {
                     
                     ZStack(alignment: .top) {
                         Rectangle()
-                            .foregroundColor(Color(.darkGray))
+                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
                             .cornerRadius(8)
                         Rectangle()
-                            .foregroundColor(Color(.darkGray))
+                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
                             .frame(height: 10)
                             .zIndex(1)
                     }
@@ -119,10 +119,10 @@ struct ContentView: View {
                     
                     ZStack(alignment: .top) {
                         Rectangle()
-                            .foregroundColor(Color(.darkGray))
+                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
                             .cornerRadius(8)
                         Rectangle()
-                            .foregroundColor(Color(.darkGray))
+                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
                             .frame(height: 10)
                             .zIndex(1)
                     }

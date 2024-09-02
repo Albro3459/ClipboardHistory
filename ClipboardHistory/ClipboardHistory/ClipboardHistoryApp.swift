@@ -15,7 +15,7 @@ struct ClipboardHistoryApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     let persistenceController = PersistenceController.shared
-                    
+    
     init() {
         //have to register first!!
         self.registerUserDefaults()
@@ -23,12 +23,16 @@ struct ClipboardHistoryApp: App {
     }
     
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
-                .environmentObject(appDelegate.clipboardManager)
-                .environmentObject(appDelegate.windowManager)
-                .environmentObject(appDelegate.menuManager)
+//        WindowGroup {
+//            ContentView()
+//                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+//                .environmentObject(appDelegate.clipboardManager!)
+//                .environmentObject(appDelegate.windowManager!)
+//                .environmentObject(appDelegate.menuManager!)
+//        }
+        
+        Settings { // have to do this to get the empty window to not appear
+            EmptyView()
         }
     }
     
@@ -45,7 +49,7 @@ struct ClipboardHistoryApp: App {
             "windowHeight": 500,
             "windowLocation": "Bottom Right",
             "windowPopOut": false, // TODO
-            "onlyPopOutWindow": false, // TODO
+//            "onlyPopOutWindow": false, // TODO
             "canWindowFloat": false,
             "hideWindowWhenNotSelected": false,
             "windowOnAllDesktops": true,
@@ -73,25 +77,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var window: NSWindow?
     var statusBarItem: NSStatusItem?
     
+    let persistenceController: PersistenceController?
     let userDefaultsManager: UserDefaultsManager?
-//    let windowManager: WindowManager?
-//    let menuManager: MenuManager?
-    let menuManager = MenuManager.shared
-    let windowManager = WindowManager.shared
-    let clipboardManager = ClipboardManager.shared
+    let windowManager: WindowManager?
+    let menuManager: MenuManager?
+//    let menuManager = MenuManager.shared
+//    let windowManager = WindowManager.shared
+    let clipboardManager: ClipboardManager?
     
     private var lastToggleTime: Date?
     private var lastPasteNoFormatTime: Date?
             
     override init() {
+        self.persistenceController = PersistenceController.shared
         self.userDefaultsManager = UserDefaultsManager.shared
-        
-//        self.windowManager = WindowManager.shared
-//        self.menuManager = MenuManager.shared
-        self.menuManager.windowManager = self.windowManager
-        self.windowManager.menuManager = self.menuManager
+        self.windowManager = WindowManager.shared
+        self.menuManager = MenuManager.shared
+        self.clipboardManager = ClipboardManager.shared
         
         super.init()
+        
+        self.menuManager?.windowManager = self.windowManager
+        self.windowManager?.menuManager = self.menuManager
+        
         setupGlobalHotKey()
     }
 
@@ -111,20 +119,35 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         
         KeyboardShortcuts.onKeyDown(for: .toggleWindow) {
-            self.windowManager.toggleWindow()
+            if UserDefaultsManager.shared.windowPopOut {
+                self.windowManager?.togglePopOutWindow(nil)
+            }
+            else {
+                self.windowManager?.toggleWindow()
+            }
         }
         
         KeyboardShortcuts.onKeyUp(for: .resetWindow) {
-            self.windowManager.resetWindow()
+            if UserDefaultsManager.shared.windowPopOut {
+                self.windowManager?.resetPopOutWindow()
+            }
+            else {
+                self.windowManager?.resetWindow()
+            }
         }
         
         KeyboardShortcuts.onKeyDown(for: .hideWindow) {
-            self.windowManager.hideWindow()
+            if UserDefaultsManager.shared.windowPopOut {
+                self.windowManager?.hidePopOutWindow()
+            }
+            else {
+                self.windowManager?.hideWindow()
+            }
         }
         
         if let userDefaultsManager = self.userDefaultsManager, userDefaultsManager.pasteWithoutFormatting {
             KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
-                self.clipboardManager.pasteNoFormatting()
+                self.clipboardManager?.pasteNoFormatting()
             }
         }
         else { // otherwise free it up, so I dont consume the keystroke
@@ -136,37 +159,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
 //        setupGlobalHotKey()
         
-        if let window = NSApplication.shared.windows.first {
-            self.windowManager.setupWindow(window: window)
-            
-                   
-            
-//            NotificationCenter.default.addObserver(self, selector: #selector(windowDidBecomeKey(_:)), name: NSWindow.didBecomeKeyNotification, object: nil)
-            if UserDefaultsManager.shared.hideWindowWhenNotSelected {
-                NotificationCenter.default.addObserver(self, selector: #selector(windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
-            }
+        self.windowManager?.setupApp()
+        
+        if !UserDefaultsManager.shared.windowPopOut && UserDefaultsManager.shared.hideWindowWhenNotSelected {
+            NotificationCenter.default.addObserver(self, selector: #selector(windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
         }
-        
-        self.menuManager.setupStatusBar()
-        
-        NSApplication.shared.mainMenu = nil
-//        self.menuManager.setupMainMenu(isCopyingPaused: nil)
-        self.menuManager.updateMainMenu(isCopyingPaused: nil)
-        
-//        // Watch for menu updates
-//        NotificationCenter.default.addObserver(
-//            forName: NSMenu.didAddItemNotification,
-//            object: nil,
-//            queue: .main
-//        ) { _ in
-//            self.menuManager.updateMainMenu(isCopyingPaused: nil)
-//        }
     }
     
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
 //        print("Dock icon clicked!")
         
-        menuManager.updateMainMenu(isCopyingPaused: nil)
+        menuManager?.updateMainMenu(isCopyingPaused: nil)
         
         return true
     }
@@ -191,7 +194,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             if let mainWindow = NSApplication.shared.mainWindow, mainWindow.title == "ClipboardHistory" {
                 print("The main window is the settings window, not hiding it.")
             } else {
-                windowManager.hideWindow()
+                windowManager?.hideWindow()
             }
         }
     }

@@ -26,7 +26,7 @@ class UserDefaultsManager {
     var windowHeight: CGFloat
     var windowLocation: String
     var windowPopOut: Bool  // pop out of the menu button when clicked
-    var onlyPopOutWindow: Bool
+//    var onlyPopOutWindow: Bool
     var canWindowFloat: Bool
     var hideWindowWhenNotSelected: Bool
     var windowOnAllDesktops: Bool
@@ -53,7 +53,7 @@ class UserDefaultsManager {
         self.windowHeight = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
         self.windowLocation = UserDefaults.standard.string(forKey: "windowLocation") ?? "bottomRight"
         self.windowPopOut = UserDefaults.standard.bool(forKey: "windowPopOut")
-        self.onlyPopOutWindow = UserDefaults.standard.bool(forKey: "onlyPopOutWindow")
+//        self.onlyPopOutWindow = UserDefaults.standard.bool(forKey: "onlyPopOutWindow")
         self.canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
         if self.canWindowFloat {
             self.hideWindowWhenNotSelected = false
@@ -94,9 +94,11 @@ class UserDefaultsManager {
         }
     }
     
-    func saveShortcuts() {
-        if let data = try? encoder.encode(pasteWithoutFormattingShortcut) {
-            UserDefaults.standard.set(data, forKey: "pasteWithoutFormattingShortcut")
+    func saveShortcuts(savePasteWithoutFormattingShortcut: Bool) {
+        if savePasteWithoutFormattingShortcut {
+            if let data = try? encoder.encode(pasteWithoutFormattingShortcut) {
+                UserDefaults.standard.set(data, forKey: "pasteWithoutFormattingShortcut")
+            }
         }
         if let data = try? encoder.encode(toggleWindowShortcut) {
             UserDefaults.standard.set(data, forKey: "toggleWindowShortcut")
@@ -108,13 +110,15 @@ class UserDefaultsManager {
         KeyboardShortcuts.reset(.toggleWindow)
         KeyboardShortcuts.reset(.resetWindow)
         KeyboardShortcuts.reset(.hideWindow)
-        KeyboardShortcuts.reset(.pasteNoFormatting)
+        if savePasteWithoutFormattingShortcut {
+            KeyboardShortcuts.reset(.pasteNoFormatting)
+        }
     }
     
-    func updateAll(saveShortcuts: Bool) {
-        if saveShortcuts {
-            self.saveShortcuts()
-        }
+    func updateAll(savePasteWithoutFormattingShortcut: Bool) {
+//        if saveShortcuts {
+        self.saveShortcuts(savePasteWithoutFormattingShortcut: savePasteWithoutFormattingShortcut)
+//        }
             
         self.appName = UserDefaults.standard.string(forKey: "appName") ?? "test App Name"
         
@@ -123,7 +127,7 @@ class UserDefaultsManager {
         self.windowHeight = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
         self.windowLocation = UserDefaults.standard.string(forKey: "windowLocation") ?? "Bottom Right"
         self.windowPopOut = UserDefaults.standard.bool(forKey: "windowPopOut")
-        self.onlyPopOutWindow = UserDefaults.standard.bool(forKey: "onlyPopOutWindow")
+//        self.onlyPopOutWindow = UserDefaults.standard.bool(forKey: "onlyPopOutWindow")
         self.canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
         if self.canWindowFloat {
             self.hideWindowWhenNotSelected = false
