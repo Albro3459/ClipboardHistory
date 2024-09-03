@@ -360,7 +360,7 @@ struct ContentView: View {
                 .help("Clear All Items")
                 .buttonStyle(.bordered)
                 .tint(Color(.darkGray))
-                .scaleEffect(isClearButtonHovered ? 1.05 : 1.0)
+                .scaleEffect(isClearButtonHovered ? 1.035 : 1.0)
                 .shadow(color: isClearButtonHovered ? Color(.darkGray) : .clear, radius: isClearButtonHovered ? 2 : 0)
                 .onHover { isClearButtonHovered in
                     withAnimation(.easeInOut(duration: 0.2)) {
