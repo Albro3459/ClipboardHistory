@@ -24,8 +24,46 @@ class MenuManager: ObservableObject {
     var statusBarItem: NSStatusItem?
     
     var appMenu: NSMenu?
+    
+    private var checkTimer: Timer?
+    private var startedTimer: Bool = false
         
     private init() { }
+
+    func startMonitoringMenu() {
+        checkTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(checkMenu), userInfo: nil, repeats: true)
+    }
+    
+    @objc func checkMenu() {
+        print("checking menu")
+        if let appMenu = NSApp.menu {
+            
+            // default menu == BAD
+            if appMenu.items.count == 6 {
+                NSApp.menu = nil
+                setupMainMenu(isCopyingPaused: nil, shouldDelay: false)
+//                if let window = WindowManager.shared.window, window.isKeyWindow {
+//                    checkTimer?.invalidate()
+//                }
+//                else if let popoverWindow = WindowManager.shared.popover?.contentViewController?.view.window, popoverWindow.isKeyWindow {
+//                    checkTimer?.invalidate()
+//                }
+            }
+//            else if let window = WindowManager.shared.window, window.isKeyWindow {
+//                checkTimer?.invalidate()
+//            }
+//            else if let popoverWindow = WindowManager.shared.popover?.contentViewController?.view.window, popoverWindow.isKeyWindow {
+//                checkTimer?.invalidate()
+//            }
+        }
+        
+        if let window = WindowManager.shared.window, window.isKeyWindow {
+            checkTimer?.invalidate()
+        }
+        else if let popoverWindow = WindowManager.shared.popover?.contentViewController?.view.window, popoverWindow.isKeyWindow {
+            checkTimer?.invalidate()
+        }
+    }
     
     
     func setupStatusBar() {
@@ -40,19 +78,18 @@ class MenuManager: ObservableObject {
                 button.title = userDefaultsManager.appName
             }
             button.action = #selector(windowManager?.handleStatusItemPressed(_:))
-            button.target = windowManager
-            print("setup status bar")
-            
+            button.target = windowManager            
         } else {
             print("Failed to create status bar item")
         }
     }
     
-    func setupMainMenu(isCopyingPaused: Bool?) {
+    func setupMainMenu(isCopyingPaused: Bool?, shouldDelay: Bool) {
+        print("setting up menu")
         DispatchQueue.main.async {
             NSApp.menu = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                
+            DispatchQueue.main.asyncAfter(deadline: .now() + (shouldDelay ? 0.1 : 0.0)) {
+
                 let appMenu = NSMenu()
                 
                 // First App Menu
@@ -95,7 +132,7 @@ class MenuManager: ObservableObject {
                 
                 // Window Menu
                 let windowMenu = NSMenu(title: "Window")
-                let toggleWindowItem = NSMenuItem(title: "Show/Hide App", action: #selector(self.windowManager?.toggleWindow), keyEquivalent: self.userDefaultsManager.toggleWindowShortcut.toKeyEquivalent() ?? "C")
+                let toggleWindowItem = NSMenuItem(title: "Show/Hide App", action: #selector(self.windowManager?.handleToggleWindow), keyEquivalent: self.userDefaultsManager.toggleWindowShortcut.toKeyEquivalent() ?? "C")
                 toggleWindowItem.keyEquivalentModifierMask = self.userDefaultsManager.toggleWindowShortcut.toModifierFlags()
                 toggleWindowItem.target = WindowManager.shared
                 windowMenu.addItem(toggleWindowItem)
@@ -104,6 +141,7 @@ class MenuManager: ObservableObject {
                 let hideItem = NSMenuItem(title: "Hide App", action: #selector(self.windowManager?.hideWindow), keyEquivalent: "h")
                 hideItem.target = WindowManager.shared
                 windowMenu.addItem(hideItem)
+                
                 
                 let windowMenuItem = NSMenuItem()
                 windowMenuItem.submenu = windowMenu
@@ -132,6 +170,10 @@ class MenuManager: ObservableObject {
                 self.appMenu = appMenu
                 
 //                print("setup the main menu")
+                if !self.startedTimer {
+                    self.startMonitoringMenu()
+                    self.startedTimer = true
+                }
             }
         }
     }
@@ -150,7 +192,7 @@ class MenuManager: ObservableObject {
 //        else {
 //            self.setupMainMenu(isCopyingPaused: isCopyingPaused)
 //        }
-        self.setupMainMenu(isCopyingPaused: isCopyingPaused)
+        self.setupMainMenu(isCopyingPaused: isCopyingPaused, shouldDelay: true)
     }
 
     

@@ -48,6 +48,7 @@ struct SearchBarView: View {
             DispatchQueue.main.async {
                 isTextFieldFocused = false
             }
+            print("search bar view \(UserDefaultsManager.shared.darkMode)")
         }
     }
 }

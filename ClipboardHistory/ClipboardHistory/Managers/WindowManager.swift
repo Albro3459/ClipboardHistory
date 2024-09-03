@@ -26,20 +26,24 @@ class WindowManager: ObservableObject {
     var window: NSWindow?
     var popover: NSPopover?
     
+    //#colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.75)
+    let darkModeBackground = #colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.75)
+    
+    //#colorLiteral(red: 0.941, green: 0.937, blue: 0.941, alpha: 0.4)
+    let lightModeBackground = #colorLiteral(red: 0.941, green: 0.937, blue: 0.941, alpha: 0.4)
+    
     private init() {}
     
     @objc func handleStatusItemPressed(_ sender: Any?) {
         if userDefaultsManager.windowPopOut {
-            print("toggle: Status Item Popping out")
             togglePopOutWindow(sender)
         }
         else {
-            print("toggle: showing window")
            showWindow()
         }
     }
     
-    func handleToggleWindow() {
+    @objc func handleToggleWindow() {
         if userDefaultsManager.windowPopOut {
             if self.window != nil {
                 window?.orderOut(nil)
@@ -59,7 +63,6 @@ class WindowManager: ObservableObject {
     
     func handleResetWindow() {
         if userDefaultsManager.windowPopOut {
-            print("reset: Status Item window reset")
             if self.window != nil {
                 window?.orderOut(nil)
             }
@@ -67,7 +70,6 @@ class WindowManager: ObservableObject {
             resetPopOutWindow()
         }
         else {
-            print("reset: reset window")
             if window == nil {
                 setupWindow()
             }
@@ -93,7 +95,6 @@ class WindowManager: ObservableObject {
         self.menuManager?.updateMainMenu(isCopyingPaused: nil)
         
         if UserDefaultsManager.shared.windowPopOut {
-            print("finished launching popping out")
             self.setupPopOutWindow()
         }
         else {
@@ -102,7 +103,6 @@ class WindowManager: ObservableObject {
     }
     
     func setupWindow() {
-        print("setup regular window")
         NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
         
         let window = NSWindow(
@@ -302,12 +302,10 @@ class WindowManager: ObservableObject {
         hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
         popover?.contentViewController = hostingController
         
-//        popover?.behavior = .transient // makes window close when you click outside of it
+        popover?.behavior = .transient // makes window close when you click outside of it
         
         //testing
         if let popoverWindow = popover?.contentViewController?.view.window {
-            popoverWindow.alphaValue = 1 // opacity
-//            popoverWindow.makeKey()
             popoverWindow.makeKeyAndOrderFront(nil)
             popoverWindow.makeFirstResponder(popoverWindow.contentView)
         }
@@ -317,8 +315,7 @@ class WindowManager: ObservableObject {
         NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
         popover?.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
             
-        //#colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
-        self.popover?.backgroundColor = #colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
+        self.popover?.backgroundColor = UserDefaultsManager.shared.darkMode ? darkModeBackground : lightModeBackground
 
         self.menuManager?.updateMainMenu(isCopyingPaused: nil)
         
@@ -331,27 +328,6 @@ class WindowManager: ObservableObject {
     }
     
     func togglePopOutWindow(_ sender: Any?) {
-        let hostingController = NSHostingController(rootView: self.contentView.focusable(true))
-        let windowWidth: CGFloat = userDefaultsManager.windowWidth
-        let windowHeight: CGFloat = userDefaultsManager.windowHeight
-        hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
-        popover?.contentViewController = hostingController
-        popover?.contentSize = NSSize(width: windowWidth, height: windowHeight)
-        
-        popover?.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
-        
-//        popover?.behavior = .transient // makes window close when you click outside of it
-        
-        //testing
-        if let popoverWindow = popover?.contentViewController?.view.window {
-//            popoverWindow.alphaValue = 1 //  opacity
-//            popoverWindow.makeKey()
-            popoverWindow.makeKeyAndOrderFront(nil)
-            popoverWindow.makeFirstResponder(popoverWindow.contentView)
-        }
-        
-        //#colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
-        self.popover?.backgroundColor = #colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
         
         NSApplication.shared.activate(ignoringOtherApps: true)
         
@@ -369,6 +345,9 @@ class WindowManager: ObservableObject {
                 if let button = menuManager?.statusBarItem?.button {
                     popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
                 }
+                else {
+                    print("toggle popover hit ELSE for some reason")
+                }
             }
         }
     }
@@ -381,60 +360,31 @@ class WindowManager: ObservableObject {
     
     func showPopOutWindow() {
         if let button = menuManager?.statusBarItem?.button {
-            NSApp.appearance = NSAppearance(named: UserDefaults.standard.bool(forKey: "darkMode") ? .darkAqua : .vibrantLight)
-            popover?.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
             
             self.menuManager?.updateMainMenu(isCopyingPaused: nil)
             
-            //testing
-            if let popoverWindow = popover?.contentViewController?.view.window {
-//                popoverWindow.alphaValue = 1 // opacity
-    //            popoverWindow.makeKey()
-                popoverWindow.makeKeyAndOrderFront(nil)
-                popoverWindow.makeFirstResponder(popoverWindow.contentView)
-            }
-            
             NSApplication.shared.activate(ignoringOtherApps: true)
-            
-            //#colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
-            self.popover?.backgroundColor = #colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
-        
             popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
     }
     
     func resetPopOutWindow() {
         if self.popover == nil {
-            self.popover = NSPopover()
+            setupPopOutWindow()
+            return
         }
-        
-        let hostingController = NSHostingController(rootView: self.contentView.focusable(true))
         
         let windowWidth: CGFloat = CGFloat(UserDefaults.standard.float(forKey: "windowWidth"))
         let windowHeight: CGFloat = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
-        hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)
-        
-        popover?.contentViewController = hostingController
-        
+                
         popover?.contentSize = NSSize(width: windowWidth, height: windowHeight)
-        
-//        popover?.behavior = .transient // makes window close when you click outside of it
-        
-        //testing
-        if let popoverWindow = popover?.contentViewController?.view.window {
-//            popoverWindow.alphaValue = 1 // opacity
-//            popoverWindow.makeKey()
-            popoverWindow.makeKeyAndOrderFront(nil)
-            popoverWindow.makeFirstResponder(popoverWindow.contentView)
-        }
-        
+                
         NSApplication.shared.activate(ignoringOtherApps: true)
         
         NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
         popover?.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
         
-        //#colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
-        self.popover?.backgroundColor = #colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.70)
+        self.popover?.backgroundColor = UserDefaultsManager.shared.darkMode ? darkModeBackground : lightModeBackground
         
         self.menuManager?.updateMainMenu(isCopyingPaused: nil)
         

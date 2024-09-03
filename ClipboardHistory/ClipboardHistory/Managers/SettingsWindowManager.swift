@@ -63,4 +63,10 @@ class SettingsWindowManager: ObservableObject {
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
+    
+    func closeSettingsWindow() {
+        if let settingsWindow = self.settingsWindow {
+            settingsWindow.orderOut(nil)
+        }
+    }
 }

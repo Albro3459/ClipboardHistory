@@ -95,10 +95,8 @@ class UserDefaultsManager {
     }
     
     func saveShortcuts(savePasteWithoutFormattingShortcut: Bool) {
-        if savePasteWithoutFormattingShortcut {
-            if let data = try? encoder.encode(pasteWithoutFormattingShortcut) {
-                UserDefaults.standard.set(data, forKey: "pasteWithoutFormattingShortcut")
-            }
+        if let data = try? encoder.encode(pasteWithoutFormattingShortcut) {
+            UserDefaults.standard.set(data, forKey: "pasteWithoutFormattingShortcut")
         }
         if let data = try? encoder.encode(toggleWindowShortcut) {
             UserDefaults.standard.set(data, forKey: "toggleWindowShortcut")
@@ -116,6 +114,7 @@ class UserDefaultsManager {
     }
     
     func updateAll(savePasteWithoutFormattingShortcut: Bool) {
+        
 //        if saveShortcuts {
         self.saveShortcuts(savePasteWithoutFormattingShortcut: savePasteWithoutFormattingShortcut)
 //        }
@@ -145,6 +144,7 @@ class UserDefaultsManager {
         self.canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
 
         self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
+        print("updateAll settings: \(self.pasteWithoutFormatting)")
                 
         ClipboardManager.shared.clipboardMonitor?.reloadVars()
         

@@ -162,17 +162,22 @@ struct SettingsView: View {
                     ClipboardSettingsView(pauseCopyingInput: $pauseCopyingInput, maxStoreCountInput: $maxStoreCountInput, noDuplicatesInput: $noDuplicatesInput, canCopyFilesOrFoldersInput: $canCopyFilesOrFoldersInput, canCopyImagesInput: $canCopyImagesInput, pasteWithoutFormattingInput: $pasteWithoutFormattingInput)
                         .tabItem {
                             Text("Clipboard")
+                                .help("View Clipboard Related Settings")
                         }
+
                     
                     WindowSettingsView(darkModeInput: $darkModeInput, windowWidthInput: $windowWidthInput, windowHeightInput: $windowHeightInput, windowLocationInput: $windowLocationInput, windowPopOutInput: $windowPopOutInput, canWindowFloatInput: $canWindowFloatInput, hideWindowWhenNotSelectedInput: $hideWindowWhenNotSelectedInput, windowOnAllDesktopsInput: $windowOnAllDesktopsInput)
                         .tabItem {
                             Text("Window")
+                                .help("View Window Settings")
                         }
                     
                     ShortcutsSettingsView(pasteWithoutFormattingShortcutInput: $pasteWithoutFormattingShortcutInput, toggleWindowShortcutInput: $toggleWindowShortcutInput, resetWindowShortcutInput: $resetWindowShortcutInput)
                         .tabItem {
                             Text("Keyboad Shortcuts")
+                                .help("View Keyboard Shortcut Settings")
                         }
+
                 }
 
                 ZStack {
@@ -191,11 +196,13 @@ struct SettingsView: View {
                             secondaryButton: .cancel()
                         )
                     }
+                    .help("Reset Settings to Default Button")
                     
                     Button("Save") {
                         self.saveSettings()
                     }
                     .padding(.leading, 500)
+                    .help("Save Button")
                     
                 }
                 .padding(.top, -10)
@@ -219,6 +226,9 @@ struct SettingsView: View {
         }
         .frame(width: 580, height: 500)
         .padding()
+        .onAppear() {
+            self.setUpKeyboardHandling()
+        }
     }
     
     private func handleWindowDidResignKey(_ notification: Notification) {
@@ -237,6 +247,7 @@ struct SettingsView: View {
     }
     
     private func saveSettings() {
+        
         UserDefaults.standard.set(pauseCopyingInput, forKey: "pauseCopying")
         UserDefaults.standard.set(maxStoreCountInput, forKey: "maxStoreCount")
         UserDefaults.standard.set(noDuplicatesInput, forKey: "noDuplicates")
@@ -246,9 +257,6 @@ struct SettingsView: View {
         
         UserDefaults.standard.set(darkModeInput, forKey: "darkMode")
         UserDefaults.standard.set(windowWidthInput, forKey: "windowWidth")
-        print("settings save:")
-        print(windowWidthInput)
-        print()
         UserDefaults.standard.set(windowHeightInput, forKey: "windowHeight")
         UserDefaults.standard.set(windowLocationInput, forKey: "windowLocation")
         UserDefaults.standard.set(windowPopOutInput, forKey: "windowPopOut")
@@ -256,13 +264,13 @@ struct SettingsView: View {
         UserDefaults.standard.set(hideWindowWhenNotSelectedInput, forKey: "hideWindowWhenNotSelected")
         UserDefaults.standard.set(windowOnAllDesktopsInput, forKey: "windowOnAllDesktops")
         
-        if pasteWithoutFormatting {
+        if pasteWithoutFormattingInput {
             //                        print("enabling")
             KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
                 clipboardManager.pasteNoFormatting()
             }
         }
-        else if !pasteWithoutFormatting {
+        else if !pasteWithoutFormattingInput {
             //                        print("disabling")
             KeyboardShortcuts.disable(.pasteNoFormatting)
         }
@@ -294,8 +302,8 @@ struct SettingsView: View {
         noDuplicatesInput = true
         canCopyFilesOrFoldersInput = true
         canCopyImagesInput = true
-        pasteWithoutFormattingInput = false
-        darkModeInput = true
+//        pasteWithoutFormattingInput = false // not gonna reset
+//        darkModeInput = true // not gonna reset
         windowWidthInput = 300.0
         windowHeightInput = 500.0
         windowLocationInput = "Bottom Right"
@@ -303,30 +311,30 @@ struct SettingsView: View {
         canWindowFloatInput = false
         hideWindowWhenNotSelectedInput = false
         windowOnAllDesktopsInput = true
+        
         pasteWithoutFormattingShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "v")
         toggleWindowShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "c")
         resetWindowShortcutInput = KeyboardShortcut(modifiers: ["option"], key: "r")
         
-        UserDefaults.standard.set(false, forKey: "pauseCopying")
-        UserDefaults.standard.set(50, forKey: "maxStoreCount")
-        UserDefaults.standard.set(true, forKey: "noDuplicates")
-        UserDefaults.standard.set(true, forKey: "canCopyFilesOrFolders")
-        UserDefaults.standard.set(true, forKey: "canCopyImages")
-        UserDefaults.standard.set(false, forKey: "pasteWithoutFormatting")
+        UserDefaults.standard.set(pauseCopyingInput, forKey: "pauseCopying")
+        UserDefaults.standard.set(maxStoreCountInput, forKey: "maxStoreCount")
+        UserDefaults.standard.set(noDuplicatesInput, forKey: "noDuplicates")
+        UserDefaults.standard.set(canCopyFilesOrFoldersInput, forKey: "canCopyFilesOrFolders")
+        UserDefaults.standard.set(canCopyImagesInput, forKey: "canCopyImages")
+//        UserDefaults.standard.set(pasteWithoutFormattingInput, forKey: "pasteWithoutFormatting") // not gonna reset
         
-        UserDefaults.standard.set(true, forKey: "darkMode")
-        UserDefaults.standard.set(300.0, forKey: "windowWidth")
-        UserDefaults.standard.set(500.0, forKey: "windowHeight")
-        UserDefaults.standard.set("Bottom Right", forKey: "windowLocation")
-        UserDefaults.standard.set(false, forKey: "windowPopOut")
-        UserDefaults.standard.set(false, forKey: "canWindowFloat")
-        UserDefaults.standard.set(false, forKey: "hideWindowWhenNotSelected")
-        UserDefaults.standard.set(true, forKey: "windowOnAllDesktops")
+//        UserDefaults.standard.set(darkModeInput, forKey: "darkMode") // not gonna reset
+        UserDefaults.standard.set(windowWidthInput, forKey: "windowWidth")
+        UserDefaults.standard.set(windowHeightInput, forKey: "windowHeight")
+        UserDefaults.standard.set(windowLocationInput, forKey: "windowLocation")
+        UserDefaults.standard.set(windowPopOutInput, forKey: "windowPopOut")
+        UserDefaults.standard.set(canWindowFloatInput, forKey: "canWindowFloat")
+        UserDefaults.standard.set(hideWindowWhenNotSelectedInput, forKey: "hideWindowWhenNotSelected")
+        UserDefaults.standard.set(windowOnAllDesktopsInput, forKey: "windowOnAllDesktops")
         
-        
-        userDefaultsManager.pasteWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["command", "shift"], key: "v")
-        userDefaultsManager.toggleWindowShortcut = KeyboardShortcut(modifiers: ["command", "shift"], key: "c")
-        userDefaultsManager.resetWindowShortcut = KeyboardShortcut(modifiers: ["command", "shift"], key: "c")
+        userDefaultsManager.pasteWithoutFormattingShortcut = pasteWithoutFormattingShortcutInput
+        userDefaultsManager.toggleWindowShortcut = toggleWindowShortcutInput
+        userDefaultsManager.resetWindowShortcut = resetWindowShortcutInput
         
         menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput)
         
@@ -338,6 +346,21 @@ struct SettingsView: View {
         }
         
         WindowManager.shared.handleResetWindow()
+    }
+    
+    private func setUpKeyboardHandling() {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.type == .keyDown && !self.showingResetAlert {
+                if event.keyCode == 13 && event.modifierFlags.contains(.command) {
+                    // handle Cmd + W
+                    if let settingsWindow = SettingsWindowManager.shared.settingsWindow, settingsWindow.isKeyWindow {
+                        SettingsWindowManager.shared.closeSettingsWindow()
+                        return nil
+                    }
+                }
+            }
+            return event
+        }
     }
 }
 
@@ -475,6 +498,12 @@ struct WindowSettingsView: View {
                     VStack {
                         Spacer()
                         Toggle("Dark Mode On?", isOn: $darkModeInput).padding()
+                        Text("Might need to restart app for a full visual update")
+                            .font(.subheadline)
+                            .padding(.top, -20)
+                        
+                        Spacer()
+                        Spacer()
                         
                         Text("Window Width: ")
                         
@@ -514,8 +543,10 @@ struct WindowSettingsView: View {
                         
                         Toggle("Switch Window to Pop Out of Status Bar Icon?", isOn: $windowPopOutInput).padding()
                         
+                        
                         Spacer()
                         Spacer()
+                        
                         Text("Default Window Location: ")
                             .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
                         Menu {
@@ -639,7 +670,6 @@ struct ShortcutsSettingsView: View {
                         }.padding()
                         
                         VStack {
-                            Spacer()
                             Text("Toggle Show/Hide Window Shortcut: ")
                             
                             Spacer()
@@ -649,7 +679,6 @@ struct ShortcutsSettingsView: View {
                         }.padding()
                         
                         VStack {
-                            Spacer()
                             Text("Reset Window Shortcut: ")
                             
                             Spacer()
@@ -657,6 +686,11 @@ struct ShortcutsSettingsView: View {
                             CustomShortcutView(shortcut: $resetWindowShortcutInput)
                             
                         }.padding()
+                        
+                        Spacer()
+                        
+                        Text("Click the Help menu tab or this link for the full list of Keyboard Shortcuts: ")
+                        Link("ListOfKeyboardShortcuts", destination: URL(string: "https://github.com/Albro3459/ClipboardHistory/blob/main/ListOfKeyboardShortcuts.md")!)
                         
                         
                     }
@@ -800,7 +834,7 @@ struct KeyboardModifierView : View {
                 Text("None")
             }
         } label: {
-            Text(selectedItem ?? "None")
+            Text(selectedItem ?? keyModifier)
                 .foregroundColor(selectedItem == nil ? .gray : .primary)
         }
         .onAppear() {
