@@ -252,37 +252,46 @@ class ClipboardManager: ObservableObject {
     }
             
     func copied(item: ClipboardItem?) -> Bool {
-        if let item = item {
-            if clipboardMonitor?.checkLast(group: nil, item: item, context: nil) == true {
-                DispatchQueue.main.async {
-                    self.isCopied = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        self.isCopied = false
-                    }
-                }
-                return true
-            }
-            else {
-                return false
+        DispatchQueue.main.async {
+            self.isCopied = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                self.isCopied = false
             }
         }
-        else if let selectGroup = self.selectedGroup {
-            if clipboardMonitor?.checkLast(group: selectGroup.group, item: nil, context: nil) == true {
-                DispatchQueue.main.async {
-                    self.isCopied = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        self.isCopied = false
-                    }
-                }
-                return true
-            }
-            else {
-                return false
-            }
-        }
-        else {
-            return false
-        }
+        return true
+        
+        // code that actually checks if it is going to copy, buttt I want to see the copy popop for user feedback
+//        if let item = item {
+//            if clipboardMonitor?.checkLast(group: nil, item: item, context: nil) == true {
+//                DispatchQueue.main.async {
+//                    self.isCopied = true
+//                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+//                        self.isCopied = false
+//                    }
+//                }
+//                return true
+//            }
+//            else {
+//                return false
+//            }
+//        }
+//        else if let selectGroup = self.selectedGroup {
+//            if clipboardMonitor?.checkLast(group: selectGroup.group, item: nil, context: nil) == true {
+//                DispatchQueue.main.async {
+//                    self.isCopied = true
+//                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+//                        self.isCopied = false
+//                    }
+//                }
+//                return true
+//            }
+//            else {
+//                return false
+//            }
+//        }
+//        else {
+//            return false
+//        }
     }
     
     func deleteGroup(group: ClipboardGroup?, selectList: [SelectedGroup], viewContext: NSManagedObjectContext) {
