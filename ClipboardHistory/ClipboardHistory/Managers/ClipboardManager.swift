@@ -437,7 +437,7 @@ class ClipboardManager: ObservableObject {
     func toggleExpansion(for group: SelectedGroup) {
         if let currentGroup = selectedGroup, currentGroup == group {
             currentGroup.isExpanded.toggle()
-            print("toggling")
+//            print("toggling")
 
             objectWillChange.send()
         }
@@ -448,7 +448,7 @@ class ClipboardManager: ObservableObject {
             DispatchQueue.main.async {
                 
                 currentGroup.isExpanded = true
-                print("expanding")
+//                print("expanding")
                 
                 self.objectWillChange.send()
             }
@@ -462,7 +462,7 @@ class ClipboardManager: ObservableObject {
                     selectedGroup.isExpanded = true
                 }
             }
-            print("expanded groups")
+//            print("expanded groups")
             self.objectWillChange.send()
         }
     }
@@ -472,7 +472,7 @@ class ClipboardManager: ObservableObject {
             DispatchQueue.main.async {
                 
                 currentGroup.isExpanded = false
-                print("contracting")
+//                print("contracting")
                 
                 self.objectWillChange.send()
             }
@@ -485,7 +485,7 @@ class ClipboardManager: ObservableObject {
             for selectedGroup in list {
                 selectedGroup.isExpanded = false
             }
-            print("contracted groups")
+//            print("contracted groups")
             self.objectWillChange.send()
         }
     }

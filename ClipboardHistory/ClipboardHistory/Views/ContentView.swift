@@ -30,8 +30,7 @@ struct ContentView: View {
     let menuManager = MenuManager.shared
     @ObservedObject var selectListManager = SelectListManager.shared
         
-    @State private var showingAlert = false
-    @State private var groupShowingAlert = false
+    @State private var showAlert = false
     @State private var activeAlert: ActiveAlert = .clear
 
     @State private var atTopOfList = true
@@ -48,6 +47,9 @@ struct ContentView: View {
     @State private var justScrolledToTop: Bool = true
     
     @State private var imageSizeMultiple: CGFloat = 1
+    
+    @State private var openedFileFolderOrApp: Bool = false
+    @State private var openedStateChanged: Bool = false
         
     @State private var copyStatusChanged: Bool = false    
     @State private var showCopyFailedFeedback: Bool = false
@@ -114,6 +116,36 @@ struct ContentView: View {
                 // x: frame_width/2  |  y: -(window_height/2 - frame_height)
                 .position(x: 90/2, y: -(self.windowHeight/2 - 24))
                 .frame(width: 90, height: 24)
+                .zIndex(5)
+            
+                
+                Color.white.opacity(0.1).flash(duration: 0.3)
+            }
+            
+            if self.openedStateChanged {
+                ZStack(alignment: .center) {
+                    
+                    ZStack(alignment: .top) {
+                        Rectangle()
+                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
+                            .cornerRadius(8)
+                        Rectangle()
+                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
+                            .frame(height: 10)
+                            .zIndex(1)
+                    }
+                    Text("Opening!")
+                        .font(.subheadline)
+                        .bold()
+                        
+                        .cornerRadius(8)
+                        .frame(alignment: .center)
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.easeInOut, value: self.openedStateChanged)
+                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
+                .position(x: 100/2, y: -(self.windowHeight/2 - 24))
+                .frame(width: 100, height: 24)
                 .zIndex(5)
             
                 
@@ -251,7 +283,7 @@ struct ContentView: View {
                         LazyVStack(spacing: 0) {
                             ForEach(selectListManager.selectList.indices, id: \.self) { index in
                                 if index >= 0 && index < selectListManager.selectList.count {
-                                    ClipboardGroupView(selectGroup: selectListManager.selectList[index], parentShowingAlert: $showingAlert, groupShowingAlert: $groupShowingAlert, isSearchFocused: $isSearchFocused, isSelectingCategory: $isSelectingCategory, windowWidth: $windowWidth,
+                                    ClipboardGroupView(selectGroup: selectListManager.selectList[index], showAlert: $showAlert, activeAlert: $activeAlert, isSearchFocused: $isSearchFocused, isSelectingCategory: $isSelectingCategory, windowWidth: $windowWidth, openedFileFolderOrApp: $openedFileFolderOrApp,
                                                        isGroupSelected: Binding(
                                                         get: { if index >= 0 && index < selectListManager.selectList.count { return self.clipboardManager.selectedGroup == selectListManager.selectList[index] }
                                                             else { return false } },
@@ -263,7 +295,6 @@ struct ContentView: View {
                                                         }))
                                     .id(selectListManager.selectList[index].group.objectID)
                                     .animation((atTopOfList || userDefaultsManager.noDuplicates) ? .default : nil, value: selectListManager.selectList.first?.group.objectID)
-                                    
                                 }
                             }
                             
@@ -320,7 +351,7 @@ struct ContentView: View {
                 )
                 Spacer()
                 Button {
-                    showingAlert = true
+                    showAlert = true
                     activeAlert = .clear
                 } label: {
                     Text("Clear All")
@@ -337,7 +368,7 @@ struct ContentView: View {
                     }
                 }
                 .padding(.bottom, 8)
-                .alert(isPresented: $showingAlert) {
+                .alert(isPresented: $showAlert) {
                     if activeAlert == .clear {
                         Alert(
                             title: Text("Confirm Clear"),
@@ -408,6 +439,15 @@ struct ContentView: View {
                     }
                 }
             }
+            .onChange(of: openedFileFolderOrApp) {
+                DispatchQueue.main.async {
+                    self.openedStateChanged = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        self.openedStateChanged = false
+                        openedFileFolderOrApp = false
+                    }
+                }
+            }
             .onReceive(clipboardManager.clipboardMonitor?.copyFailedStateChange ?? PassthroughSubject<Void, Never>()) { _ in
                 // needed because this change wont update unless app is active
                 if let monitor = clipboardManager.clipboardMonitor {
@@ -472,10 +512,7 @@ struct ContentView: View {
                     return event
                 }
             }
-//            let type = event.type
-//            print("content view showing alert: \(self.showingAlert) or \(self.groupShowingAlert)\n")
-            if event.type == .keyDown && !self.showingAlert && !self.groupShowingAlert {
-//                print("content view showing alert: \(self.showingAlert) or \(self.groupShowingAlert)\n")
+            if event.type == .keyDown && !self.showAlert {
                 switch event.keyCode {
                 case 13:
                     if event.modifierFlags.contains(.command) {
@@ -510,14 +547,14 @@ struct ContentView: View {
 
                         if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) {
                             DispatchQueue.main.async {
-                                self.showingAlert = true
+                                self.showAlert = true
                                 activeAlert = .clear
                             }
                             return nil
                         }
                         else if event.modifierFlags.contains(.command) {
                             DispatchQueue.main.async {
-                                self.showingAlert = true
+                                self.showAlert = true
                                 activeAlert = .delete
                             }
                             return nil
@@ -767,18 +804,16 @@ struct ClipboardGroupView: View {
     @ObservedObject var selectListManager = SelectListManager.shared
     
     var selectGroup: SelectedGroup
-//    @Binding var selectList: [SelectedGroup]
     
-    
-    @Binding var parentShowingAlert: Bool
-    @Binding var groupShowingAlert: Bool
-    @State private var showingDeleteAlert = false
-    @State private var showingItemDeleteAlert = false
+    @Binding var showAlert: Bool
+    @Binding var activeAlert: ActiveAlert
     
     @Binding var isSearchFocused: Bool
     @Binding var isSelectingCategory: Bool
     
     @Binding var windowWidth: CGFloat
+    
+    @Binding var openedFileFolderOrApp: Bool
     
     @Binding var isGroupSelected: Bool
         
@@ -794,8 +829,8 @@ struct ClipboardGroupView: View {
     var body: some View {
         let group = selectGroup.group
         if group.count == 1, let item = group.itemsArray.first {
-            ClipboardItemView(item: item, selectGroup: selectGroup, isPartOfGroup: false, imageSizeMultiple: 1.0, showingItemDeleteAlert: $showingItemDeleteAlert, isSelected: Binding(
-                get: { /*self.clipboardManager.selectedItem == item*/
+            ClipboardItemView(item: item, selectGroup: selectGroup, isPartOfGroup: false, imageSizeMultiple: 1.0, showAlert: $showAlert, activeAlert: $activeAlert, openedFileFolderOrApp: $openedFileFolderOrApp, isSelected: Binding(
+                get: {
                     self.clipboardManager.selectedGroup == selectGroup
                 },
                 set: { newItem in
@@ -804,41 +839,7 @@ struct ClipboardGroupView: View {
                     self.clipboardManager.selectedItem = nil
                 }))
             .id(item.objectID)
-//            .background(RoundedRectangle(cornerRadius: 8)
-//                .fill((clipboardManager.selectedGroup == selectGroup && clipboardManager.selectedItem == nil) ? 
-//                      (isGroupSelected ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5)) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5))
-//                .padding(.horizontal, 10)
-//                .padding(.vertical, 4)
-//            )
-//            .scaleEffect(isGroupHovered ? 1.02 : 1.0)
-//            .shadow(color: isGroupHovered ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color(.gray)) : .clear, radius: isGroupHovered ? 2 : 0)
-//            .onHover { isGroupHovered in
-//                withAnimation(.easeInOut(duration: 0.2)) {
-//                    self.isGroupHovered = isGroupHovered
-//                }
-//            }
-//            .onTapGesture(count: 2) {
-//                isGroupSelected = true
-//                clipboardManager.selectedGroup = selectGroup
-//                clipboardManager.selectedItem = nil
-//                clipboardManager.copySingleGroup()
-//            }
-//            .onTapGesture(count: 1) {
-//                print("Single Group tap:")
-//                print("shouldSelectGroup: \(shouldSelectGroup)")
-//                isGroupSelected = true
-//                clipboardManager.selectedGroup = selectGroup
-//                clipboardManager.selectedItem = nil
-//            }
-            .onChange(of: self.showingDeleteAlert || showingItemDeleteAlert) {
-                print("check ** alert: \(self.showingDeleteAlert) or \(showingItemDeleteAlert)")
-                if self.showingDeleteAlert || showingItemDeleteAlert {
-                    self.groupShowingAlert = true
-                }
-                else {
-                    self.groupShowingAlert = false
-                }
-            }
+            
             .onAppear {
                 setUpKeyboardHandling()
             }
@@ -923,7 +924,8 @@ struct ClipboardGroupView: View {
                         Button(action: {
                             isGroupSelected = true
                             clipboardManager.selectedGroup = selectGroup
-                            showingDeleteAlert = true
+                            showAlert = true
+                            activeAlert = .delete
                         }) {
                             Image(systemName: "trash")
                                 .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
@@ -932,28 +934,11 @@ struct ClipboardGroupView: View {
                         .buttonStyle(BorderlessButtonStyle())
                         .padding(.leading, 5)
                         .padding(.trailing, 10)
-                        .alert(isPresented: $showingDeleteAlert) {
-                            Alert(
-                                title: Text("Confirm Delete"),
-                                message: Text("Are you sure you want to delete this clipboard item?"),
-                                primaryButton: .destructive(Text("Delete")) {
-                                    if let item = clipboardManager.selectedItem {
-                                        clipboardManager.deleteItem(item: item, viewContext: viewContext, shouldSave: true)
-                                    }
-                                    else {
-                                        clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectListManager.selectList, viewContext: viewContext)
-                                    }
-                                },
-                                secondaryButton: .cancel()
-                            )
-                        }
                     }
                     .padding(.top, 3)
                     .padding(.leading, 15)
                     .padding(.trailing, 15)
                     .padding(.bottom, 4)
-                    
-                    
                     
                     .background(RoundedRectangle(cornerRadius: 8)
                         .fill((clipboardManager.selectedGroup == selectGroup && clipboardManager.selectedItem == nil) ? (isGroupSelected ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5)) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5))
@@ -990,22 +975,13 @@ struct ClipboardGroupView: View {
                         ScrollViewReader { scrollView in
                             LazyVStack(spacing: 0) {
                                 ForEach(group.itemsArray, id: \.self) { item in
-                                    ClipboardItemView(item: item, selectGroup: selectGroup, isPartOfGroup: true, imageSizeMultiple: 0.8, showingItemDeleteAlert: $showingItemDeleteAlert, isSelected: Binding(
+                                    ClipboardItemView(item: item, selectGroup: selectGroup, isPartOfGroup: true, imageSizeMultiple: 0.8, showAlert: $showAlert, activeAlert: $activeAlert, openedFileFolderOrApp: $openedFileFolderOrApp, isSelected: Binding(
                                         get: { self.clipboardManager.selectedItem == item
                                         },
                                         set: { newItem in
                                             self.clipboardManager.selectedItem = newItem ? item : nil
                                         }))
                                     .id(item.objectID)
-                                }
-                                .onChange(of: self.showingDeleteAlert || self.showingItemDeleteAlert) {
-//                                    print("check AJKUHIKL alert: \(self.showingDeleteAlert) or \(self.showingItemDeleteAlert)")
-                                    if self.showingDeleteAlert || self.showingItemDeleteAlert {
-                                        self.groupShowingAlert = true
-                                    }
-                                    else {
-                                        self.groupShowingAlert = false
-                                    }
                                 }
                             }
                         }
@@ -1015,28 +991,6 @@ struct ClipboardGroupView: View {
                     }
                 }
             }
-            .onChange(of: self.showingDeleteAlert || self.showingItemDeleteAlert) {
-//                print("check bruhhh alert: \(self.showingDeleteAlert) or \(self.showingItemDeleteAlert)")
-                if self.showingDeleteAlert || self.showingItemDeleteAlert {
-                    self.groupShowingAlert = true
-                }
-                else {
-                    self.groupShowingAlert = false
-                }
-            }
-            .onAppear {
-                setUpKeyboardHandling()
-            }
-            // NOT NEEDED ANYMORE *** visually unselects the group when selecting its items ***
-//            .onChange(of: clipboardManager.selectedItem) {
-//                if let item = clipboardManager.selectedItem, let itemGroup = item.group, let group = clipboardManager.selectedGroup?.group,
-//                   itemGroup == group {
-//                        shouldSelectGroup = false
-//                }
-//                else {
-//                    shouldSelectGroup = true
-//                }
-//            }
         }
     }
     
@@ -1045,8 +999,7 @@ struct ClipboardGroupView: View {
             
             if let currSelectGroup = self.clipboardManager.selectedGroup {
                 
-                if event.type == .keyDown && !self.parentShowingAlert && !self.groupShowingAlert && !self.showingDeleteAlert && !self.showingItemDeleteAlert {
-//                        print("Group view showing alert: \(self.parentShowingAlert) or \(self.showingDeleteAlert) or \(self.showingItemDeleteAlert)")
+                if event.type == .keyDown && !self.showAlert {
                     switch event.keyCode {
                     case 124:
                         // right arrow to expand group
@@ -1102,17 +1055,21 @@ struct ClipboardGroupView: View {
                                                    let resourceValues = try? resolvedUrl.resourceValues(forKeys: [.isDirectoryKey, .isAliasFileKey]) {
                                                     if resourceValues.isAliasFile == true || resourceValues.isDirectory == true {
                                                         self.clipboardManager.openFolder(filePath: resolvedUrl.path)
+                                                        self.openedFileFolderOrApp = true
                                                         return nil
                                                     } else {
                                                         self.clipboardManager.openFile(filePath: resolvedUrl.path)
+                                                        self.openedFileFolderOrApp = true
                                                         return nil
                                                     }
                                                 }
                                             } else if let type = itemToOpen.type, type == "folder" || type == "removable" || type == "zipFile" || type == "dmgFile" || type == "randomFile" || type == "execFile" {
                                                 self.clipboardManager.openFolder(filePath: filePath)
+                                                self.openedFileFolderOrApp = true
                                                 return nil
                                             } else if itemToOpen.type == "file" || itemToOpen.type == "image" || itemToOpen.type == "app" || itemToOpen.type == "calendarApp" || itemToOpen.type == "settingsApp" || itemToOpen.type == "photoBoothApp" {
                                                 self.clipboardManager.openFile(filePath: filePath)
+                                                self.openedFileFolderOrApp = true
                                                 return nil
                                             }
                                         }
@@ -1191,15 +1148,16 @@ struct ClipboardItemView: View {
     var item: ClipboardItem
     
     var selectGroup: SelectedGroup
-    
-//    @Binding var selectList: [SelectedGroup]
-    
+        
     var isPartOfGroup: Bool
     
     var imageSizeMultiple: CGFloat
     
-    @Binding var showingItemDeleteAlert: Bool
+    @Binding var showAlert: Bool
+    @Binding var activeAlert: ActiveAlert
             
+    @Binding var openedFileFolderOrApp: Bool
+    
     @Binding var isSelected: Bool
     
     @State private var isItemHovered: Bool = false
@@ -1411,6 +1369,7 @@ struct ClipboardItemView: View {
                         if resourceValues.isAliasFile == true || resourceValues.isDirectory == true {
                             Button(action: {
                                 clipboardManager.openFolder(filePath: resolvedUrl.path)
+                                self.openedFileFolderOrApp = true
                             }) {
 //                                Image(systemName: "rectangle.portrait.and.arrow.right")
 //                                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
@@ -1423,6 +1382,7 @@ struct ClipboardItemView: View {
                         } else {
                             Button(action: {
                                 clipboardManager.openFile(filePath: resolvedUrl.path)
+                                self.openedFileFolderOrApp = true
                             }) {
 //                                Image(systemName: "rectangle.portrait.and.arrow.right")
 //                                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
@@ -1438,6 +1398,7 @@ struct ClipboardItemView: View {
                 } else if let type = item.type, type == "folder" || type == "removable" || type == "zipFile" || type == "dmgFile" || type == "randomFile" || type == "execFile" {
                     Button(action: {
                         clipboardManager.openFolder(filePath: filePath)
+                        self.openedFileFolderOrApp = true
                     }) {
 //                        Image(systemName: "rectangle.portrait.and.arrow.right")
 //                            .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
@@ -1450,6 +1411,7 @@ struct ClipboardItemView: View {
                 } else if item.type == "file" || item.type == "image" || item.type == "app" || item.type == "calendarApp" || item.type == "settingsApp" || item.type == "photoBoothApp" {
                     Button(action: {
                         clipboardManager.openFile(filePath: filePath)
+                        self.openedFileFolderOrApp = true
                     }) {
 //                        Image(systemName: "rectangle.portrait.and.arrow.right")
 //                            .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
@@ -1484,8 +1446,8 @@ struct ClipboardItemView: View {
                     clipboardManager.selectedItem = item
                 }
                 clipboardManager.selectedGroup = selectGroup
-                showingItemDeleteAlert = true
-                print("showing item alert \(showingItemDeleteAlert)")
+                showAlert = true
+                activeAlert = .delete
             }) {
                 Image(systemName: "trash")
                     .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
@@ -1494,21 +1456,6 @@ struct ClipboardItemView: View {
             .buttonStyle(BorderlessButtonStyle())
             .padding(.leading, 5)
             .padding(.trailing, 10)
-            .alert(isPresented: $showingItemDeleteAlert) {
-                Alert(
-                    title: Text("Confirm Delete"),
-                    message: Text("Are you sure you want to delete this clipboard item?"),
-                    primaryButton: .destructive(Text("Delete")) {
-                        if let item = clipboardManager.selectedItem {
-                            clipboardManager.deleteItem(item: item, viewContext: viewContext, shouldSave: true)
-                        }
-                        else {
-                            clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectListManager.selectList, viewContext: viewContext)
-                        }
-                    },
-                    secondaryButton: .cancel()
-                )
-            }
         }
         .padding(.top, 3)
         .padding(.leading, 15)
