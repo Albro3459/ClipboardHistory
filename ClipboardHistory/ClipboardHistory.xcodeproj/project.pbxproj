@@ -25,6 +25,7 @@
 		6072ABDC2BF3157B0091E218 /* ClipboardHistoryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABDB2BF3157B0091E218 /* ClipboardHistoryUITests.swift */; };
 		6072ABDE2BF3157B0091E218 /* ClipboardHistoryUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABDD2BF3157B0091E218 /* ClipboardHistoryUITestsLaunchTests.swift */; };
 		6072ABEF2BF7D6CF0091E218 /* ClipboardMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6072ABEE2BF7D6CF0091E218 /* ClipboardMonitor.swift */; };
+		60887E312C86DA070020801A /* SelectListManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60887E302C86DA070020801A /* SelectListManager.swift */; };
 		60E1F0CF2C7AA02B0074F91B /* KeyboardShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E1F0CE2C7AA02B0074F91B /* KeyboardShortcut.swift */; };
 		60F263902C645E0C00E5FC7B /* ClipboardItem+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60F2638C2C645E0C00E5FC7B /* ClipboardItem+CoreDataClass.swift */; };
 		60F263912C645E0C00E5FC7B /* ClipboardItem+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60F2638D2C645E0C00E5FC7B /* ClipboardItem+CoreDataProperties.swift */; };
@@ -73,6 +74,7 @@
 		6072ABDB2BF3157B0091E218 /* ClipboardHistoryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryUITests.swift; sourceTree = "<group>"; };
 		6072ABDD2BF3157B0091E218 /* ClipboardHistoryUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		6072ABEE2BF7D6CF0091E218 /* ClipboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMonitor.swift; sourceTree = "<group>"; };
+		60887E302C86DA070020801A /* SelectListManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectListManager.swift; sourceTree = "<group>"; };
 		60E1F0CE2C7AA02B0074F91B /* KeyboardShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcut.swift; sourceTree = "<group>"; };
 		60F2638C2C645E0C00E5FC7B /* ClipboardItem+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipboardItem+CoreDataClass.swift"; sourceTree = "<group>"; };
 		60F2638D2C645E0C00E5FC7B /* ClipboardItem+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipboardItem+CoreDataProperties.swift"; sourceTree = "<group>"; };
@@ -116,6 +118,7 @@
 				604B0A682C7FBF9600839CEA /* UserDefaultsManager.swift */,
 				604B0A642C7EBAE500839CEA /* MenuManager.swift */,
 				60116D6D2C82B8BE00DDBD46 /* SettingsWindowManager.swift */,
+				60887E302C86DA070020801A /* SelectListManager.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -361,6 +364,7 @@
 				6072ABBB2BF3157A0091E218 /* ClipboardHistoryApp.swift in Sources */,
 				6072ABC72BF3157B0091E218 /* ClipboardHistory.xcdatamodeld in Sources */,
 				604B0A672C7EBD6E00839CEA /* WindowManager.swift in Sources */,
+				60887E312C86DA070020801A /* SelectListManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -521,7 +525,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_ENTITLEMENTS = ClipboardHistory/ClipboardHistory_Debug.entitlements;
+				CODE_SIGN_ENTITLEMENTS = ClipboardHistory/ClipboardHistory_Release.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;

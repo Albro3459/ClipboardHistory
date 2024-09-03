@@ -28,6 +28,7 @@ struct ContentView: View {
     
     @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
     let menuManager = MenuManager.shared
+    @ObservedObject var selectListManager = SelectListManager.shared
         
     @State private var showingAlert = false
     @State private var groupShowingAlert = false
@@ -58,7 +59,7 @@ struct ContentView: View {
     @State private var windowWidth: CGFloat = 0
     @State private var windowHeight: CGFloat = 0
     
-    @State private var selectList: [SelectedGroup] = []
+//    @State private var selectList: [SelectedGroup] = []
     
     private var clipboardGroups: [ClipboardGroup] {
         return clipboardManager.search(fetchedClipboardGroups: fetchedClipboardGroups, searchText: searchText, selectedTypes: selectedTypes)
@@ -248,29 +249,29 @@ struct ContentView: View {
                     
                     ScrollViewReader { scrollView in
                         LazyVStack(spacing: 0) {
-                            ForEach(selectList.indices, id: \.self) { index in
-                                if index >= 0 && index < selectList.count {
-                                    ClipboardGroupView(selectGroup: selectList[index], selectList: $selectList, parentShowingAlert: $showingAlert, groupShowingAlert: $groupShowingAlert, isSearchFocused: $isSearchFocused, isSelectingCategory: $isSelectingCategory, windowWidth: $windowWidth,
+                            ForEach(selectListManager.selectList.indices, id: \.self) { index in
+                                if index >= 0 && index < selectListManager.selectList.count {
+                                    ClipboardGroupView(selectGroup: selectListManager.selectList[index], parentShowingAlert: $showingAlert, groupShowingAlert: $groupShowingAlert, isSearchFocused: $isSearchFocused, isSelectingCategory: $isSelectingCategory, windowWidth: $windowWidth,
                                                        isGroupSelected: Binding(
-                                                        get: { if index >= 0 && index < selectList.count { return self.clipboardManager.selectedGroup == selectList[index] }
+                                                        get: { if index >= 0 && index < selectListManager.selectList.count { return self.clipboardManager.selectedGroup == selectListManager.selectList[index] }
                                                             else { return false } },
                                                         set: { isSelected in
-                                                            if index >= 0 && index < selectList.count{
-                                                                self.clipboardManager.selectedGroup = isSelected ? selectList[index] : nil
+                                                            if index >= 0 && index < selectListManager.selectList.count{
+                                                                self.clipboardManager.selectedGroup = isSelected ? selectListManager.selectList[index] : nil
                                                             }
                                                             isFocused = false
                                                         }))
-                                    .id(selectList[index].group.objectID)
-                                    .animation((atTopOfList || userDefaultsManager.noDuplicates) ? .default : nil, value: selectList.first?.group.objectID)
+                                    .id(selectListManager.selectList[index].group.objectID)
+                                    .animation((atTopOfList || userDefaultsManager.noDuplicates) ? .default : nil, value: selectListManager.selectList.first?.group.objectID)
                                     
                                 }
                             }
                             
                         } //scrolls when using the arrow keys
                         .onChange(of: clipboardManager.selectedGroup, initial: false) {
-                            if let selectedGroup = clipboardManager.selectedGroup, let index = selectList.firstIndex(of: selectedGroup) {
+                            if let selectedGroup = clipboardManager.selectedGroup, let index = selectListManager.selectList.firstIndex(of: selectedGroup) {
                                 withAnimation(.easeInOut(duration: 0.5)) {
-                                    scrollView.scrollTo(selectList[index].group.objectID)
+                                    scrollView.scrollTo(selectListManager.selectList[index].group.objectID)
                                 }
                             }
                         }
@@ -281,9 +282,9 @@ struct ContentView: View {
                                 }
                             }
                             else {
-                                if let selectedGroup = clipboardManager.selectedGroup, let index = selectList.firstIndex(of: selectedGroup) {
+                                if let selectedGroup = clipboardManager.selectedGroup, let index = selectListManager.selectList.firstIndex(of: selectedGroup) {
                                         withAnimation(.easeInOut(duration: 0.5)) {
-                                            scrollView.scrollTo(selectList[index].group.objectID, anchor: (selectedGroup.isExpanded && clipboardManager.selectedItem == nil) ? .top : nil)
+                                            scrollView.scrollTo(selectListManager.selectList[index].group.objectID, anchor: (selectedGroup.isExpanded && clipboardManager.selectedItem == nil) ? .top : nil)
                                         }
 //                                    }
                                 }
@@ -291,22 +292,22 @@ struct ContentView: View {
                         }
                         
                         .onChange(of: scrollToTop, initial: false) {
-                            if selectList.count > 0 {
+                            if selectListManager.selectList.count > 0 {
                                 withAnimation() {
-                                    scrollView.scrollTo(selectList.first?.group.objectID, anchor: .top)
+                                    scrollView.scrollTo(selectListManager.selectList.first?.group.objectID, anchor: .top)
                                     scrollToTop = false
                                     justScrolledToTop = true
-                                    clipboardManager.selectedGroup = selectList.first
+                                    clipboardManager.selectedGroup = selectListManager.selectList.first
                                 }
                             }
                         }
                         .onChange(of: scrollToBottom, initial: false) {
-                            if selectList.count > 0 {
+                            if selectListManager.selectList.count > 0 {
                                 withAnimation() {
-                                    scrollView.scrollTo(selectList.last?.group.objectID)
+                                    scrollView.scrollTo(selectListManager.selectList.last?.group.objectID)
                                     scrollToBottom = false
                                     justScrolledToTop = false
-                                    clipboardManager.selectedGroup = selectList.last
+                                    clipboardManager.selectedGroup = selectListManager.selectList.last
                                 }
                             }
                         }
@@ -356,7 +357,7 @@ struct ContentView: View {
                                         clipboardManager.deleteItem(item: item, viewContext: viewContext, shouldSave: true)
                                 }
                                 else {
-                                    clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectList, viewContext: viewContext)
+                                    clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectListManager.selectList, viewContext: viewContext)
                                 }
                             },
                             secondaryButton: .cancel()
@@ -364,33 +365,33 @@ struct ContentView: View {
                     }
                 }
                 .onAppear {
-                    clipboardManager.selectedGroup = selectList.first
+                    clipboardManager.selectedGroup = selectListManager.selectList.first
                 }
 
             }
             .onAppear {
-                clipboardManager.selectedGroup = selectList.first
+                clipboardManager.selectedGroup = selectListManager.selectList.first
                 darkMode = userDefaultsManager.darkMode
                 setUpKeyboardHandling()
                 initializeSelectList()
             }
             .onChange(of: clipboardGroups.count) { oldValue, newValue in
                 if clipboardGroups.count == 1 {
-                    clipboardManager.selectedGroup = selectList.first
+                    clipboardManager.selectedGroup = selectListManager.selectList.first
                 }
                 initializeSelectList()
             }
             .onChange(of: clipboardGroups.first) { oldValue, newValue in
                 // when last item gets deleted and so the count doesnt change
                 if clipboardGroups.count == 1 {
-                    clipboardManager.selectedGroup = selectList.first
+                    clipboardManager.selectedGroup = selectListManager.selectList.first
                 }
                 initializeSelectList()
             }
-            .onChange(of: selectList.first) { oldValue, newValue in
+            .onChange(of: selectListManager.selectList.first) { oldValue, newValue in
                 // is user wants no dupes, then select the top when a new copy comes in
                 if userDefaultsManager.noDuplicates {
-                    clipboardManager.selectedGroup = selectList.first
+                    clipboardManager.selectedGroup = selectListManager.selectList.first
                 }
             }
             .onChange(of: isFocused) {
@@ -423,7 +424,7 @@ struct ContentView: View {
     }
     
     func initializeSelectList() {
-        self.selectList = clipboardGroups.map { clipboardGroup in
+        self.selectListManager.selectList = clipboardGroups.map { clipboardGroup in
             let isExpanded = self.findExpandedState(for: clipboardGroup)
             return SelectedGroup(group: clipboardGroup, isExpanded: isExpanded)
         }
@@ -431,7 +432,7 @@ struct ContentView: View {
     
     func findExpandedState(for inputGroup: ClipboardGroup) -> Bool {
         // if this group was already in selectList, return its isExpanded
-        return selectList.first(where: { $0.group == inputGroup })?.isExpanded ?? false
+        return selectListManager.selectList.first(where: { $0.group == inputGroup })?.isExpanded ?? false
     }
     
     private func clearClipboardItems() {
@@ -456,12 +457,12 @@ struct ContentView: View {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             var currentIndex: Int?
             if let group = clipboardManager.selectedGroup {
-                currentIndex = selectList.firstIndex(of: group)
+                currentIndex = selectListManager.selectList.firstIndex(of: group)
 //                print("\(currentIndex)\n")
             }
             if currentIndex == nil {
-                if !selectList.isEmpty {
-                    clipboardManager.selectedGroup = selectList[0]
+                if !selectListManager.selectList.isEmpty {
+                    clipboardManager.selectedGroup = selectListManager.selectList[0]
                     if let group = clipboardManager.selectedGroup?.group, group.count == 1 {
                     clipboardManager.selectedGroup?.selectedItem = clipboardManager.selectedGroup?.group.itemsArray.first
                     }
@@ -471,6 +472,8 @@ struct ContentView: View {
                     return event
                 }
             }
+//            let type = event.type
+//            print("content view showing alert: \(self.showingAlert) or \(self.groupShowingAlert)\n")
             if event.type == .keyDown && !self.showingAlert && !self.groupShowingAlert {
 //                print("content view showing alert: \(self.showingAlert) or \(self.groupShowingAlert)\n")
                 switch event.keyCode {
@@ -562,8 +565,8 @@ struct ContentView: View {
                     }
                     else {
                         if let currIndex = currentIndex, currIndex - 1 >= 0 {
-                            let aboveGroup = selectList[currIndex - 1]
-                            let currGroup = selectList[currIndex]
+                            let aboveGroup = selectListManager.selectList[currIndex - 1]
+                            let currGroup = selectListManager.selectList[currIndex]
                             
                             if currGroup.isExpanded {
                                 if let selectedItem = clipboardManager.selectedItem {
@@ -601,7 +604,7 @@ struct ContentView: View {
                         }
                         else if let currIndex = currentIndex {
                             // at the top of the selectList, but group is expanded
-                            let currGroup = selectList[currIndex]
+                            let currGroup = selectListManager.selectList[currIndex]
                             if currGroup.isExpanded {
                                 if let selectedItem = clipboardManager.selectedItem {
                                     if let itemIndex = currGroup.group.itemsArray.firstIndex(where: { $0 == selectedItem }) {
@@ -629,51 +632,80 @@ struct ContentView: View {
                         justScrolledToTop = false
                     }
                     else {
-                        if let currIndex = currentIndex, currIndex < selectList.count - 1 {
-                            let currGroup = selectList[currIndex]
+                        //print("a")
+                        if let currIndex = currentIndex, currIndex < selectListManager.selectList.count - 1 {
+                            //print("b")
+                            let currGroup = selectListManager.selectList[currIndex]
                             if currGroup.isExpanded {
+                                //print("c")
                                 if let selectedItem = clipboardManager.selectedItem {
+                                    //print("d")
                                     if let currItemIndex = currGroup.group.itemsArray.firstIndex(where: { $0 == selectedItem }),
                                        currItemIndex + 1 < currGroup.group.itemsArray.count {
+                                        //print("e")
                                         clipboardManager.selectedItem = currGroup.group.itemsArray[currItemIndex + 1]
                                     } else {
-                                        if currIndex + 1 < selectList.count {
-                                            clipboardManager.selectedGroup = selectList[currIndex + 1]
+                                        //print("f")
+                                        if currIndex + 1 < selectListManager.selectList.count {
+                                            //print("g")
+                                            clipboardManager.selectedGroup = selectListManager.selectList[currIndex + 1]
                                             clipboardManager.selectedItem = nil
                                         }
+                                        //print("h")
                                     }
                                 } else {
+                                    //print("i")
                                     clipboardManager.selectedItem = currGroup.group.itemsArray.first
                                 }
-                            } else {
-                                if currIndex + 1 < selectList.count {
-                                    clipboardManager.selectedGroup = selectList[currIndex + 1]
+                            }
+                            else {
+                                //print("j")
+                                if currIndex + 1 < selectListManager.selectList.count {
+                                    //print("k")
+                                    clipboardManager.selectedGroup = selectListManager.selectList[currIndex + 1]
                                     clipboardManager.selectedItem = nil
+                                }
+                                else {
+                                    //print("l")
                                 }
                             }
                         }
                         else if let currIndex = currentIndex {
+                            //print("m")
                             // at bottom of selectList, but group is expanded
-                            let currGroup = selectList[currIndex]
+                            let currGroup = selectListManager.selectList[currIndex]
                             if currGroup.isExpanded {
+                                //print("n")
                                 if let selectedItem = clipboardManager.selectedItem {
+                                    //print("o")
                                     if let currItemIndex = currGroup.group.itemsArray.firstIndex(where: { $0 == selectedItem }),
                                        currItemIndex + 1 < currGroup.group.itemsArray.count {
+                                        //print("p")
                                         clipboardManager.selectedItem = currGroup.group.itemsArray[currItemIndex + 1]
                                     }
                                     else {
-                                        if currIndex + 1 < selectList.count {
-                                            clipboardManager.selectedGroup = selectList[currIndex + 1]
+                                        //print("q")
+                                        if currIndex + 1 < selectListManager.selectList.count {
+                                            //print("r")
+                                            clipboardManager.selectedGroup = selectListManager.selectList[currIndex + 1]
                                             clipboardManager.selectedItem = nil
+                                        }
+                                        else {
+                                            //print("s")
                                         }
                                     }
                                 }
                                 else {
+                                    //print("t")
                                     clipboardManager.selectedItem = currGroup.group.itemsArray.first
                                 }
                             }
                         }
+                        else {
+                            //print("u")
+                        }
                     }
+                    //print()
                     return nil
                 case 123:
 //                    print("left arrow")
@@ -703,7 +735,7 @@ struct ContentView: View {
                     // handle cmd + [
                     if !isFocused || !isSelectingCategory {
                         if event.modifierFlags.contains(.command) {
-                            clipboardManager.expandAll(for: self.selectList)
+                            clipboardManager.expandAll(for: self.selectListManager.selectList)
                             return nil
                         }
                     }
@@ -711,7 +743,7 @@ struct ContentView: View {
                     // handle cmd + ]
                     if !isFocused || !isSelectingCategory {
                         if event.modifierFlags.contains(.command) {
-                            clipboardManager.contractAll(for: self.selectList)
+                            clipboardManager.contractAll(for: self.selectListManager.selectList)
                             return nil
                         }
                     }
@@ -732,9 +764,11 @@ struct ClipboardGroupView: View {
     @EnvironmentObject var clipboardManager: ClipboardManager
     
     let userDefaultsManager = UserDefaultsManager.shared
+    @ObservedObject var selectListManager = SelectListManager.shared
     
     var selectGroup: SelectedGroup
-    @Binding var selectList: [SelectedGroup]
+//    @Binding var selectList: [SelectedGroup]
+    
     
     @Binding var parentShowingAlert: Bool
     @Binding var groupShowingAlert: Bool
@@ -760,7 +794,7 @@ struct ClipboardGroupView: View {
     var body: some View {
         let group = selectGroup.group
         if group.count == 1, let item = group.itemsArray.first {
-            ClipboardItemView(item: item, selectGroup: selectGroup, selectList: $selectList, isPartOfGroup: false, imageSizeMultiple: $imageSizeMultiple, showingItemDeleteAlert: $showingItemDeleteAlert, isSelected: Binding(
+            ClipboardItemView(item: item, selectGroup: selectGroup, isPartOfGroup: false, imageSizeMultiple: 1.0, showingItemDeleteAlert: $showingItemDeleteAlert, isSelected: Binding(
                 get: { /*self.clipboardManager.selectedItem == item*/
                     self.clipboardManager.selectedGroup == selectGroup
                 },
@@ -770,19 +804,19 @@ struct ClipboardGroupView: View {
                     self.clipboardManager.selectedItem = nil
                 }))
             .id(item.objectID)
-            .background(RoundedRectangle(cornerRadius: 8)
-                .fill((clipboardManager.selectedGroup == selectGroup && clipboardManager.selectedItem == nil) ? 
-                      (isGroupSelected ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5)) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-            )
-            .scaleEffect(isGroupHovered ? 1.02 : 1.0)
-            .shadow(color: isGroupHovered ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color(.gray)) : .clear, radius: isGroupHovered ? 2 : 0)
-            .onHover { isGroupHovered in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    self.isGroupHovered = isGroupHovered
-                }
-            }
+//            .background(RoundedRectangle(cornerRadius: 8)
+//                .fill((clipboardManager.selectedGroup == selectGroup && clipboardManager.selectedItem == nil) ? 
+//                      (isGroupSelected ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5)) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5))
+//                .padding(.horizontal, 10)
+//                .padding(.vertical, 4)
+//            )
+//            .scaleEffect(isGroupHovered ? 1.02 : 1.0)
+//            .shadow(color: isGroupHovered ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color(.gray)) : .clear, radius: isGroupHovered ? 2 : 0)
+//            .onHover { isGroupHovered in
+//                withAnimation(.easeInOut(duration: 0.2)) {
+//                    self.isGroupHovered = isGroupHovered
+//                }
+//            }
 //            .onTapGesture(count: 2) {
 //                isGroupSelected = true
 //                clipboardManager.selectedGroup = selectGroup
@@ -796,8 +830,9 @@ struct ClipboardGroupView: View {
 //                clipboardManager.selectedGroup = selectGroup
 //                clipboardManager.selectedItem = nil
 //            }
-            .onChange(of: self.parentShowingAlert ||  self.showingDeleteAlert || self.showingItemDeleteAlert) {
-                if self.parentShowingAlert ||  self.showingDeleteAlert || self.showingItemDeleteAlert {
+            .onChange(of: self.showingDeleteAlert || showingItemDeleteAlert) {
+                print("check ** alert: \(self.showingDeleteAlert) or \(showingItemDeleteAlert)")
+                if self.showingDeleteAlert || showingItemDeleteAlert {
                     self.groupShowingAlert = true
                 }
                 else {
@@ -906,7 +941,7 @@ struct ClipboardGroupView: View {
                                         clipboardManager.deleteItem(item: item, viewContext: viewContext, shouldSave: true)
                                     }
                                     else {
-                                        clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectList, viewContext: viewContext)
+                                        clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectListManager.selectList, viewContext: viewContext)
                                     }
                                 },
                                 secondaryButton: .cancel()
@@ -955,7 +990,7 @@ struct ClipboardGroupView: View {
                         ScrollViewReader { scrollView in
                             LazyVStack(spacing: 0) {
                                 ForEach(group.itemsArray, id: \.self) { item in
-                                    ClipboardItemView(item: item, selectGroup: selectGroup, selectList: $selectList, isPartOfGroup: true, imageSizeMultiple: $imageSizeMultiple, showingItemDeleteAlert: $showingItemDeleteAlert, isSelected: Binding(
+                                    ClipboardItemView(item: item, selectGroup: selectGroup, isPartOfGroup: true, imageSizeMultiple: 0.8, showingItemDeleteAlert: $showingItemDeleteAlert, isSelected: Binding(
                                         get: { self.clipboardManager.selectedItem == item
                                         },
                                         set: { newItem in
@@ -963,8 +998,9 @@ struct ClipboardGroupView: View {
                                         }))
                                     .id(item.objectID)
                                 }
-                                .onChange(of: self.parentShowingAlert ||  self.showingDeleteAlert || self.showingItemDeleteAlert) {
-                                    if self.parentShowingAlert ||  self.showingDeleteAlert || self.showingItemDeleteAlert {
+                                .onChange(of: self.showingDeleteAlert || self.showingItemDeleteAlert) {
+//                                    print("check AJKUHIKL alert: \(self.showingDeleteAlert) or \(self.showingItemDeleteAlert)")
+                                    if self.showingDeleteAlert || self.showingItemDeleteAlert {
                                         self.groupShowingAlert = true
                                     }
                                     else {
@@ -979,8 +1015,9 @@ struct ClipboardGroupView: View {
                     }
                 }
             }
-            .onChange(of: self.parentShowingAlert ||  self.showingDeleteAlert || self.showingItemDeleteAlert) {
-                if self.parentShowingAlert ||  self.showingDeleteAlert || self.showingItemDeleteAlert {
+            .onChange(of: self.showingDeleteAlert || self.showingItemDeleteAlert) {
+//                print("check bruhhh alert: \(self.showingDeleteAlert) or \(self.showingItemDeleteAlert)")
+                if self.showingDeleteAlert || self.showingItemDeleteAlert {
                     self.groupShowingAlert = true
                 }
                 else {
@@ -1008,8 +1045,8 @@ struct ClipboardGroupView: View {
             
             if let currSelectGroup = self.clipboardManager.selectedGroup {
                 
-                if event.type == .keyDown && !self.parentShowingAlert &&  !self.showingDeleteAlert && !self.showingItemDeleteAlert {
-                    //                            print("Group view showing alert: \(self.parentShowingAlert) or \(self.showingDeleteAlert) or \(self.showingItemDeleteAlert)")
+                if event.type == .keyDown && !self.parentShowingAlert && !self.groupShowingAlert && !self.showingDeleteAlert && !self.showingItemDeleteAlert {
+//                        print("Group view showing alert: \(self.parentShowingAlert) or \(self.showingDeleteAlert) or \(self.showingItemDeleteAlert)")
                     switch event.keyCode {
                     case 124:
                         // right arrow to expand group
@@ -1149,15 +1186,17 @@ struct ClipboardItemView: View {
     
     @EnvironmentObject var clipboardManager: ClipboardManager
     
+    @ObservedObject var selectListManager = SelectListManager.shared
+    
     var item: ClipboardItem
     
     var selectGroup: SelectedGroup
     
-    @Binding var selectList: [SelectedGroup]
+//    @Binding var selectList: [SelectedGroup]
     
     var isPartOfGroup: Bool
     
-    @Binding var imageSizeMultiple: CGFloat
+    var imageSizeMultiple: CGFloat
     
     @Binding var showingItemDeleteAlert: Bool
             
@@ -1181,7 +1220,7 @@ struct ClipboardItemView: View {
                     Image(nsImage: nsImage)
                         .resizable()
                         .scaledToFit()
-                        .frame(maxHeight: (item.type == "app" ? 80 : 70) * imageSizeMultiple)
+                        .frame(maxHeight: (item.type == "app" ? 70 : 60) * imageSizeMultiple)
                         .cornerRadius(8)
                         .clipped()
                     
@@ -1221,7 +1260,7 @@ struct ClipboardItemView: View {
                         Image("RandomFileThumbnail")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 70 * imageSizeMultiple)
+                            .frame(idealWidth: 45,  maxHeight: 60 * imageSizeMultiple)
                     }
                     if let content = item.content, let content = content.split(separator: ".").first {
                         Text(content)
@@ -1235,7 +1274,7 @@ struct ClipboardItemView: View {
                     Image(nsImage: nsImage)
                         .resizable()
                         .scaledToFit()
-                        .frame(maxHeight: 70 * imageSizeMultiple)
+                        .frame(idealWidth: 45,  maxHeight: 60 * imageSizeMultiple)
                         .cornerRadius(8)
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
@@ -1256,27 +1295,27 @@ struct ClipboardItemView: View {
                         Image("ZipFileThumbnail")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 49)
+                            .frame(idealWidth: 45,  maxHeight: 60 * imageSizeMultiple)
                     case "dmgFile":
                         Image("DmgFileThumbnail")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 49)
+                            .frame(idealWidth: 45,  maxHeight: 60 * imageSizeMultiple)
                     case "randomFile":
                         Image("RandomFileThumbnail")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 49)
+                            .frame(idealWidth: 45,  maxHeight: 60 * imageSizeMultiple)
                     case "execFile":
                         Image("ExecFileThumbnail")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 49)
+                            .frame(idealWidth: 45,  maxHeight: 60 * imageSizeMultiple)
                     default:
                         Image("RandomFileThumbnail")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 49)
+                            .frame(idealWidth: 45,  maxHeight: 60 * imageSizeMultiple)
                     }
                     if let content = item.content {
                         Text(content)
@@ -1291,7 +1330,7 @@ struct ClipboardItemView: View {
                         Image("HardDriveThumbnail")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 49)
+                            .frame(height: 55 * imageSizeMultiple)
                         Text("Macintosh HD")
                             .font(.subheadline)
                             .bold()
@@ -1301,7 +1340,7 @@ struct ClipboardItemView: View {
                         Image("FolderThumbnail")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 49)
+                            .frame(height: 55 * imageSizeMultiple)
                         Text(content)
                             .font(.subheadline)
                             .bold()
@@ -1314,7 +1353,7 @@ struct ClipboardItemView: View {
                         Image("HardDriveThumbnail")
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 49)
+                            .frame(height: 55 * imageSizeMultiple)
                         Text("Macintosh HD")
                             .font(.subheadline)
                             .bold()
@@ -1325,7 +1364,7 @@ struct ClipboardItemView: View {
                             Image("AliasFolderThumbnail")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(height: 49)
+                                .frame(height: 55 * imageSizeMultiple)
                             Text(content)
                                 .font(.subheadline)
                                 .bold()
@@ -1353,7 +1392,7 @@ struct ClipboardItemView: View {
                     Image("DiskThumbnail")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 49)
+                        .frame(height: 60 * imageSizeMultiple)
                     Text(content)
                         .font(.subheadline)
                         .bold()
@@ -1446,6 +1485,7 @@ struct ClipboardItemView: View {
                 }
                 clipboardManager.selectedGroup = selectGroup
                 showingItemDeleteAlert = true
+                print("showing item alert \(showingItemDeleteAlert)")
             }) {
                 Image(systemName: "trash")
                     .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
@@ -1463,7 +1503,7 @@ struct ClipboardItemView: View {
                             clipboardManager.deleteItem(item: item, viewContext: viewContext, shouldSave: true)
                         }
                         else {
-                            clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectList, viewContext: viewContext)
+                            clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectListManager.selectList, viewContext: viewContext)
                         }
                     },
                     secondaryButton: .cancel()
@@ -1476,7 +1516,8 @@ struct ClipboardItemView: View {
         .padding(.bottom, 4)
         
         .background(RoundedRectangle(cornerRadius: 8)
-            .fill(isPartOfGroup ? (isSelected ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5)) : Color.clear)
+//            .fill(isPartOfGroup ? (isSelected ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5)) : Color.clear)
+            .fill(isSelected ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5))
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
         )

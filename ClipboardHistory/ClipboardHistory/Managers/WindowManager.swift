@@ -250,7 +250,6 @@ class WindowManager: ObservableObject {
                     self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
                 }
                 else {
-                    print("hiding")
                     self.hideWindow()
                 }
             }
@@ -282,7 +281,6 @@ class WindowManager: ObservableObject {
     @objc func hideWindow() {
         DispatchQueue.main.async {
             NSApp.hide(nil)
-            print("hid")
         }
     }
     
