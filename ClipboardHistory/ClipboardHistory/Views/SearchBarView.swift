@@ -10,18 +10,20 @@ import AppKit
 import Foundation
 
 struct SearchBarView: View {
+    @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
     @Binding var searchText: String
     @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
         ZStack(alignment: .leading) {
             HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
-                    .padding(.leading, 8)
-                    .onTapGesture {
-                        isTextFieldFocused = false
-                    }
+//                Image(systemName: "magnifyingglass")
+//                    .foregroundColor(userDefaultsManager.darkMode ? .white : .black)
+//                    .padding(.leading, 8)
+//                    .onTapGesture {
+//                        isTextFieldFocused = false
+//                        print(userDefaultsManager.darkMode)
+//                    }
 
                 ClearTextField(placeholder: "Search", text: $searchText)
                     .focused($isTextFieldFocused)
@@ -48,7 +50,6 @@ struct SearchBarView: View {
             DispatchQueue.main.async {
                 isTextFieldFocused = false
             }
-            print("search bar view \(UserDefaultsManager.shared.darkMode)")
         }
     }
 }

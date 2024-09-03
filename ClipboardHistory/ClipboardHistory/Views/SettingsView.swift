@@ -10,7 +10,7 @@ import SwiftUI
 import KeyboardShortcuts
 
 struct SettingsView: View {
-    let userDefaultsManager = UserDefaultsManager.shared
+    @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
     let clipboardManager = ClipboardManager.shared
     let menuManager = MenuManager.shared
     
@@ -220,6 +220,9 @@ struct SettingsView: View {
                         self.resetSettings = false
                     }
                 }
+                .onChange(of: userDefaultsManager.darkMode) {
+                    self.darkMode = userDefaultsManager.darkMode
+                }
             }
             .padding(.top, 20)
             
@@ -365,7 +368,7 @@ struct SettingsView: View {
 }
 
 struct ClipboardSettingsView: View {
-    let userDefaultsManager = UserDefaultsManager.shared
+    @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
     let clipboardManager = ClipboardManager.shared
     let menuManager = MenuManager.shared
 
@@ -453,7 +456,7 @@ struct ClipboardSettingsView: View {
 }
 
 struct WindowSettingsView: View {
-    let userDefaultsManager = UserDefaultsManager.shared
+    @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
     
     @State private var darkMode = UserDefaults.standard.bool(forKey: "darkMode")
     @Binding var darkModeInput: Bool
@@ -498,9 +501,6 @@ struct WindowSettingsView: View {
                     VStack {
                         Spacer()
                         Toggle("Dark Mode On?", isOn: $darkModeInput).padding()
-                        Text("Might need to restart app for a full visual update")
-                            .font(.subheadline)
-                            .padding(.top, -20)
                         
                         Spacer()
                         Spacer()
@@ -596,18 +596,21 @@ struct WindowSettingsView: View {
                             .disabled(windowPopOutInput)
                             .padding()
                         
-                        Toggle("**Very Buggy** Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelectedInput)
+                        Toggle("Show Window On All Desktops?", isOn: $windowOnAllDesktops)
                             .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
                             .disabled(windowPopOutInput)
                             .padding()
                         
-                        Toggle("Show Window On All Desktops?", isOn: $windowOnAllDesktops)
+                        Toggle("**Very Buggy** Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelectedInput)
                             .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
                             .disabled(windowPopOutInput)
                             .padding()
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onChange(of: userDefaultsManager.darkMode) {
+                    self.darkMode = userDefaultsManager.darkMode
+                }
             }
 //            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

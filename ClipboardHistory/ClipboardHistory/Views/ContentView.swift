@@ -26,7 +26,7 @@ struct ContentView: View {
     
     @EnvironmentObject var clipboardManager: ClipboardManager
     
-    let userDefaultsManager = UserDefaultsManager.shared
+    @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
     let menuManager = MenuManager.shared
         
     @State private var showingAlert = false
@@ -52,6 +52,8 @@ struct ContentView: View {
     @State private var showCopyFailedFeedback: Bool = false
     
     @State private var isClearButtonHovered: Bool = false
+    
+    @State private var darkMode: Bool = true
     
     @State private var windowWidth: CGFloat = 0
     @State private var windowHeight: CGFloat = 0
@@ -179,6 +181,15 @@ struct ContentView: View {
             
             VStack {
                 HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(darkMode ? .white : .black)
+                        .padding(.leading, 8)
+                        .onTapGesture {
+//                            isTextFieldFocused = false
+                            self.isSearchFocused = false
+                            print(userDefaultsManager.darkMode)
+                        }
+                    
                     SearchBarView(searchText: $searchText)
                         .focused($isFocused)
                         .padding(.trailing, (fetchedClipboardGroups.count <= 0) ? 10 : 0)
@@ -189,7 +200,7 @@ struct ContentView: View {
                             isFocused = false
                         }) {
                             Image(systemName: "line.horizontal.3.decrease.circle")
-                                .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
+                                .foregroundColor(darkMode ? .white : .black)
                                 .padding(.trailing, -2)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -213,7 +224,7 @@ struct ContentView: View {
                             }
                         }) {
                             Image(systemName: (!atTopOfList && !justScrolledToTop) ? "arrow.up.circle" : "arrow.down.circle")
-                                .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
+                                .foregroundColor(darkMode ? .white : .black)
                                 .padding(.trailing, 5)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -222,7 +233,7 @@ struct ContentView: View {
                     
                 }
                 .padding(.top, 2)
-                .padding(.bottom, -8)
+                .padding(.bottom, -8)                
                     
                 ScrollView(showsIndicators: false) {
                     GeometryReader { geometry in
@@ -317,8 +328,8 @@ struct ContentView: View {
                 .help("Clear All Items")
                 .buttonStyle(.bordered)
                 .tint(Color(.darkGray))
-                .scaleEffect(isClearButtonHovered ? 1.02 : 1.0)
-                .shadow(color: isClearButtonHovered ? Color(.darkGray).opacity(0.2) : .clear, radius: isClearButtonHovered ? 2 : 0)
+                .scaleEffect(isClearButtonHovered ? 1.05 : 1.0)
+                .shadow(color: isClearButtonHovered ? Color(.darkGray) : .clear, radius: isClearButtonHovered ? 2 : 0)
                 .onHover { isClearButtonHovered in
                     withAnimation(.easeInOut(duration: 0.2)) {
                         self.isClearButtonHovered = isClearButtonHovered
@@ -359,6 +370,7 @@ struct ContentView: View {
             }
             .onAppear {
                 clipboardManager.selectedGroup = selectList.first
+                darkMode = userDefaultsManager.darkMode
                 setUpKeyboardHandling()
                 initializeSelectList()
             }
@@ -383,6 +395,9 @@ struct ContentView: View {
             }
             .onChange(of: isFocused) {
                 isSearchFocused = isFocused
+            }
+            .onChange(of: userDefaultsManager.darkMode) {
+                darkMode = userDefaultsManager.darkMode
             }
             .onReceive(clipboardManager.clipboardMonitor?.copyFailedStateChange ?? PassthroughSubject<Void, Never>()) { _ in
                 // needed because this change wont update unless app is active

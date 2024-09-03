@@ -10,9 +10,9 @@ import AppKit
 import Cocoa
 import SwiftUI
 import KeyboardShortcuts
+import Combine
 
-
-class UserDefaultsManager {
+class UserDefaultsManager : ObservableObject {
     static let shared = UserDefaultsManager()
     
     let decoder = JSONDecoder()
@@ -21,7 +21,16 @@ class UserDefaultsManager {
 //  User Defaults
     var appName: String
     
-    var darkMode: Bool
+    // have to do this to update the ui state without interacting with the app.
+        // => essentially when I change darkMode and save the settings
+    @Published var darkMode: Bool
+//    {
+//        didSet {
+//            darkModeSubject.send()
+//        }
+//    }
+//    let darkModeSubject = PassthroughSubject<Void, Never>()
+    
     var windowWidth: CGFloat
     var windowHeight: CGFloat
     var windowLocation: String
@@ -44,7 +53,7 @@ class UserDefaultsManager {
     var toggleWindowShortcut: KeyboardShortcut
     var resetWindowShortcut: KeyboardShortcut
     
-    init() {
+    private init() {
         
         self.appName = UserDefaults.standard.string(forKey: "appName") ?? "test App Name"
         
@@ -144,7 +153,6 @@ class UserDefaultsManager {
         self.canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
 
         self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
-        print("updateAll settings: \(self.pasteWithoutFormatting)")
                 
         ClipboardManager.shared.clipboardMonitor?.reloadVars()
         

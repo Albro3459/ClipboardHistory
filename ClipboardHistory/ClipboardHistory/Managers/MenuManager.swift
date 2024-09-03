@@ -35,26 +35,13 @@ class MenuManager: ObservableObject {
     }
     
     @objc func checkMenu() {
-        print("checking menu")
         if let appMenu = NSApp.menu {
             
             // default menu == BAD
             if appMenu.items.count == 6 {
                 NSApp.menu = nil
                 setupMainMenu(isCopyingPaused: nil, shouldDelay: false)
-//                if let window = WindowManager.shared.window, window.isKeyWindow {
-//                    checkTimer?.invalidate()
-//                }
-//                else if let popoverWindow = WindowManager.shared.popover?.contentViewController?.view.window, popoverWindow.isKeyWindow {
-//                    checkTimer?.invalidate()
-//                }
             }
-//            else if let window = WindowManager.shared.window, window.isKeyWindow {
-//                checkTimer?.invalidate()
-//            }
-//            else if let popoverWindow = WindowManager.shared.popover?.contentViewController?.view.window, popoverWindow.isKeyWindow {
-//                checkTimer?.invalidate()
-//            }
         }
         
         if let window = WindowManager.shared.window, window.isKeyWindow {
@@ -85,7 +72,6 @@ class MenuManager: ObservableObject {
     }
     
     func setupMainMenu(isCopyingPaused: Bool?, shouldDelay: Bool) {
-        print("setting up menu")
         DispatchQueue.main.async {
             NSApp.menu = nil
             DispatchQueue.main.asyncAfter(deadline: .now() + (shouldDelay ? 0.1 : 0.0)) {
