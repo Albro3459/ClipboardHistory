@@ -159,7 +159,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
 //        print("Dock icon clicked!")
         
-        menuManager?.updateMainMenu(isCopyingPaused: nil)
+        menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
         
         if UserDefaultsManager.shared.windowPopOut {
             windowManager?.window = nil
@@ -181,10 +181,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         return true
     }
-    
-    
-    
-    
     
 //    @objc func windowDidAppear(_ notification: Notification) {
 //        print("window appeared")

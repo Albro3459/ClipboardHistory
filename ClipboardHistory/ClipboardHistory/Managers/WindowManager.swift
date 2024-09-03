@@ -92,7 +92,7 @@ class WindowManager: ObservableObject {
                                 
         NSApplication.shared.mainMenu = nil
 //        self.menuManager.setupMainMenu(isCopyingPaused: nil)
-        self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+        self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
         
         if UserDefaultsManager.shared.windowPopOut {
             self.setupPopOutWindow()
@@ -226,7 +226,7 @@ class WindowManager: ObservableObject {
                 window.level = .floating
             }
             
-            self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+            self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
         }
     }
     
@@ -247,7 +247,7 @@ class WindowManager: ObservableObject {
                     if UserDefaultsManager.shared.canWindowFloat {
                         window.level = .floating
                     }
-                    self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+                    self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
                 }
                 else {
                     print("hiding")
@@ -260,7 +260,7 @@ class WindowManager: ObservableObject {
     @objc func showWindow() {
         DispatchQueue.main.async {
             NSApplication.shared.activate(ignoringOtherApps: true)
-            self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+            self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
             if let window = self.window {
                 window.makeKeyAndOrderFront(nil)
 //                if self.userDefaultsManager.windowOnAllDesktops {
@@ -317,12 +317,12 @@ class WindowManager: ObservableObject {
             
         self.popover?.backgroundColor = UserDefaultsManager.shared.darkMode ? darkModeBackground : lightModeBackground
 
-        self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+        self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.125) {
             if let button = self.menuManager?.statusBarItem?.button {
                 self.popover?.show(relativeTo: button.frame, of: button, preferredEdge: .minY)
-                self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+                self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
             }
         }
     }
@@ -331,7 +331,7 @@ class WindowManager: ObservableObject {
         
         NSApplication.shared.activate(ignoringOtherApps: true)
         
-        self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+        self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
         
         if let popover = popover {
             if popover.isShown {
@@ -353,7 +353,7 @@ class WindowManager: ObservableObject {
     }
     
     func hidePopOutWindow() {
-        self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+        self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
         
         popover?.close()
     }
@@ -361,7 +361,7 @@ class WindowManager: ObservableObject {
     func showPopOutWindow() {
         if let button = menuManager?.statusBarItem?.button {
             
-            self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+            self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
             
             NSApplication.shared.activate(ignoringOtherApps: true)
             popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
@@ -386,7 +386,7 @@ class WindowManager: ObservableObject {
         
         self.popover?.backgroundColor = UserDefaultsManager.shared.darkMode ? darkModeBackground : lightModeBackground
         
-        self.menuManager?.updateMainMenu(isCopyingPaused: nil)
+        self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
         
         showPopOutWindow()
     }

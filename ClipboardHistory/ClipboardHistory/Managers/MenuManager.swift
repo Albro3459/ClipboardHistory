@@ -16,7 +16,7 @@ import Combine
 class MenuManager: ObservableObject {
     static let shared = MenuManager()
     
-    let userDefaultsManager = UserDefaultsManager.shared
+    @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
     let clipboardManager = ClipboardManager.shared
     weak var windowManager: WindowManager?
     let settingsWindowManager = SettingsWindowManager.shared
@@ -40,7 +40,7 @@ class MenuManager: ObservableObject {
             // default menu == BAD
             if appMenu.items.count == 6 {
                 NSApp.menu = nil
-                setupMainMenu(isCopyingPaused: nil, shouldDelay: false)
+                setupMainMenu(isCopyingPaused: nil, shouldDelay: true)
             }
         }
         
@@ -105,7 +105,7 @@ class MenuManager: ObservableObject {
                 
                 // File Menu
                 let fileMenu = NSMenu(title: "File")
-                let pauseResumeItem = NSMenuItem(title: (isCopyingPaused ?? self.userDefaultsManager.pauseCopying ? "Resume Copying" : "Pause Copying"), action: #selector(self.toggleCopying), keyEquivalent: "P")
+                let pauseResumeItem = NSMenuItem(title: (isCopyingPaused ?? self.userDefaultsManager.pauseCopying ? "Resume Copying" : "Pause Copying"), action: #selector(self.toggleMenuCopying), keyEquivalent: "P")
                 pauseResumeItem.keyEquivalentModifierMask = [.command, .shift]
                 pauseResumeItem.target = self
                 fileMenu.addItem(pauseResumeItem)
@@ -164,7 +164,7 @@ class MenuManager: ObservableObject {
         }
     }
     
-    func updateMainMenu(isCopyingPaused: Bool?) {
+    func updateMainMenu(isCopyingPaused: Bool?, shouldDelay: Bool) {
         let isCopyingPaused = isCopyingPaused ?? UserDefaults.standard.bool(forKey: "pauseCopying")
 //        if let appMenu = self.appMenu {
 //            // updates when isCopyingPaused changes
@@ -178,15 +178,19 @@ class MenuManager: ObservableObject {
 //        else {
 //            self.setupMainMenu(isCopyingPaused: isCopyingPaused)
 //        }
-        self.setupMainMenu(isCopyingPaused: isCopyingPaused, shouldDelay: true)
+        self.setupMainMenu(isCopyingPaused: isCopyingPaused, shouldDelay: shouldDelay)
     }
 
     
-    @objc func toggleCopying() {
+    @objc func toggleMenuCopying() {
+        toggleCopying(shouldDelay: false)
+    }
+    
+    func toggleCopying(shouldDelay: Bool) {
         // Flip the current pause state
         DispatchQueue.main.async {
 
-            print("toggling copying")
+//            print("toggling copying")
             let isCopyingCurrentlyPausedState = UserDefaults.standard.bool(forKey: "pauseCopying")
                     
             let newIsCopyingPausedState = !isCopyingCurrentlyPausedState
@@ -202,7 +206,7 @@ class MenuManager: ObservableObject {
             
             self.clipboardManager.clipboardMonitor?.isCopyingPaused = newIsCopyingPausedState
             
-            self.updateMainMenu(isCopyingPaused: newIsCopyingPausedState)
+            self.updateMainMenu(isCopyingPaused: newIsCopyingPausedState, shouldDelay: shouldDelay)
             
             self.clipboardManager.clipboardMonitor?.sendCopyStatusCangeStateChangeToUI()
         }

@@ -290,7 +290,7 @@ struct SettingsView: View {
             }
         }
         
-        menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput)
+        menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput, shouldDelay: true)
         
         DispatchQueue.main.async {
             self.saved = true
@@ -339,7 +339,7 @@ struct SettingsView: View {
         userDefaultsManager.toggleWindowShortcut = toggleWindowShortcutInput
         userDefaultsManager.resetWindowShortcut = resetWindowShortcutInput
         
-        menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput)
+        menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput, shouldDelay: true)
         
         userDefaultsManager.updateAll(savePasteWithoutFormattingShortcut: true)
 

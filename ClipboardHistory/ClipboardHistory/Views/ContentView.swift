@@ -399,6 +399,14 @@ struct ContentView: View {
             .onChange(of: userDefaultsManager.darkMode) {
                 darkMode = userDefaultsManager.darkMode
             }
+            .onChange(of: userDefaultsManager.pauseCopying) {
+                DispatchQueue.main.async {
+                    self.copyStatusChanged = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                        self.copyStatusChanged = false
+                    }
+                }
+            }
             .onReceive(clipboardManager.clipboardMonitor?.copyFailedStateChange ?? PassthroughSubject<Void, Never>()) { _ in
                 // needed because this change wont update unless app is active
                 if let monitor = clipboardManager.clipboardMonitor {
@@ -408,13 +416,7 @@ struct ContentView: View {
             .onReceive(clipboardManager.clipboardMonitor?.copyStatusStateChange ?? PassthroughSubject<Void, Never>()) { _ in
                 // needed because this change wont update unless app is active
                 if let monitor = clipboardManager.clipboardMonitor {
-//                    let status = monitor.isCopyingPaused
-//                    DispatchQueue.main.async {
-                        self.copyStatusChanged = monitor.showCopyStateChangedPopUp
-//                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
-//                            self.copyStatusChanged = !status
-//                        }
-                    
+                    self.copyStatusChanged = monitor.showCopyStateChangedPopUp                    
                 }
             }
         }
@@ -531,7 +533,7 @@ struct ContentView: View {
                     // Handle Command + Shift + P
                     if event.modifierFlags.contains(.command) {
                         if event.modifierFlags.contains(.shift) {
-                            self.menuManager.toggleCopying()
+                            self.menuManager.toggleCopying(shouldDelay: true)
                             
                             return nil // no more beeps
                         }
