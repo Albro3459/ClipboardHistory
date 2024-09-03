@@ -6,11 +6,13 @@
 * it is fully built by me, Alex Brodsky, in Swift for Mac OS 14.4 
     * I could try lowering the required MacOS version if you want to try the app, email is in bio
 
-* it opens on the bottom right on all the desktop windows
+* it opens on the bottom right on all the desktop windows by default
 
-* once running, it can be opened and closed with cmd + shift + c
+* once running, it can be opened and closed with (cmd + shift + c), by default
 
 * click the clipboard status menu bar icon to show the app while running
+
+   * in the app settings > window, you can change the app to pop out of the status bar icon
 
 * use the mouse or arrow keys to select items
 
@@ -18,12 +20,10 @@
 
 * it can hold text, images, files and folders. it can even hold groups
 
-* clipboard history is currently limited to 50 items.
+* clipboard history is currently limited to 50 items, you can change this in the settings
 
-* coming soon!:
+* coming not so soon!:
     * selecting multiple items at once with cmd or shift click
-
-    * the ability to change keyboard shortcuts
 
     * maybe pinning items
 
