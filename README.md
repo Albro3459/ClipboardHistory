@@ -1,16 +1,20 @@
 ## ClipboardHistory, a Mac clipboard history manager like Clipboard History from Windows
 #### Download link to try it out! [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
 
+###### btw if you clone the repo to run it, it is in sandbox mode, so some things might break
+
 * scroll to the very bottom for install instructions
 
 * it is fully built by me, Alex Brodsky, in Swift for Mac OS 14.4 
     * I could try lowering the required MacOS version if you want to try the app, email is in bio
 
-* it opens on the bottom right on all the desktop windows
+* it opens on the bottom right on all the desktop windows by default
 
-* once running, it can be opened and closed with cmd + shift + c
+* once running, it can be opened and closed with (cmd + shift + c), by default
 
 * click the clipboard status menu bar icon to show the app while running
+
+   * in the app settings > window, you can change the app to pop out of the status bar icon
 
 * use the mouse or arrow keys to select items
 
@@ -18,12 +22,10 @@
 
 * it can hold text, images, files and folders. it can even hold groups
 
-* clipboard history is currently limited to 50 items.
+* clipboard history is currently limited to 50 items, you can change this in the settings
 
-* coming soon!:
+* coming not so soon!:
     * selecting multiple items at once with cmd or shift click
-
-    * the ability to change keyboard shortcuts
 
     * maybe pinning items
 
@@ -34,6 +36,7 @@
     <img src="https://github.com/user-attachments/assets/5159adc7-daa6-439a-8380-c28f2f8c5863" alt="example screen shot" height="300"/>
     <img src="https://github.com/user-attachments/assets/0fc2feba-a20e-4bb0-a75e-d8a2747b75ff" alt="example screen shot with open group" height="300"/>
     <img src="https://github.com/user-attachments/assets/816caec4-2adb-4f34-90f7-335faee855d1" alt="example folder search screen shot" height="300"/>
+    <img src="https://github.com/user-attachments/assets/48884218-41e7-4273-bba7-6753feceb33d" alt="example folder search screen shot" height="300"/>
 </div>
 
 ### Tips for using the app:

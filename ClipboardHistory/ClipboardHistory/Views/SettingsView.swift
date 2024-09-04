@@ -263,6 +263,10 @@ struct SettingsView: View {
         UserDefaults.standard.set(windowHeightInput, forKey: "windowHeight")
         UserDefaults.standard.set(windowLocationInput, forKey: "windowLocation")
         UserDefaults.standard.set(windowPopOutInput, forKey: "windowPopOut")
+        if windowPopOutInput {
+            canWindowFloatInput = false
+            hideWindowWhenNotSelectedInput = false
+        }
         UserDefaults.standard.set(canWindowFloatInput, forKey: "canWindowFloat")
         UserDefaults.standard.set(hideWindowWhenNotSelectedInput, forKey: "hideWindowWhenNotSelected")
         UserDefaults.standard.set(windowOnAllDesktopsInput, forKey: "windowOnAllDesktops")
