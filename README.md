@@ -36,6 +36,7 @@
     <img src="https://github.com/user-attachments/assets/5159adc7-daa6-439a-8380-c28f2f8c5863" alt="example screen shot" height="300"/>
     <img src="https://github.com/user-attachments/assets/0fc2feba-a20e-4bb0-a75e-d8a2747b75ff" alt="example screen shot with open group" height="300"/>
     <img src="https://github.com/user-attachments/assets/816caec4-2adb-4f34-90f7-335faee855d1" alt="example folder search screen shot" height="300"/>
+    <img src="https://github.com/user-attachments/assets/48884218-41e7-4273-bba7-6753feceb33d" alt="example popup window" height="300"/>
 </div>
 
 ### Tips for using the app:
