@@ -1,9 +1,23 @@
 ## ClipboardHistory, a Mac clipboard history manager like Clipboard History from Windows
 #### Download link to try it out! [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
 
-###### btw if you clone the repo to run it, it is in sandbox mode, so some things might break
+<details>
+  <summary>Instructions for running the project in XCode</summary>
 
-* scroll to the very bottom for install instructions
+ * btw if you clone the repo to run it, it is in sandbox mode, so some things will break.
+    * the download from Google Drive is NOT sandboxed, so everything will work
+
+ * you will need XCode, I'm on Version 15.3  
+
+ * before you run anything, in XCode, you have to go to File > Packages > Update to Latest Package Versions
+</details>
+
+<br></br>
+
+<details>
+  <summary>Info and About Section</summary>
+
+ * scroll to the very bottom for install instructions
 
 * it is fully built by me, Alex Brodsky, in Swift for Mac OS 14.4 
     * I could try lowering the required MacOS version if you want to try the app, email is in bio
@@ -28,18 +42,23 @@
     * selecting multiple items at once with cmd or shift click
 
     * maybe pinning items
+</details>
 
+<br></br>
 
 ### Screenshots:
-
 <div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 40px;">
     <img src="https://github.com/user-attachments/assets/5159adc7-daa6-439a-8380-c28f2f8c5863" alt="example screen shot" height="300"/>
+    <img src="https://github.com/user-attachments/assets/48884218-41e7-4273-bba7-6753feceb33d" alt="example popup window" height="300"/>
     <img src="https://github.com/user-attachments/assets/0fc2feba-a20e-4bb0-a75e-d8a2747b75ff" alt="example screen shot with open group" height="300"/>
     <img src="https://github.com/user-attachments/assets/816caec4-2adb-4f34-90f7-335faee855d1" alt="example folder search screen shot" height="300"/>
-    <img src="https://github.com/user-attachments/assets/48884218-41e7-4273-bba7-6753feceb33d" alt="example popup window" height="300"/>
 </div>
 
+<br></br>
+
 ### Tips for using the app:
+<details>
+  <summary>Tips</summary>
 
 * see the ListOfKeyboardShortcuts.md file for the full list of keyboard shortcuts, or scroll to the bottom
 
@@ -71,10 +90,15 @@
 * cmd + shift + v for paste without formatting anywhere on your computer!
 
 * the open button next to files and folders opens the file or folder
+</details>
+
+<br></br>
 
 ### Installation Guide:
+<details>
+  <summary>Installation Guide</summary>
 
-* this application is set up to only work with MacOS 14.4+
+ * this application is set up to only work with MacOS 14.4+
     * if you're on a lower MacOS, email me: brodsky.alex22@gmail.com, and I'll try to a different version
 
 * download the zip from [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
@@ -113,15 +137,22 @@
 
     * i know, its a lil scary because it says 'control your computer'. its just because it needs to listen to (cmd + shift + v) to paste without formatting.
         * again, you can turn this off in the settings
+</details>
+
+<br></br>
 
 ### Here is a list of all the Keyboard Shortcuts:
+<details>
+  <summary>changeable shortcuts:</summary>
 
- ##### changeable shortcuts:
     - cmd + shift + c: open and close window
     - option + r: reset window
     - cmd + shift + v: paste without formatting
+</details>
 
- ##### unchangeable shortcuts:
+<details>
+  <summary>unchangeable shortcuts:</summary>
+
     - menu options:
       - cmd + ;: Opens the GitHub link
       - cmd + ': Opens the LinkedIn link
@@ -154,6 +185,7 @@
     - page down: scroll to bottom
 
     - esc: exit search or type selector
+</details>
 
 
 <!-- <br />

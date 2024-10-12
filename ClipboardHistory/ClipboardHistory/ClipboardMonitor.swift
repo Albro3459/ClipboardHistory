@@ -128,7 +128,7 @@ class ClipboardMonitor: ObservableObject {
                                 return
                             }
                         }
-                        else if let imageData = pasteboard.data(forType: .tiff), let image = NSImage(data: imageData) {
+                        else if let imageData = item.data(forType: .tiff) ?? item.data(forType: .png) ?? item.data(forType: NSPasteboard.PasteboardType("public.jpeg")), let image = NSImage(data: imageData) {
                             if self.userDefaultsManager.canCopyImages {
                                 self.processImageData(image: image, inGroup: group, context: childContext)
                             }
@@ -136,7 +136,7 @@ class ClipboardMonitor: ObservableObject {
                                 return
                             }
                         }
-                        else if let content = pasteboard.string(forType: .string) {
+                        else if let content = item.string(forType: .string) {
                             let item = ClipboardItem(context: childContext)
                             item.content = content
                             item.type = "text"
@@ -145,6 +145,27 @@ class ClipboardMonitor: ObservableObject {
                             item.imageHash = nil
                             item.group = group
                             group.addToItems(item)
+                        }
+                        else if item.types.contains(NSPasteboard.PasteboardType("public.html")) &&
+                                    item.types.contains(NSPasteboard.PasteboardType("org.chromium.web-custom-data")) &&
+                                    item.types.contains(NSPasteboard.PasteboardType("org.chromium.source-url")) {
+                            
+                            // for copying images out of google docs cause they're weird
+                            if let htmlContent = item.string(forType: .html), let imageUrl = self.extractHtmlImageURL(from: htmlContent) {
+                                operationsPending += 1 // Track pending download operation
+                                self.downloadAndProcessImageFromURL(from: imageUrl, inGroup: group, context: childContext) {
+                                    operationsPending -= 1
+                                    if operationsPending == 0 {
+                                        self.saveClipboardGroup(childContext: childContext)
+                                    }
+                                }
+                            } else {
+                                continue
+                            }
+                        }
+                        else {
+                            print(item.types);
+                            return
                         }
                         counter += 1
                     }
@@ -155,6 +176,55 @@ class ClipboardMonitor: ObservableObject {
             }
         }
     }
+    
+    // from google docs typically
+    private func extractHtmlImageURL(from htmlContent: String) -> URL? {
+        // regular expression pattern to match an <img> tag and capture the "src" attribute
+        let pattern = "<img[^>]+src=[\"']([^\"']+)[\"']"
+        
+        let regex = try? NSRegularExpression(pattern: pattern, options: [])
+        let nsString = htmlContent as NSString
+        
+        if let match = regex?.firstMatch(in: htmlContent, options: [], range: NSRange(location: 0, length: nsString.length)) {
+            
+            // extracting the "src" url
+            let srcRange = match.range(at: 1)
+            let urlString = nsString.substring(with: srcRange)
+            
+            return URL(string: urlString)
+        }
+        
+        return nil
+    }
+    
+    private func downloadAndProcessImageFromURL(from imageUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext, completion: @escaping () -> Void) {
+
+//    private func downloadAndProcessImageFromURL(from imageUrl: URL) {
+
+        // creating a data task to download the image asynchronously
+        let task = URLSession.shared.dataTask(with: imageUrl) { data, response, error in
+            guard let data = data, error == nil else {
+                print("Failed to download image from URL: \(imageUrl), error: \(String(describing: error))")
+                completion()
+                return
+            }
+            
+            // create the image using existing function
+            if let image = NSImage(data: data) {
+                DispatchQueue.main.async {
+                    self.processImageData(image: image, inGroup: group, context: context)
+                    completion()
+                }
+            } else {
+                print("Failed to create NSImage from downloaded data.")
+                completion()
+            }
+        }
+        
+        // Start the download task
+        task.resume()
+    }
+    
     
     private func processFileFolder(fileUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext,
                                    completion: @escaping (Bool) -> Void) {
