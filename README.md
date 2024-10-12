@@ -10,6 +10,7 @@
  * you will need XCode, I'm on Version 15.3  
 
  * before you run anything, in XCode, you have to go to File > Packages > Update to Latest Package Versions
+     * every time you switch branches, you MUST do this again. the project is dependent on the KeyboardShortcuts package
 </details>
 
 <br></br>
