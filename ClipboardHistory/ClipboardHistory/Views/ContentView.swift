@@ -28,6 +28,7 @@ struct ContentView: View {
     
     @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
     let menuManager = MenuManager.shared
+    let windowManager = WindowManager.shared
     @ObservedObject var selectListManager = SelectListManager.shared
         
     @State private var showAlert = false
@@ -61,6 +62,7 @@ struct ContentView: View {
     @State private var windowWidth: CGFloat = 0
     @State private var windowHeight: CGFloat = 0
     
+    @State private var fetchedItemCount: Int = 0
 //    @State private var selectList: [SelectedGroup] = []
     
     private var clipboardGroups: [ClipboardGroup] {
@@ -218,14 +220,19 @@ struct ContentView: View {
                         .foregroundColor(darkMode ? .white : .black)
                         .padding(.leading, 8)
                         .onTapGesture {
-//                            isTextFieldFocused = false
                             self.isSearchFocused = false
-                            print(userDefaultsManager.darkMode)
+                            self.isFocused = false
                         }
                     
-                    SearchBarView(searchText: $searchText)
+                    SearchBarView(searchText: $searchText, showAlert: $showAlert, isSelectingCategory: $isSelectingCategory, searchItemCount: selectListManager.selectList.count, fetchedItemCount: $fetchedItemCount)
                         .focused($isFocused)
                         .padding(.trailing, (fetchedClipboardGroups.count <= 0) ? 10 : 0)
+                        .onAppear() {
+                            fetchedItemCount = fetchedClipboardGroups.count
+                        }
+                        .onChange(of: fetchedClipboardGroups.count) {
+                            fetchedItemCount = fetchedClipboardGroups.count
+                        }
                     
                     if fetchedClipboardGroups.count > 0 {
                         Button(action: {
@@ -250,10 +257,14 @@ struct ContentView: View {
                             if !atTopOfList && !justScrolledToTop {
                                 scrollToTop = true
                                 justScrolledToTop = true
+                                self.isSearchFocused = false
+                                self.isFocused = false
                             }
                             else if atTopOfList || justScrolledToTop {
                                 scrollToBottom = true
                                 justScrolledToTop = false
+                                self.isSearchFocused = false
+                                self.isFocused = false
                             }
                         }) {
                             Image(systemName: (!atTopOfList && !justScrolledToTop) ? "arrow.up.circle" : "arrow.down.circle")
@@ -582,9 +593,22 @@ struct ContentView: View {
                 case 53:
                     // Escape key
                     DispatchQueue.main.async {
-                        if isFocused == false && isSelectingCategory == false {
-                            searchText = ""
+//                        // if searching and the search has 0 results, esc should clear the search
+//                        if self.isSelectingCategory == false && (self.selectListManager.selectList.count == 0 && self.fetchedClipboardGroups.count != 0) {
+//                            searchText = ""
+//                        }
+                        // if not focused or selecting
+                        if self.isFocused == false && self.isSelectingCategory == false {
+                            // if we didnt search for anything, hide the app
+                            if searchText == "" {
+                                self.windowManager.hideApp()
+                            }
+                            // otherwise clear the search
+                            else {
+                                searchText = ""
+                            }
                         }
+                        // else stop searching or selecting categories
                         else {
                             isSelectingCategory = false
                             isFocused = false

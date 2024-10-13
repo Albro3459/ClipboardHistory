@@ -388,6 +388,17 @@ class WindowManager: ObservableObject {
         
         showPopOutWindow()
     }
+
+    @objc func hideApp() {
+        DispatchQueue.main.async {
+            if let _ = self.popover {
+                self.hidePopOutWindow()
+            }
+            else {
+                self.hideWindow()
+            }
+        }
+    }
 }
 
 // this is how I can get the popover to have a custom background color

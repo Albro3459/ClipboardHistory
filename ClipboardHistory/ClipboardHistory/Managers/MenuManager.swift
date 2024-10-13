@@ -124,7 +124,7 @@ class MenuManager: ObservableObject {
                 windowMenu.addItem(toggleWindowItem)
                 
                 // keyEquivalent of capital letter tells swift to add Shift to the command!!
-                let hideItem = NSMenuItem(title: "Hide App", action: #selector(self.windowManager?.hideWindow), keyEquivalent: "h")
+                let hideItem = NSMenuItem(title: "Hide App", action: #selector(self.windowManager?.hideApp), keyEquivalent: "h")
                 hideItem.target = WindowManager.shared
                 windowMenu.addItem(hideItem)
                 
