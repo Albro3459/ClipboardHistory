@@ -541,14 +541,13 @@ struct ContentView: View {
                     // handle Cmd + W
                         if let window = WindowManager.shared.window, window.isKeyWindow {
                             WindowManager.shared.hideWindow()
-                            return nil
                         }
                         else if let popoverWindow = WindowManager.shared.popover?.contentViewController?.view.window, popoverWindow.isKeyWindow {
 //                            WindowManager.shared.hidePopOutWindow()
                             WindowManager.shared.hideWindow()
                             SettingsWindowManager.shared.closeSettingsWindow()
-                            return nil
                         }
+                        return nil
                     }
                 case 8:
                     if event.modifierFlags.contains(.command) {
@@ -556,13 +555,12 @@ struct ContentView: View {
                             // Handle Command + C
                             if clipboardManager.selectedItem != nil {
                                 clipboardManager.copySelectedItemInGroup()
-                                return nil
                             }
                             else {
                                 clipboardManager.copySelectedGroup()
-                                return nil
                             }
                         }
+                        return nil
                     }
                 case 51:
                     // Handle Command + Del
@@ -590,7 +588,7 @@ struct ContentView: View {
                             isSelectingCategory = false
                             isFocused = true
                         }
-                         return nil // no more beeps
+                        return nil // no more beeps
                     }
                 case 35:
                     // Handle Command + Shift + P
@@ -602,31 +600,31 @@ struct ContentView: View {
                         }
                     }
                     
-                case 53:
-                    // Escape key
-                    DispatchQueue.main.async {
-//                        // if searching and the search has 0 results, esc should clear the search
-//                        if self.isSelectingCategory == false && (self.selectListManager.selectList.count == 0 && self.fetchedClipboardGroups.count != 0) {
-//                            searchText = ""
+//                case 53:
+//                    // Escape key
+//                    DispatchQueue.main.async {
+////                        // if searching and the search has 0 results, esc should clear the search
+////                        if self.isSelectingCategory == false && (self.selectListManager.selectList.count == 0 && self.fetchedClipboardGroups.count != 0) {
+////                            searchText = ""
+////                        }
+//                        // if not focused or selecting
+//                        if self.isFocused == false && self.isSelectingCategory == false {
+//                            // if we didnt search for anything, hide the app
+//                            if searchText == "" {
+//                                self.windowManager.hideApp()
+//                            }
+//                            // otherwise clear the search
+//                            else {
+//                                searchText = ""
+//                            }
 //                        }
-                        // if not focused or selecting
-                        if self.isFocused == false && self.isSelectingCategory == false {
-                            // if we didnt search for anything, hide the app
-                            if searchText == "" {
-                                self.windowManager.hideApp()
-                            }
-                            // otherwise clear the search
-                            else {
-                                searchText = ""
-                            }
-                        }
-                        // else stop searching or selecting categories
-                        else {
-                            isSelectingCategory = false
-                            isFocused = false
-                        }
-                    }
-                    return nil
+//                        // else stop searching or selecting categories
+//                        else {
+//                            isSelectingCategory = false
+//                            isFocused = false
+//                        }
+//                    }
+//                    return nil
                 case 126:
                     // Handle up arrow
                     isFocused = false
@@ -789,13 +787,12 @@ struct ContentView: View {
                     if clipboardManager.selectedGroup?.isExpanded == true {
                         if clipboardManager.selectedItem != nil {
                             clipboardManager.selectedItem = nil
-                            return nil
                         }
                         else if let selectedGroup = clipboardManager.selectedGroup {
                             clipboardManager.contract(for: selectedGroup)
-                            return nil
                         }
                     }
+                    return nil
                 case 115, 116:
                     // Handle Home or Page Up Key action
                     scrollToTop = true
@@ -821,7 +818,7 @@ struct ContentView: View {
                         }
                     }
                 default:
-                    break
+                    return event
                 }
             }
             return event
@@ -1046,9 +1043,9 @@ struct ClipboardGroupView: View {
                         if !self.isSearchFocused || !self.isSelectingCategory {
                             if currSelectGroup.group.count > 1 {
                                 self.clipboardManager.expand(for: currSelectGroup)
-                                return nil
                             }
                         }
+                        return nil
                     case 123:
                         // left arrow to contract group
                         self.isSearchFocused = false
@@ -1060,15 +1057,14 @@ struct ClipboardGroupView: View {
                                 if self.clipboardManager.selectedGroup?.self.isExpanded == true {
                                     if self.clipboardManager.selectedItem != nil {
                                         self.clipboardManager.selectedItem = nil
-                                        return nil
                                     }
                                     else if let selectedGroup = self.clipboardManager.selectedGroup {
                                         self.clipboardManager.contract(for: selectedGroup)
-                                        return nil
                                     }
                                 }
                             }
                         }
+                        return nil
                     case 36, 76:
                         // Handle Enter or Return
                         if !self.isSearchFocused || !self.isSelectingCategory {
@@ -1094,21 +1090,17 @@ struct ClipboardGroupView: View {
                                                     if resourceValues.isAliasFile == true || resourceValues.isDirectory == true {
                                                         self.clipboardManager.openFolder(filePath: resolvedUrl.path)
                                                         self.openedFileFolderOrApp = true
-                                                        return nil
                                                     } else {
                                                         self.clipboardManager.openFile(filePath: resolvedUrl.path)
                                                         self.openedFileFolderOrApp = true
-                                                        return nil
                                                     }
                                                 }
                                             } else if let type = itemToOpen.type, type == "folder" || type == "removable" || type == "zipFile" || type == "dmgFile" || type == "randomFile" || type == "execFile" {
                                                 self.clipboardManager.openFolder(filePath: filePath)
                                                 self.openedFileFolderOrApp = true
-                                                return nil
                                             } else if itemToOpen.type == "file" || itemToOpen.type == "image" || itemToOpen.type == "app" || itemToOpen.type == "calendarApp" || itemToOpen.type == "settingsApp" || itemToOpen.type == "photoBoothApp" {
                                                 self.clipboardManager.openFile(filePath: filePath)
                                                 self.openedFileFolderOrApp = true
-                                                return nil
                                             }
                                         }
                                     }
@@ -1125,12 +1117,11 @@ struct ClipboardGroupView: View {
                                 if userDefaultsManager.enterKeyHidesAfterCopy && !(settingsWindowManager.settingsWindow?.isKeyWindow ?? false)   {
                                     self.windowManager.hideApp()
                                 }
-                                
-                                return nil
                             }
                         }
+                        return nil
                     default:
-                        break
+                        return event
                     }
                 }
             }

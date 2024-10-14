@@ -109,8 +109,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         self.windowManager?.menuManager = self.menuManager
         self.menuManager?.windowManager = self.windowManager
-        
-        
+                
         setupGlobalHotKey()
     }
 
@@ -183,6 +182,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if !UserDefaultsManager.shared.windowPopOut && UserDefaultsManager.shared.hideWindowWhenNotSelected {
             NotificationCenter.default.addObserver(self, selector: #selector(windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
         }
+        
+        self.windowManager?.window?.delegate = self
     }
     
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -211,6 +212,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         return true
     }
     
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        self.windowManager?.hideApp()
+        return false
+    }
+    
+    
 //    @objc func windowDidAppear(_ notification: Notification) {
 //        print("window appeared")
 //        NSApplication.shared.mainMenu = nil
@@ -218,10 +225,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 //    }
     
     @objc func windowDidResignKey(_ notification: Notification) {
-        print("Window did resign key (unfocused)")
+//        print("Window did resign key (unfocused)")
         // App lost focus
         
-        print(UserDefaultsManager.shared.hideWindowWhenNotSelected)
+//        print(UserDefaultsManager.shared.hideWindowWhenNotSelected)
         if UserDefaultsManager.shared.hideWindowWhenNotSelected {
             // Check if the current main window is the settings window
             if let mainWindow = NSApplication.shared.mainWindow, mainWindow.title == "ClipboardHistory" {

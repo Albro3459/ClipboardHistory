@@ -11,6 +11,8 @@ import Foundation
 
 struct SearchBarView: View {
     @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
+    let windowManager = WindowManager.shared
+    
     @Binding var searchText: String
     @Binding var showAlert: Bool
     @Binding var isSelectingCategory: Bool
@@ -70,18 +72,38 @@ struct SearchBarView: View {
                             self.isSelectingCategory = false
                             self.isTextFieldFocused = true
                         }
-                        return nil // no more beeps
+//                        return nil // no more beeps
                     }
                 case 53:
                     // Escape key
                     // if searching and the search has 0 results, esc should clear the search
-                    if self.isSelectingCategory == false && (self.searchItemCount == 0 && self.fetchedItemCount != 0) {
-                        searchText = ""
-                        return nil
+                    if self.searchItemCount == 0 {
+                        self.searchText = ""
                     }
-
+                    //                        // if searching and the search has 0 results, esc should clear the search
+                    else if self.isTextFieldFocused == false && self.isSelectingCategory == false &&
+                                (self.searchItemCount == 0 && self.fetchedItemCount != 0) {
+                        self.searchText = ""
+                    }
+                    // if not focused or selecting
+                    else if self.isTextFieldFocused == false {
+                        // if we didnt search for anything, hide the app
+                        if self.searchText == "" {
+                            self.windowManager.hideApp()
+                        }
+                        // otherwise clear the search
+                        else {
+                            self.searchText = ""
+                        }
+                    }
+                    // else stop searching or selecting categories
+                    else {
+                        self.isSelectingCategory = false
+                        self.isTextFieldFocused = false
+                    }
+                    return nil
                 default:
-                    break
+                    return event
                 }
             }
             return event
