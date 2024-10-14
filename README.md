@@ -1,5 +1,5 @@
 ## ClipboardHistory, a Mac clipboard history manager like Clipboard History from Windows
-#### Download link to try it out! [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
+#### Download link under the ***Releases*** tab on GitHub or [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing) to try it out!
 
 <details>
   <summary>Instructions for running the project in XCode</summary>
