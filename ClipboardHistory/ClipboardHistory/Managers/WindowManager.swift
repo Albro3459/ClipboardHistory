@@ -18,13 +18,15 @@ class WindowManager: ObservableObject {
         
     let persistenceController = PersistenceController.shared
     let userDefaultsManager = UserDefaultsManager.shared
-    let clipboardManager = ClipboardManager.shared
+//    let clipboardManager = ClipboardManager.shared
+    weak var clipboardManager: ClipboardManager?
     weak var menuManager: MenuManager?
     
     var contentView: AnyView!
 
     var window: NSWindow?
     var popover: NSPopover?
+    var copyingPopover: NSPopover?
     
     //#colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.75)
     let darkModeBackground = #colorLiteral(red: 0.1882, green: 0.1882, blue: 0.1961, alpha: 0.75)
@@ -100,7 +102,7 @@ class WindowManager: ObservableObject {
         self.contentView = AnyView(
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
-                .environmentObject(clipboardManager)
+                .environmentObject(clipboardManager!)
                 .environmentObject(self)
                 .environmentObject(menuManager!)
         )
@@ -115,6 +117,8 @@ class WindowManager: ObservableObject {
         else {
             self.setupWindow()
         }
+        
+        self.setupCopyingPopOutWindow()
     }
     
     
@@ -406,7 +410,68 @@ class WindowManager: ObservableObject {
         
         showPopOutWindow()
     }
+    
+    // COPYING POPOVER FUNCS
+    
+    private let copyingPopoverWidth = 150
+    private let copyingPopoverHeight = 35
+    
+    func setupCopyingPopOutWindow() {
+//        print("setup Copying Pop Out window")
+        
+        if self.copyingPopover == nil {
+            self.copyingPopover = NSPopover()
+        }
+        
+        let viewController = NSViewController()
+        viewController.view = NSView(frame: NSRect(x: 0, y: 0, width: copyingPopoverWidth, height: copyingPopoverHeight))
+        viewController.view.wantsLayer = true
+        self.copyingPopover?.contentViewController = viewController
+
+        self.copyingPopover?.behavior = .transient // Dismisses when clicked outside
+    }
+    
+    func showCopyPausedPopover(copyingFailed: Bool?, copyingPaused: Bool?) {
+        if (copyingFailed != nil || copyingPaused != nil), let button = menuManager?.statusBarItem?.button {
+            if self.copyingPopover?.isShown == false {
+            
+                let viewController = self.copyingPopover?.contentViewController ?? NSViewController()
+                viewController.view = NSView(frame: NSRect(x: 0, y: 0, width: copyingPopoverWidth, height: copyingPopoverHeight))
+                viewController.view.wantsLayer = true
+                viewController.view.layer?.backgroundColor = (copyingFailed == true) ? NSColor.red.cgColor : (copyingPaused != nil ? (self.userDefaultsManager.darkMode ? NSColor.darkGray.cgColor : NSColor.gray.cgColor): nil)
+                
+                let label = NSTextField(labelWithString: (copyingFailed == true || copyingPaused == true) ? "Copying is Paused" : (copyingPaused == false ? "Copying Resumed" : ""))
+                label.font = NSFont.systemFont(ofSize: 15)
+                label.textColor = NSColor.white
+                label.alignment = .center
+                label.frame = NSRect(x: 0, y: 0, width: copyingPopoverWidth, height: copyingPopoverHeight - 7)
+                
+                viewController.view.subviews.forEach { $0.removeFromSuperview() }
+                viewController.view.addSubview(label)
+                
+                self.copyingPopover?.contentViewController = viewController
+                
+                self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
+                self.copyingPopover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                    self.hideCopyPausedPopover(self.copyingPopover)
+                }
+            }
+        }
+    }
+    
+    func hideCopyPausedPopover(_ popover: NSPopover?) {
+        if let popover = popover {
+            popover.performClose(nil)
+        }
+        else if let _ = menuManager?.statusBarItem?.button {
+            self.copyingPopover?.performClose(nil)
+        }
+    }
 }
+
+
 
 // this is how I can get the popover to have a custom background color
 extension NSPopover {

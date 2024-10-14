@@ -23,6 +23,8 @@
     - cmd + c: copy
     - enter || return: copy
 
+    - cmd + shift + p: toggle Pause/Resume copying
+
     - cmd + enter: open item
 
     - cmd + delete: delete selected item

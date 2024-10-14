@@ -79,27 +79,33 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var statusBarItem: NSStatusItem?
     
     let persistenceController: PersistenceController?
+    let clipboardManager: ClipboardManager?
+    
     let userDefaultsManager: UserDefaultsManager?
     let windowManager: WindowManager?
     let menuManager: MenuManager?
-//    let menuManager = MenuManager.shared
-//    let windowManager = WindowManager.shared
-    let clipboardManager: ClipboardManager?
+
+    
     
     private var lastToggleTime: Date?
     private var lastPasteNoFormatTime: Date?
             
     override init() {
         self.persistenceController = PersistenceController.shared
+        self.clipboardManager = ClipboardManager.shared
+
         self.userDefaultsManager = UserDefaultsManager.shared
         self.windowManager = WindowManager.shared
         self.menuManager = MenuManager.shared
-        self.clipboardManager = ClipboardManager.shared
         
         super.init()
         
-        self.menuManager?.windowManager = self.windowManager
+        self.clipboardManager?.clipboardMonitor?.windowManager = self.windowManager
+        self.windowManager?.clipboardManager = self.clipboardManager
+        
         self.windowManager?.menuManager = self.menuManager
+        self.menuManager?.windowManager = self.windowManager
+        
         
         setupGlobalHotKey()
     }
