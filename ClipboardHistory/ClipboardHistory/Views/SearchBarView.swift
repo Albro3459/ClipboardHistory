@@ -14,7 +14,7 @@ struct SearchBarView: View {
     @Binding var searchText: String
     @Binding var showAlert: Bool
     @Binding var isSelectingCategory: Bool
-    let searchItemCount: Int
+    @Binding var searchItemCount: Int
     @Binding var fetchedItemCount: Int
     @FocusState private var isTextFieldFocused: Bool
     
@@ -70,15 +70,16 @@ struct SearchBarView: View {
                             self.isSelectingCategory = false
                             self.isTextFieldFocused = true
                         }
-//                        return nil // no more beeps
+                        return nil // no more beeps
                     }
                 case 53:
                     // Escape key
                     // if searching and the search has 0 results, esc should clear the search
                     if self.isSelectingCategory == false && (self.searchItemCount == 0 && self.fetchedItemCount != 0) {
                         searchText = ""
+                        return nil
                     }
-                    return nil
+
                 default:
                     break
                 }

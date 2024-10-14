@@ -34,6 +34,33 @@ class WindowManager: ObservableObject {
     
     private init() {}
     
+    
+    // SHARED FUNCTIONS between window and popout
+    
+    @objc func hideApp() {
+        DispatchQueue.main.async {
+            if let _ = self.popover {
+                self.hidePopOutWindow()
+            }
+            else {
+                self.hideWindow()
+            }
+            self.switchToPreviousWindow()
+        }
+    }
+    
+    func switchToPreviousWindow() {
+        // Get the list of running applications, excluding the current app
+        let currentApp = NSWorkspace.shared.frontmostApplication
+        let runningApps = NSWorkspace.shared.runningApplications.filter { $0 != currentApp }
+        
+        // Find the most recently active app (excluding the current app)
+        if let previousApp = runningApps.first(where: { $0.activationPolicy == .regular }) {
+            // Activate the previous app
+            previousApp.activate()
+        }
+    }
+    
     @objc func handleStatusItemPressed(_ sender: Any?) {
         if userDefaultsManager.windowPopOut {
             togglePopOutWindow(sender)
@@ -101,6 +128,9 @@ class WindowManager: ObservableObject {
             self.setupWindow()
         }
     }
+    
+    
+    // WINDOW FUNCTIONS
     
     func setupWindow() {
         NSApp.appearance = NSAppearance(named: UserDefaultsManager.shared.darkMode ? .darkAqua : .vibrantLight)
@@ -285,7 +315,7 @@ class WindowManager: ObservableObject {
     }
     
     
-    //POPOVER STARTS HERE
+    //POPOVER FUNCTIONS
     
     func setupPopOutWindow() {
 //        print("setup Pop Out window")
@@ -387,17 +417,6 @@ class WindowManager: ObservableObject {
         self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
         
         showPopOutWindow()
-    }
-
-    @objc func hideApp() {
-        DispatchQueue.main.async {
-            if let _ = self.popover {
-                self.hidePopOutWindow()
-            }
-            else {
-                self.hideWindow()
-            }
-        }
     }
 }
 

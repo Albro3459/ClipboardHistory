@@ -62,6 +62,7 @@ struct ContentView: View {
     @State private var windowWidth: CGFloat = 0
     @State private var windowHeight: CGFloat = 0
     
+    @State private var searchItemCount: Int = 0
     @State private var fetchedItemCount: Int = 0
 //    @State private var selectList: [SelectedGroup] = []
     
@@ -224,14 +225,18 @@ struct ContentView: View {
                             self.isFocused = false
                         }
                     
-                    SearchBarView(searchText: $searchText, showAlert: $showAlert, isSelectingCategory: $isSelectingCategory, searchItemCount: selectListManager.selectList.count, fetchedItemCount: $fetchedItemCount)
+                    SearchBarView(searchText: $searchText, showAlert: $showAlert, isSelectingCategory: $isSelectingCategory, searchItemCount: $searchItemCount, fetchedItemCount: $fetchedItemCount)
                         .focused($isFocused)
                         .padding(.trailing, (fetchedClipboardGroups.count <= 0) ? 10 : 0)
                         .onAppear() {
                             fetchedItemCount = fetchedClipboardGroups.count
+                            searchItemCount = selectListManager.selectList.count
                         }
                         .onChange(of: fetchedClipboardGroups.count) {
                             fetchedItemCount = fetchedClipboardGroups.count
+                        }
+                        .onChange(of: selectListManager.selectList.count) {
+                            searchItemCount = selectListManager.selectList.count
                         }
                     
                     if fetchedClipboardGroups.count > 0 {
