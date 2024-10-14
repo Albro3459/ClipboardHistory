@@ -5,6 +5,14 @@
 //  Created by Alex Brodsky on 8/30/24.
 //
 
+/*
+ 
+ setting where 'enter' key will hide the app after
+ 
+ self.enterKeyHidesAfterCopy = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopy")
+ */
+
+
 import Foundation
 import SwiftUI
 import KeyboardShortcuts
@@ -29,6 +37,9 @@ struct SettingsView: View {
     @State private var canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
     @State private var canCopyImagesInput = UserDefaults.standard.bool(forKey: "canCopyImages")
 
+    @State private var enterKeyHidesAfterCopy = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopy")
+    @State private var enterKeyHidesAfterCopyInput = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopy")
+    
     @State private var pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
     @State private var pasteWithoutFormattingInput = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
 
@@ -159,7 +170,7 @@ struct SettingsView: View {
             
             VStack {
                 TabView {
-                    ClipboardSettingsView(pauseCopyingInput: $pauseCopyingInput, maxStoreCountInput: $maxStoreCountInput, noDuplicatesInput: $noDuplicatesInput, canCopyFilesOrFoldersInput: $canCopyFilesOrFoldersInput, canCopyImagesInput: $canCopyImagesInput, pasteWithoutFormattingInput: $pasteWithoutFormattingInput)
+                    ClipboardSettingsView(pauseCopyingInput: $pauseCopyingInput, maxStoreCountInput: $maxStoreCountInput, noDuplicatesInput: $noDuplicatesInput, canCopyFilesOrFoldersInput: $canCopyFilesOrFoldersInput, canCopyImagesInput: $canCopyImagesInput, enterKeyHidesAfterCopyInput: $enterKeyHidesAfterCopyInput, pasteWithoutFormattingInput: $pasteWithoutFormattingInput)
                         .tabItem {
                             Text("Clipboard")
                                 .help("View Clipboard Related Settings")
@@ -256,6 +267,7 @@ struct SettingsView: View {
         UserDefaults.standard.set(noDuplicatesInput, forKey: "noDuplicates")
         UserDefaults.standard.set(canCopyFilesOrFoldersInput, forKey: "canCopyFilesOrFolders")
         UserDefaults.standard.set(canCopyImagesInput, forKey: "canCopyImages")
+        UserDefaults.standard.set(enterKeyHidesAfterCopyInput, forKey: "enterKeyHidesAfterCopy")
         UserDefaults.standard.set(pasteWithoutFormattingInput, forKey: "pasteWithoutFormatting")
         
         UserDefaults.standard.set(darkModeInput, forKey: "darkMode")
@@ -309,6 +321,7 @@ struct SettingsView: View {
         noDuplicatesInput = true
         canCopyFilesOrFoldersInput = true
         canCopyImagesInput = true
+        enterKeyHidesAfterCopyInput = false
 //        pasteWithoutFormattingInput = false // not gonna reset
 //        darkModeInput = true // not gonna reset
         windowWidthInput = 300.0
@@ -328,6 +341,7 @@ struct SettingsView: View {
         UserDefaults.standard.set(noDuplicatesInput, forKey: "noDuplicates")
         UserDefaults.standard.set(canCopyFilesOrFoldersInput, forKey: "canCopyFilesOrFolders")
         UserDefaults.standard.set(canCopyImagesInput, forKey: "canCopyImages")
+        UserDefaults.standard.set(enterKeyHidesAfterCopyInput, forKey: "enterKeyHidesAfterCopy")
 //        UserDefaults.standard.set(pasteWithoutFormattingInput, forKey: "pasteWithoutFormatting") // not gonna reset
         
 //        UserDefaults.standard.set(darkModeInput, forKey: "darkMode") // not gonna reset
@@ -391,6 +405,9 @@ struct ClipboardSettingsView: View {
     @State private var canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
     @Binding var canCopyImagesInput: Bool
     
+    @State private var enterKeyHidesAfterCopy = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopyInput")
+    @Binding var enterKeyHidesAfterCopyInput: Bool
+    
     @State private var pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
     @Binding var pasteWithoutFormattingInput: Bool
     
@@ -444,6 +461,7 @@ struct ClipboardSettingsView: View {
                             Toggle("Can App Hold Files or Folders?", isOn: $canCopyFilesOrFoldersInput).padding()
                             Toggle("Can App Hold Images?", isOn: $canCopyImagesInput).padding()
                             Toggle("Enable Paste Without Formatting?", isOn: $pasteWithoutFormattingInput).padding()
+                            Toggle("Hide App After Enter Key Pressed For Copy?", isOn: $enterKeyHidesAfterCopyInput).padding()
                         }
                     }
                 }

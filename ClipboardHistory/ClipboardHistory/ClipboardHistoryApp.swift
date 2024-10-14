@@ -61,6 +61,7 @@ struct ClipboardHistoryApp: App {
             "canCopyFilesOrFolders": true,
             "canCopyImages": true,
             
+            "enterKeyHidesAfterCopy" : false,
             "pasteWithoutFormatting": false,
             
             // out of app shortcuts
@@ -127,12 +128,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         
         KeyboardShortcuts.onKeyDown(for: .hideWindow) {
-            if UserDefaultsManager.shared.windowPopOut {
-                self.windowManager?.hidePopOutWindow()
-            }
-            else {
+//            if UserDefaultsManager.shared.windowPopOut {
+//                self.windowManager?.hidePopOutWindow()
+//            }
+//            else {
                 self.windowManager?.hideWindow()
-            }
+//            }
         }
         
         if let userDefaultsManager = self.userDefaultsManager, userDefaultsManager.pasteWithoutFormatting {

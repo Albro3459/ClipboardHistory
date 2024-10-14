@@ -538,7 +538,8 @@ struct ContentView: View {
                             return nil
                         }
                         else if let popoverWindow = WindowManager.shared.popover?.contentViewController?.view.window, popoverWindow.isKeyWindow {
-                            WindowManager.shared.hidePopOutWindow()
+//                            WindowManager.shared.hidePopOutWindow()
+                            WindowManager.shared.hideWindow()
                             SettingsWindowManager.shared.closeSettingsWindow()
                             return nil
                         }
@@ -831,6 +832,7 @@ struct ClipboardGroupView: View {
     
     let userDefaultsManager = UserDefaultsManager.shared
     @ObservedObject var selectListManager = SelectListManager.shared
+    let windowManager = WindowManager.shared
     
     var selectGroup: SelectedGroup
     
@@ -1108,12 +1110,16 @@ struct ClipboardGroupView: View {
                             else {
                                 if self.clipboardManager.selectedItem != nil {
                                     self.clipboardManager.copySelectedItemInGroup()
-                                    return nil
                                 }
                                 else {
                                     self.clipboardManager.copySelectedGroup()
-                                    return nil
                                 }
+                                
+                                if userDefaultsManager.enterKeyHidesAfterCopy {
+                                    self.windowManager.hideApp()
+                                }
+                                
+                                return nil
                             }
                         }
                     default:

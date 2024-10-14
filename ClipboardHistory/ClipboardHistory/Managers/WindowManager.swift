@@ -39,25 +39,13 @@ class WindowManager: ObservableObject {
     
     @objc func hideApp() {
         DispatchQueue.main.async {
-            if let _ = self.popover {
-                self.hidePopOutWindow()
-            }
-            else {
+//            if let _ = self.popover {
+//                self.hidePopOutWindow()
+//            }
+//            else {
                 self.hideWindow()
-            }
-            self.switchToPreviousWindow()
-        }
-    }
-    
-    func switchToPreviousWindow() {
-        // Get the list of running applications, excluding the current app
-        let currentApp = NSWorkspace.shared.frontmostApplication
-        let runningApps = NSWorkspace.shared.runningApplications.filter { $0 != currentApp }
-        
-        // Find the most recently active app (excluding the current app)
-        if let previousApp = runningApps.first(where: { $0.activationPolicy == .regular }) {
-            // Activate the previous app
-            previousApp.activate()
+//            }
+//            self.switchToPreviousWindow()
         }
     }
     

@@ -47,6 +47,7 @@ class UserDefaultsManager : ObservableObject {
     var canCopyFilesOrFolders: Bool
     var canCopyImages: Bool
     
+    var enterKeyHidesAfterCopy: Bool
     var pasteWithoutFormatting: Bool
     
     var pasteWithoutFormattingShortcut: KeyboardShortcut
@@ -79,6 +80,7 @@ class UserDefaultsManager : ObservableObject {
         self.canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
         self.canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
 
+        self.enterKeyHidesAfterCopy = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopy")
         self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
         
         if let data = UserDefaults.standard.data(forKey: "pasteWithoutFormattingShortcut") {
@@ -152,6 +154,7 @@ class UserDefaultsManager : ObservableObject {
         self.canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
         self.canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
 
+        self.enterKeyHidesAfterCopy = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopy")
         self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
                 
         ClipboardManager.shared.clipboardMonitor?.reloadVars()
