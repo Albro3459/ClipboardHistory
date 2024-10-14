@@ -17,6 +17,7 @@ class ClipboardMonitor: ObservableObject {
     @Published var tmpFolderPath = FileManager.default.temporaryDirectory
     
     let userDefaultsManager = UserDefaultsManager.shared
+    weak var windowManager: WindowManager?
     
     var copyFailedStateChange = PassthroughSubject<Void, Never>()
     var copyStatusStateChange = PassthroughSubject<Void, Never>()
@@ -60,6 +61,9 @@ class ClipboardMonitor: ObservableObject {
                     
                     self.showCopyFailedFeedback = true
                     self.copyFailedStateChange.send()
+                    
+                    self.windowManager?.showCopyPausedPopover(copyingFailed: true, copyingPaused: nil)
+                    
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
                         self.showCopyFailedFeedback = false
                         self.copyFailedStateChange.send()

@@ -12,6 +12,10 @@ import Foundation
 struct SearchBarView: View {
     @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
     @Binding var searchText: String
+    @Binding var showAlert: Bool
+    @Binding var isSelectingCategory: Bool
+    @Binding var searchItemCount: Int
+    @Binding var fetchedItemCount: Int
     @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
@@ -50,6 +54,37 @@ struct SearchBarView: View {
             DispatchQueue.main.async {
                 isTextFieldFocused = false
             }
+            setUpKeyboardHandling()
+        }
+    }
+    
+    private func setUpKeyboardHandling() {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            
+            if event.type == .keyDown && !self.showAlert {
+                switch event.keyCode {
+                case 3:
+                    // Handle Command + F
+                    if event.modifierFlags.contains(.command) {
+                        DispatchQueue.main.async {
+                            self.isSelectingCategory = false
+                            self.isTextFieldFocused = true
+                        }
+                        return nil // no more beeps
+                    }
+                case 53:
+                    // Escape key
+                    // if searching and the search has 0 results, esc should clear the search
+                    if self.isSelectingCategory == false && (self.searchItemCount == 0 && self.fetchedItemCount != 0) {
+                        searchText = ""
+                        return nil
+                    }
+
+                default:
+                    break
+                }
+            }
+            return event
         }
     }
 }

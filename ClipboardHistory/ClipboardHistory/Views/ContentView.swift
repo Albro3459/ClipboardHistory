@@ -28,6 +28,7 @@ struct ContentView: View {
     
     @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
     let menuManager = MenuManager.shared
+    let windowManager = WindowManager.shared
     @ObservedObject var selectListManager = SelectListManager.shared
         
     @State private var showAlert = false
@@ -61,6 +62,8 @@ struct ContentView: View {
     @State private var windowWidth: CGFloat = 0
     @State private var windowHeight: CGFloat = 0
     
+    @State private var searchItemCount: Int = 0
+    @State private var fetchedItemCount: Int = 0
 //    @State private var selectList: [SelectedGroup] = []
     
     private var clipboardGroups: [ClipboardGroup] {
@@ -152,65 +155,67 @@ struct ContentView: View {
                 Color.white.opacity(0.1).flash(duration: 0.3)
             }
             
-            if self.copyStatusChanged, let monitor = clipboardManager.clipboardMonitor {
-                ZStack(alignment: .center) {
-                    
-                    ZStack(alignment: .top) {
-                        Rectangle()
-                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
-                            .cornerRadius(8)
-                        Rectangle()
-                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
-                            .frame(height: 10)
-                            .zIndex(1)
-                    }
-                    Text("Copying \(monitor.isCopyingPaused ? "Paused" : "Resumed")!")
-                        .font(.subheadline)
-                        .bold()
-                        
-                        .cornerRadius(8)
-                        .frame(alignment: .center)
-                }
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .animation(.easeInOut, value: monitor.isCopyingPaused)
-                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
-                .position(x: (monitor.isCopyingPaused ? 110 : 120)/2, y: -(self.windowHeight/2 - 24))
-                .frame(width: (monitor.isCopyingPaused ? 110 : 120), height: 24)
-                .zIndex(5)
-            
-                
-                Color.white.opacity(0.1).flash(duration: 0.3)
-            }
-            
-            // when copying fails due to copying being paused
-            if let monitor = clipboardManager.clipboardMonitor, self.showCopyFailedFeedback || monitor.showCopyFailedFeedback {
-                ZStack(alignment: .center) {
-                    
-                    ZStack(alignment: .top) {
-                        Rectangle()
-                            .foregroundColor(Color(.red))
-                            .cornerRadius(8)
-                        Rectangle()
-                            .foregroundColor(Color(.red))
-                            .frame(height: 10)
-                            .zIndex(1)
-                    }
-                    Text("Copying is Paused!")
-                        .font(.subheadline)
-                        .bold()
-                        .cornerRadius(8)
-                        .frame(alignment: .center)
-                }
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .animation(.easeInOut, value: self.showCopyFailedFeedback)
-                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
-                .position(x: 120/2, y: -(self.windowHeight/2 - 24) )
-                .frame(width: 120, height: 24)
-                .zIndex(5)
-            
-                
-                Color.red.opacity(0.1).flash(duration: 0.3)
-            }
+            // Switched to popover for this
+//            if self.copyStatusChanged, let monitor = clipboardManager.clipboardMonitor {
+//                ZStack(alignment: .center) {
+//                    
+//                    ZStack(alignment: .top) {
+//                        Rectangle()
+//                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
+//                            .cornerRadius(8)
+//                        Rectangle()
+//                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
+//                            .frame(height: 10)
+//                            .zIndex(1)
+//                    }
+//                    Text("Copying \(monitor.isCopyingPaused ? "Paused" : "Resumed")!")
+//                        .font(.subheadline)
+//                        .bold()
+//                        
+//                        .cornerRadius(8)
+//                        .frame(alignment: .center)
+//                }
+//                .transition(.move(edge: .top).combined(with: .opacity))
+//                .animation(.easeInOut, value: monitor.isCopyingPaused)
+//                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
+//                .position(x: (monitor.isCopyingPaused ? 110 : 120)/2, y: -(self.windowHeight/2 - 24))
+//                .frame(width: (monitor.isCopyingPaused ? 110 : 120), height: 24)
+//                .zIndex(5)
+//            
+//                
+//                Color.white.opacity(0.1).flash(duration: 0.3)
+//            }
+//            
+            // Switched to popover for this
+//            // when copying fails due to copying being paused
+//            if let monitor = clipboardManager.clipboardMonitor, self.showCopyFailedFeedback || monitor.showCopyFailedFeedback {
+//                ZStack(alignment: .center) {
+//                    
+//                    ZStack(alignment: .top) {
+//                        Rectangle()
+//                            .foregroundColor(Color(.red))
+//                            .cornerRadius(8)
+//                        Rectangle()
+//                            .foregroundColor(Color(.red))
+//                            .frame(height: 10)
+//                            .zIndex(1)
+//                    }
+//                    Text("Copying is Paused!")
+//                        .font(.subheadline)
+//                        .bold()
+//                        .cornerRadius(8)
+//                        .frame(alignment: .center)
+//                }
+//                .transition(.move(edge: .top).combined(with: .opacity))
+//                .animation(.easeInOut, value: self.showCopyFailedFeedback)
+//                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
+//                .position(x: 120/2, y: -(self.windowHeight/2 - 24) )
+//                .frame(width: 120, height: 24)
+//                .zIndex(5)
+//            
+//                
+//                Color.red.opacity(0.1).flash(duration: 0.3)
+//            }
             
             VStack {
                 HStack {
@@ -218,14 +223,23 @@ struct ContentView: View {
                         .foregroundColor(darkMode ? .white : .black)
                         .padding(.leading, 8)
                         .onTapGesture {
-//                            isTextFieldFocused = false
                             self.isSearchFocused = false
-                            print(userDefaultsManager.darkMode)
+                            self.isFocused = false
                         }
                     
-                    SearchBarView(searchText: $searchText)
+                    SearchBarView(searchText: $searchText, showAlert: $showAlert, isSelectingCategory: $isSelectingCategory, searchItemCount: $searchItemCount, fetchedItemCount: $fetchedItemCount)
                         .focused($isFocused)
                         .padding(.trailing, (fetchedClipboardGroups.count <= 0) ? 10 : 0)
+                        .onAppear() {
+                            fetchedItemCount = fetchedClipboardGroups.count
+                            searchItemCount = selectListManager.selectList.count
+                        }
+                        .onChange(of: fetchedClipboardGroups.count) {
+                            fetchedItemCount = fetchedClipboardGroups.count
+                        }
+                        .onChange(of: selectListManager.selectList.count) {
+                            searchItemCount = selectListManager.selectList.count
+                        }
                     
                     if fetchedClipboardGroups.count > 0 {
                         Button(action: {
@@ -250,10 +264,14 @@ struct ContentView: View {
                             if !atTopOfList && !justScrolledToTop {
                                 scrollToTop = true
                                 justScrolledToTop = true
+                                self.isSearchFocused = false
+                                self.isFocused = false
                             }
                             else if atTopOfList || justScrolledToTop {
                                 scrollToBottom = true
                                 justScrolledToTop = false
+                                self.isSearchFocused = false
+                                self.isFocused = false
                             }
                         }) {
                             Image(systemName: (!atTopOfList && !justScrolledToTop) ? "arrow.up.circle" : "arrow.down.circle")
@@ -431,14 +449,6 @@ struct ContentView: View {
             .onChange(of: userDefaultsManager.darkMode) {
                 darkMode = userDefaultsManager.darkMode
             }
-            .onChange(of: userDefaultsManager.pauseCopying) {
-                DispatchQueue.main.async {
-                    self.copyStatusChanged = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
-                        self.copyStatusChanged = false
-                    }
-                }
-            }
             .onChange(of: openedFileFolderOrApp) {
                 DispatchQueue.main.async {
                     self.openedStateChanged = true
@@ -448,17 +458,29 @@ struct ContentView: View {
                     }
                 }
             }
+            // I dont think this is ever triggered because pauseCopying is not published, but the onReceives below work
+            .onChange(of: userDefaultsManager.pauseCopying) {
+                DispatchQueue.main.async {
+                    self.copyStatusChanged = true
+                    self.windowManager.showCopyPausedPopover(copyingFailed: nil, copyingPaused: userDefaultsManager.pauseCopying)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                        self.copyStatusChanged = false
+                    }
+                }
+            }
             .onReceive(clipboardManager.clipboardMonitor?.copyFailedStateChange ?? PassthroughSubject<Void, Never>()) { _ in
                 // needed because this change wont update unless app is active
                 if let monitor = clipboardManager.clipboardMonitor {
                     self.showCopyFailedFeedback = monitor.showCopyFailedFeedback
                 }
+                self.windowManager.showCopyPausedPopover(copyingFailed: true, copyingPaused: nil)
             }
             .onReceive(clipboardManager.clipboardMonitor?.copyStatusStateChange ?? PassthroughSubject<Void, Never>()) { _ in
                 // needed because this change wont update unless app is active
                 if let monitor = clipboardManager.clipboardMonitor {
                     self.copyStatusChanged = monitor.showCopyStateChangedPopUp                    
                 }
+                self.windowManager.showCopyPausedPopover(copyingFailed: nil, copyingPaused: clipboardManager.clipboardMonitor?.isCopyingPaused)
             }
         }
     }
@@ -522,7 +544,8 @@ struct ContentView: View {
                             return nil
                         }
                         else if let popoverWindow = WindowManager.shared.popover?.contentViewController?.view.window, popoverWindow.isKeyWindow {
-                            WindowManager.shared.hidePopOutWindow()
+//                            WindowManager.shared.hidePopOutWindow()
+                            WindowManager.shared.hideWindow()
                             SettingsWindowManager.shared.closeSettingsWindow()
                             return nil
                         }
@@ -582,9 +605,22 @@ struct ContentView: View {
                 case 53:
                     // Escape key
                     DispatchQueue.main.async {
-                        if isFocused == false && isSelectingCategory == false {
-                            searchText = ""
+//                        // if searching and the search has 0 results, esc should clear the search
+//                        if self.isSelectingCategory == false && (self.selectListManager.selectList.count == 0 && self.fetchedClipboardGroups.count != 0) {
+//                            searchText = ""
+//                        }
+                        // if not focused or selecting
+                        if self.isFocused == false && self.isSelectingCategory == false {
+                            // if we didnt search for anything, hide the app
+                            if searchText == "" {
+                                self.windowManager.hideApp()
+                            }
+                            // otherwise clear the search
+                            else {
+                                searchText = ""
+                            }
                         }
+                        // else stop searching or selecting categories
                         else {
                             isSelectingCategory = false
                             isFocused = false
@@ -802,6 +838,8 @@ struct ClipboardGroupView: View {
     
     let userDefaultsManager = UserDefaultsManager.shared
     @ObservedObject var selectListManager = SelectListManager.shared
+    let windowManager = WindowManager.shared
+    let settingsWindowManager = SettingsWindowManager.shared
     
     var selectGroup: SelectedGroup
     
@@ -1079,12 +1117,16 @@ struct ClipboardGroupView: View {
                             else {
                                 if self.clipboardManager.selectedItem != nil {
                                     self.clipboardManager.copySelectedItemInGroup()
-                                    return nil
                                 }
                                 else {
                                     self.clipboardManager.copySelectedGroup()
-                                    return nil
                                 }
+                                
+                                if userDefaultsManager.enterKeyHidesAfterCopy && !(settingsWindowManager.settingsWindow?.isKeyWindow ?? false)   {
+                                    self.windowManager.hideApp()
+                                }
+                                
+                                return nil
                             }
                         }
                     default:

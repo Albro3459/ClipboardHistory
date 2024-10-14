@@ -1,7 +1,7 @@
 ### Installation Guide:
 
 * this application is set up to only work with MacOS 14.4+
-    * if you're on a lower MacOS, email me: brodsky.alex22@gmail.com, and I'll try to a different version
+    * if you're on a lower MacOS, email me: brodsky.alex22@gmail.com, and I'll try have it work with lower versions
 
 * download the zip from [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
 

@@ -4,6 +4,8 @@
     - cmd + shift + c: open and close window
     - option + r: reset window
     - cmd + shift + v: paste without formatting
+    - option + shift + l: paste All Lowercase without formatting
+    - option + shift + u: paste All Uppercase without formatting
 
  #### unchangeable shortcuts:
     - menu options:
@@ -22,6 +24,8 @@
 
     - cmd + c: copy
     - enter || return: copy
+
+    - cmd + shift + p: toggle Pause/Resume copying
 
     - cmd + enter: open item
 

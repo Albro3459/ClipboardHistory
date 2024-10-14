@@ -61,10 +61,15 @@ struct ClipboardHistoryApp: App {
             "canCopyFilesOrFolders": true,
             "canCopyImages": true,
             
+            "enterKeyHidesAfterCopy" : false,
             "pasteWithoutFormatting": false,
+            "pasteLowercaseWithoutFormatting": false,
+            "pasteUppercaseWithoutFormatting": false,
             
             // out of app shortcuts
             "pasteWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["command", "shift"], key: "v")),
+            "pasteLowercaseWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["option", "shift"], key: "l")),
+            "pasteUppercaseWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["option", "shift"], key: "u")),
             "toggleWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["command", "shift"], key: "c")),
             "resetWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["option"], key: "r"))
         ]
@@ -78,27 +83,33 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var statusBarItem: NSStatusItem?
     
     let persistenceController: PersistenceController?
+    let clipboardManager: ClipboardManager?
+    
     let userDefaultsManager: UserDefaultsManager?
     let windowManager: WindowManager?
     let menuManager: MenuManager?
-//    let menuManager = MenuManager.shared
-//    let windowManager = WindowManager.shared
-    let clipboardManager: ClipboardManager?
+
+    
     
     private var lastToggleTime: Date?
     private var lastPasteNoFormatTime: Date?
             
     override init() {
         self.persistenceController = PersistenceController.shared
+        self.clipboardManager = ClipboardManager.shared
+
         self.userDefaultsManager = UserDefaultsManager.shared
         self.windowManager = WindowManager.shared
         self.menuManager = MenuManager.shared
-        self.clipboardManager = ClipboardManager.shared
         
         super.init()
         
-        self.menuManager?.windowManager = self.windowManager
+        self.clipboardManager?.clipboardMonitor?.windowManager = self.windowManager
+        self.windowManager?.clipboardManager = self.clipboardManager
+        
         self.windowManager?.menuManager = self.menuManager
+        self.menuManager?.windowManager = self.windowManager
+        
         
         setupGlobalHotKey()
     }
@@ -127,21 +138,39 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         
         KeyboardShortcuts.onKeyDown(for: .hideWindow) {
-            if UserDefaultsManager.shared.windowPopOut {
-                self.windowManager?.hidePopOutWindow()
-            }
-            else {
+//            if UserDefaultsManager.shared.windowPopOut {
+//                self.windowManager?.hidePopOutWindow()
+//            }
+//            else {
                 self.windowManager?.hideWindow()
-            }
+//            }
         }
         
         if let userDefaultsManager = self.userDefaultsManager, userDefaultsManager.pasteWithoutFormatting {
             KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
-                self.clipboardManager?.pasteNoFormatting()
+                self.clipboardManager?.pasteNoFormatting(lowerFalseUpperTrueText: nil)
             }
         }
         else { // otherwise free it up, so I dont consume the keystroke
             KeyboardShortcuts.disable(.pasteNoFormatting)
+        }
+        
+        if let userDefaultsManager = self.userDefaultsManager, userDefaultsManager.pasteLowercaseWithoutFormatting {
+            KeyboardShortcuts.onKeyUp(for: .pasteLowerNoFormatting) {
+                self.clipboardManager?.pasteNoFormatting(lowerFalseUpperTrueText: false)
+            }
+        }
+        else { // otherwise free it up, so I dont consume the keystroke
+            KeyboardShortcuts.disable(.pasteLowerNoFormatting)
+        }
+        
+        if let userDefaultsManager = self.userDefaultsManager, userDefaultsManager.pasteUppercaseWithoutFormatting {
+            KeyboardShortcuts.onKeyUp(for: .pasteUpperNoFormatting) {
+                self.clipboardManager?.pasteNoFormatting(lowerFalseUpperTrueText: true)
+            }
+        }
+        else { // otherwise free it up, so I dont consume the keystroke
+            KeyboardShortcuts.disable(.pasteUpperNoFormatting)
         }
         
     }
@@ -227,6 +256,16 @@ extension KeyboardShortcuts.Name {
     static var pasteNoFormatting: Self {
         let userDefaultsManager = UserDefaultsManager.shared
         return Self("pasteNoFormatting", default: .from(userDefaultsManager.pasteWithoutFormattingShortcut))
+    }
+    
+    static var pasteLowerNoFormatting: Self {
+        let userDefaultsManager = UserDefaultsManager.shared
+        return Self("pasteLowerNoFormatting", default: .from(userDefaultsManager.pasteLowercaseWithoutFormattingShortcut))
+    }
+    
+    static var pasteUpperNoFormatting: Self {
+        let userDefaultsManager = UserDefaultsManager.shared
+        return Self("pasteUpperNoFormatting", default: .from(userDefaultsManager.pasteUppercaseWithoutFormattingShortcut))
     }
 
     static var resetWindow: Self {

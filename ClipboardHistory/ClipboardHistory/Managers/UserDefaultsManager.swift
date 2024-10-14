@@ -47,9 +47,14 @@ class UserDefaultsManager : ObservableObject {
     var canCopyFilesOrFolders: Bool
     var canCopyImages: Bool
     
+    var enterKeyHidesAfterCopy: Bool
     var pasteWithoutFormatting: Bool
+    var pasteLowercaseWithoutFormatting: Bool
+    var pasteUppercaseWithoutFormatting: Bool
     
     var pasteWithoutFormattingShortcut: KeyboardShortcut
+    var pasteLowercaseWithoutFormattingShortcut: KeyboardShortcut
+    var pasteUppercaseWithoutFormattingShortcut: KeyboardShortcut
     var toggleWindowShortcut: KeyboardShortcut
     var resetWindowShortcut: KeyboardShortcut
     
@@ -79,13 +84,30 @@ class UserDefaultsManager : ObservableObject {
         self.canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
         self.canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
 
+        self.enterKeyHidesAfterCopy = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopy")
         self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
+        self.pasteLowercaseWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteLowercaseWithoutFormatting")
+        self.pasteUppercaseWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteUppercaseWithoutFormatting")
         
         if let data = UserDefaults.standard.data(forKey: "pasteWithoutFormattingShortcut") {
             self.pasteWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
         } else {
             print("pasteWithoutFormattingShortcut Decode Failed!!")
             self.pasteWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "v")
+        }
+        
+        if let data = UserDefaults.standard.data(forKey: "pasteLowercaseWithoutFormattingShortcut") {
+            self.pasteLowercaseWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
+        } else {
+            print("pasteLowercaseWithoutFormattingShortcut Decode Failed!!")
+            self.pasteLowercaseWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "l")
+        }
+        
+        if let data = UserDefaults.standard.data(forKey: "pasteUppercaseWithoutFormattingShortcut") {
+            self.pasteUppercaseWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
+        } else {
+            print("pasteUppercaseWithoutFormattingShortcut Decode Failed!!")
+            self.pasteUppercaseWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "u")
         }
         
         if let data = UserDefaults.standard.data(forKey: "toggleWindowShortcut") {
@@ -103,10 +125,17 @@ class UserDefaultsManager : ObservableObject {
         }
     }
     
-    func saveShortcuts(savePasteWithoutFormattingShortcut: Bool) {
+    func saveShortcuts(savePasteNoFormatShortcut: Bool, savePasteLowerShortcut: Bool, savePasteUpperShortcut: Bool) {
         if let data = try? encoder.encode(pasteWithoutFormattingShortcut) {
             UserDefaults.standard.set(data, forKey: "pasteWithoutFormattingShortcut")
         }
+        if let data = try? encoder.encode(pasteLowercaseWithoutFormattingShortcut) {
+            UserDefaults.standard.set(data, forKey: "pasteLowercaseWithoutFormattingShortcut")
+        }
+        if let data = try? encoder.encode(pasteUppercaseWithoutFormattingShortcut) {
+            UserDefaults.standard.set(data, forKey: "pasteUppercaseWithoutFormattingShortcut")
+        }
+        
         if let data = try? encoder.encode(toggleWindowShortcut) {
             UserDefaults.standard.set(data, forKey: "toggleWindowShortcut")
         }
@@ -117,15 +146,21 @@ class UserDefaultsManager : ObservableObject {
         KeyboardShortcuts.reset(.toggleWindow)
         KeyboardShortcuts.reset(.resetWindow)
         KeyboardShortcuts.reset(.hideWindow)
-        if savePasteWithoutFormattingShortcut {
+        if savePasteNoFormatShortcut {
             KeyboardShortcuts.reset(.pasteNoFormatting)
+        }
+        if savePasteLowerShortcut {
+            KeyboardShortcuts.reset(.pasteLowerNoFormatting)
+        }
+        if savePasteUpperShortcut {
+            KeyboardShortcuts.reset(.pasteUpperNoFormatting)
         }
     }
     
-    func updateAll(savePasteWithoutFormattingShortcut: Bool) {
+    func updateAll(savePasteNoFormatShortcut: Bool, savePasteLowerShortcut: Bool, savePasteUpperShortcut: Bool) {
         
 //        if saveShortcuts {
-        self.saveShortcuts(savePasteWithoutFormattingShortcut: savePasteWithoutFormattingShortcut)
+        self.saveShortcuts(savePasteNoFormatShortcut: savePasteNoFormatShortcut, savePasteLowerShortcut: savePasteLowerShortcut, savePasteUpperShortcut: savePasteUpperShortcut)
 //        }
             
         self.appName = UserDefaults.standard.string(forKey: "appName") ?? "test App Name"
@@ -152,7 +187,10 @@ class UserDefaultsManager : ObservableObject {
         self.canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
         self.canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
 
+        self.enterKeyHidesAfterCopy = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopy")
         self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
+        self.pasteLowercaseWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteLowercaseWithoutFormatting")
+        self.pasteUppercaseWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteUppercaseWithoutFormatting")
                 
         ClipboardManager.shared.clipboardMonitor?.reloadVars()
         

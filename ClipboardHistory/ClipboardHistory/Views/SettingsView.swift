@@ -5,6 +5,14 @@
 //  Created by Alex Brodsky on 8/30/24.
 //
 
+/*
+ 
+ setting where 'enter' key will hide the app after
+ 
+ self.enterKeyHidesAfterCopy = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopy")
+ */
+
+
 import Foundation
 import SwiftUI
 import KeyboardShortcuts
@@ -29,8 +37,17 @@ struct SettingsView: View {
     @State private var canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
     @State private var canCopyImagesInput = UserDefaults.standard.bool(forKey: "canCopyImages")
 
+    @State private var enterKeyHidesAfterCopy = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopy")
+    @State private var enterKeyHidesAfterCopyInput = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopy")
+    
     @State private var pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
     @State private var pasteWithoutFormattingInput = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
+    
+    @State private var pasteLower = UserDefaults.standard.bool(forKey: "pasteLowercaseWithoutFormatting")
+    @State private var pasteLowerInput = UserDefaults.standard.bool(forKey: "pasteLowercaseWithoutFormatting")
+    
+    @State private var pasteUpper = UserDefaults.standard.bool(forKey: "pasteUppercaseWithoutFormatting")
+    @State private var pasteUpperInput = UserDefaults.standard.bool(forKey: "pasteUppercaseWithoutFormatting")
 
     
     
@@ -62,6 +79,12 @@ struct SettingsView: View {
     
     @State var pasteWithoutFormattingShortcut: KeyboardShortcut = UserDefaultsManager.shared.pasteWithoutFormattingShortcut
     @State var pasteWithoutFormattingShortcutInput: KeyboardShortcut = UserDefaultsManager.shared.pasteWithoutFormattingShortcut
+    
+    @State var pasteLowerShortcut: KeyboardShortcut = UserDefaultsManager.shared.pasteLowercaseWithoutFormattingShortcut
+    @State var pasteLowerShortcutInput: KeyboardShortcut = UserDefaultsManager.shared.pasteLowercaseWithoutFormattingShortcut
+    
+    @State var pasteUpperShortcut: KeyboardShortcut = UserDefaultsManager.shared.pasteUppercaseWithoutFormattingShortcut
+    @State var pasteUpperShortcutInput: KeyboardShortcut = UserDefaultsManager.shared.pasteUppercaseWithoutFormattingShortcut
     
     @State var toggleWindowShortcut: KeyboardShortcut = UserDefaultsManager.shared.toggleWindowShortcut
     @State var toggleWindowShortcutInput: KeyboardShortcut = UserDefaultsManager.shared.toggleWindowShortcut
@@ -159,7 +182,7 @@ struct SettingsView: View {
             
             VStack {
                 TabView {
-                    ClipboardSettingsView(pauseCopyingInput: $pauseCopyingInput, maxStoreCountInput: $maxStoreCountInput, noDuplicatesInput: $noDuplicatesInput, canCopyFilesOrFoldersInput: $canCopyFilesOrFoldersInput, canCopyImagesInput: $canCopyImagesInput, pasteWithoutFormattingInput: $pasteWithoutFormattingInput)
+                    ClipboardSettingsView(pauseCopyingInput: $pauseCopyingInput, maxStoreCountInput: $maxStoreCountInput, noDuplicatesInput: $noDuplicatesInput, canCopyFilesOrFoldersInput: $canCopyFilesOrFoldersInput, canCopyImagesInput: $canCopyImagesInput, enterKeyHidesAfterCopyInput: $enterKeyHidesAfterCopyInput, pasteWithoutFormattingInput: $pasteWithoutFormattingInput, pasteLowerInput: $pasteLowerInput, pasteUpperInput: $pasteUpperInput)
                         .tabItem {
                             Text("Clipboard")
                                 .help("View Clipboard Related Settings")
@@ -172,7 +195,8 @@ struct SettingsView: View {
                                 .help("View Window Settings")
                         }
                     
-                    ShortcutsSettingsView(pasteWithoutFormattingShortcutInput: $pasteWithoutFormattingShortcutInput, toggleWindowShortcutInput: $toggleWindowShortcutInput, resetWindowShortcutInput: $resetWindowShortcutInput)
+                    ShortcutsSettingsView(pasteWithoutFormattingShortcutInput: $pasteWithoutFormattingShortcutInput, pasteLowerShortcutInput: $pasteLowerShortcutInput, pasteUpperShortcutInput: $pasteUpperShortcutInput,
+                        toggleWindowShortcutInput: $toggleWindowShortcutInput, resetWindowShortcutInput: $resetWindowShortcutInput)
                         .tabItem {
                             Text("Keyboad Shortcuts")
                                 .help("View Keyboard Shortcut Settings")
@@ -197,6 +221,12 @@ struct SettingsView: View {
                         )
                     }
                     .help("Reset Settings to Default Button")
+                    
+                    
+                    Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")")
+                        .font(.footnote)
+                        .foregroundColor(darkMode ? Color(.darkGray) : Color.gray)
+
                     
                     Button("Save") {
                         self.saveSettings()
@@ -256,12 +286,20 @@ struct SettingsView: View {
         UserDefaults.standard.set(noDuplicatesInput, forKey: "noDuplicates")
         UserDefaults.standard.set(canCopyFilesOrFoldersInput, forKey: "canCopyFilesOrFolders")
         UserDefaults.standard.set(canCopyImagesInput, forKey: "canCopyImages")
+        UserDefaults.standard.set(enterKeyHidesAfterCopyInput, forKey: "enterKeyHidesAfterCopy")
         UserDefaults.standard.set(pasteWithoutFormattingInput, forKey: "pasteWithoutFormatting")
+        UserDefaults.standard.set(pasteLowerInput, forKey: "pasteLowercaseWithoutFormatting")
+        UserDefaults.standard.set(pasteUpperInput, forKey: "pasteUppercaseWithoutFormatting")
         
         UserDefaults.standard.set(darkModeInput, forKey: "darkMode")
         UserDefaults.standard.set(windowWidthInput, forKey: "windowWidth")
         UserDefaults.standard.set(windowHeightInput, forKey: "windowHeight")
         UserDefaults.standard.set(windowLocationInput, forKey: "windowLocation")
+        if hideWindowWhenNotSelectedInput {
+            if windowPopOut {
+                hideWindowWhenNotSelectedInput = false
+            }
+        }
         UserDefaults.standard.set(windowPopOutInput, forKey: "windowPopOut")
         if windowPopOutInput {
             canWindowFloatInput = false
@@ -274,7 +312,7 @@ struct SettingsView: View {
         if pasteWithoutFormattingInput {
             //                        print("enabling")
             KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
-                clipboardManager.pasteNoFormatting()
+                clipboardManager.pasteNoFormatting(lowerFalseUpperTrueText: nil)
             }
         }
         else if !pasteWithoutFormattingInput {
@@ -282,11 +320,29 @@ struct SettingsView: View {
             KeyboardShortcuts.disable(.pasteNoFormatting)
         }
         
+        if pasteLowerInput {
+            KeyboardShortcuts.onKeyUp(for: .pasteLowerNoFormatting) {
+                clipboardManager.pasteNoFormatting(lowerFalseUpperTrueText: false)
+            }
+        }
+        else if !pasteLowerInput {
+            KeyboardShortcuts.disable(.pasteLowerNoFormatting)
+        }
+        
+        if pasteUpperInput {
+            KeyboardShortcuts.onKeyUp(for: .pasteUpperNoFormatting) {
+                clipboardManager.pasteNoFormatting(lowerFalseUpperTrueText: true)
+            }
+        }
+        else if !pasteUpperInput {
+            KeyboardShortcuts.disable(.pasteUpperNoFormatting)
+        }
+        
         userDefaultsManager.pasteWithoutFormattingShortcut = pasteWithoutFormattingShortcutInput
         userDefaultsManager.toggleWindowShortcut = toggleWindowShortcutInput
         userDefaultsManager.resetWindowShortcut = resetWindowShortcutInput
         
-        userDefaultsManager.updateAll(savePasteWithoutFormattingShortcut: pasteWithoutFormatting == pasteWithoutFormattingInput)
+        userDefaultsManager.updateAll(savePasteNoFormatShortcut: pasteWithoutFormatting == pasteWithoutFormattingInput, savePasteLowerShortcut: pasteLower == pasteLowerInput, savePasteUpperShortcut: pasteUpper == pasteUpperInput)
         
         if hideWindowWhenNotSelected {
             NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification,object: nil,queue: .main) { notification in
@@ -309,6 +365,7 @@ struct SettingsView: View {
         noDuplicatesInput = true
         canCopyFilesOrFoldersInput = true
         canCopyImagesInput = true
+        enterKeyHidesAfterCopyInput = false
 //        pasteWithoutFormattingInput = false // not gonna reset
 //        darkModeInput = true // not gonna reset
         windowWidthInput = 300.0
@@ -320,6 +377,8 @@ struct SettingsView: View {
         windowOnAllDesktopsInput = true
         
         pasteWithoutFormattingShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "v")
+        pasteLowerShortcutInput = KeyboardShortcut(modifiers: ["option", "shift"], key: "l")
+        pasteUpperShortcutInput = KeyboardShortcut(modifiers: ["option", "shift"], key: "u")
         toggleWindowShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "c")
         resetWindowShortcutInput = KeyboardShortcut(modifiers: ["option"], key: "r")
         
@@ -328,6 +387,7 @@ struct SettingsView: View {
         UserDefaults.standard.set(noDuplicatesInput, forKey: "noDuplicates")
         UserDefaults.standard.set(canCopyFilesOrFoldersInput, forKey: "canCopyFilesOrFolders")
         UserDefaults.standard.set(canCopyImagesInput, forKey: "canCopyImages")
+        UserDefaults.standard.set(enterKeyHidesAfterCopyInput, forKey: "enterKeyHidesAfterCopy")
 //        UserDefaults.standard.set(pasteWithoutFormattingInput, forKey: "pasteWithoutFormatting") // not gonna reset
         
 //        UserDefaults.standard.set(darkModeInput, forKey: "darkMode") // not gonna reset
@@ -340,12 +400,14 @@ struct SettingsView: View {
         UserDefaults.standard.set(windowOnAllDesktopsInput, forKey: "windowOnAllDesktops")
         
         userDefaultsManager.pasteWithoutFormattingShortcut = pasteWithoutFormattingShortcutInput
+        userDefaultsManager.pasteLowercaseWithoutFormattingShortcut = pasteLowerShortcutInput
+        userDefaultsManager.pasteUppercaseWithoutFormattingShortcut = pasteUpperShortcutInput
         userDefaultsManager.toggleWindowShortcut = toggleWindowShortcutInput
         userDefaultsManager.resetWindowShortcut = resetWindowShortcutInput
         
         menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput, shouldDelay: true)
         
-        userDefaultsManager.updateAll(savePasteWithoutFormattingShortcut: true)
+        userDefaultsManager.updateAll(savePasteNoFormatShortcut: true, savePasteLowerShortcut: true, savePasteUpperShortcut: true)
 
         
         DispatchQueue.main.async {
@@ -391,8 +453,17 @@ struct ClipboardSettingsView: View {
     @State private var canCopyImages = UserDefaults.standard.bool(forKey: "canCopyImages")
     @Binding var canCopyImagesInput: Bool
     
+    @State private var enterKeyHidesAfterCopy = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopyInput")
+    @Binding var enterKeyHidesAfterCopyInput: Bool
+    
     @State private var pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
     @Binding var pasteWithoutFormattingInput: Bool
+    
+    @State private var pasteLower = UserDefaults.standard.bool(forKey: "pasteLowercaseWithoutFormatting")
+    @Binding var pasteLowerInput: Bool
+    
+    @State private var pasteUpper = UserDefaults.standard.bool(forKey: "pasteUppercaseWithoutFormatting")
+    @Binding var pasteUpperInput: Bool
     
     
     @State private var geoWidth: CGFloat = 0.0
@@ -403,51 +474,63 @@ struct ClipboardSettingsView: View {
     @State private var itemCountInput: String = ""
     
     var body: some View {
-            VStack {
-                ScrollView {
-                    Form {
-                        VStack {
-                            Spacer()
-                            Spacer()
-                            Toggle("Pause Copying?", isOn: $pauseCopyingInput).padding()
-                            
-                            HStack {
-                                Text("Max Number of Items to Store: ")
-                                TextField(
-                                    "",
-                                    text: $itemCountInput
-                                )
-                                .disableAutocorrection(true)
-                                .padding(5)
-                                .frame(width: 50)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 5)
-                                        .stroke(itemCountInput.isEmpty ? Color.red : Color.clear, lineWidth: 2)
-                                )
-                                .onChange(of: itemCountInput) {
-                                    if let checkInt = checkItemCount(itemCountInput) {
-                                        maxStoreCountInput = min(checkInt, 150) // Ensure maxStoreCount does not exceed 150
-                                        itemCountInput = "\(maxStoreCountInput)" // Update the text field with the valid value
-                                    } else {
-                                        maxStoreCountInput = 0 // or some other default value if the input is invalid
-                                    }
-                                }
-                                .onChange(of: maxStoreCountInput) {
-                                    itemCountInput = "\(maxStoreCountInput)"
-                                }
-                                .onAppear {
-                                    itemCountInput = "\(maxStoreCountInput)"
+        VStack {
+            ScrollView {
+                Form {
+                    VStack {
+                        Spacer()
+                        Toggle("Pause Copying?", isOn: $pauseCopyingInput).padding().padding(.top, -5)
+                        
+                        HStack {
+                            Text("Max Number of Items to Store: ")
+                            TextField(
+                                "",
+                                text: $itemCountInput
+                            )
+                            .disableAutocorrection(true)
+                            .padding(5)
+                            .frame(width: 50)
+                            .background(
+                                RoundedRectangle(cornerRadius: 5)
+                                    .stroke(itemCountInput.isEmpty ? Color.red : Color.clear, lineWidth: 2)
+                            )
+                            .onChange(of: itemCountInput) {
+                                if let checkInt = checkItemCount(itemCountInput) {
+                                    maxStoreCountInput = min(checkInt, 150) // Ensure maxStoreCount does not exceed 150
+                                    itemCountInput = "\(maxStoreCountInput)" // Update the text field with the valid value
+                                } else {
+                                    maxStoreCountInput = 0 // or some other default value if the input is invalid
                                 }
                             }
-                            
-                            Toggle("No Duplicate Copies?", isOn: $noDuplicatesInput).padding()
-                            Toggle("Can App Hold Files or Folders?", isOn: $canCopyFilesOrFoldersInput).padding()
-                            Toggle("Can App Hold Images?", isOn: $canCopyImagesInput).padding()
-                            Toggle("Enable Paste Without Formatting?", isOn: $pasteWithoutFormattingInput).padding()
+                            .onChange(of: maxStoreCountInput) {
+                                itemCountInput = "\(maxStoreCountInput)"
+                            }
+                            .onAppear {
+                                itemCountInput = "\(maxStoreCountInput)"
+                            }
+                        }
+                        
+                        Toggle("No Duplicate Copies?", isOn: $noDuplicatesInput).padding().padding(.top, -5)
+                        Toggle("Can App Hold Files or Folders?", isOn: $canCopyFilesOrFoldersInput).padding().padding(.top, -5)
+                        Toggle("Can App Hold Images?", isOn: $canCopyImagesInput).padding().padding(.top, -5)
+                        Toggle("Hide App After Enter Key Pressed For Copy?", isOn: $enterKeyHidesAfterCopyInput).padding().padding(.top, -5)
+                        
+                        Spacer()
+                        Spacer()
+                        Spacer()
+                        
+                        Text("Enable/Disable Paste Without Formatting Shorcuts?")
+                        Text("They are individual shortcuts. Check the shortcuts tab")
+                            .font(.footnote)
+                        HStack {
+                            Toggle("General No Formatting", isOn: $pasteWithoutFormattingInput).padding().padding(.top, -5)
+                            Toggle("All Lowercase", isOn: $pasteLowerInput).padding().padding(.top, -5)
+                            Toggle("All Uppercase", isOn: $pasteUpperInput).padding().padding(.top, -5)
                         }
                     }
                 }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
     }
     private func checkItemCount(_ itemCount: String) -> Int? {
@@ -545,7 +628,9 @@ struct WindowSettingsView: View {
                         
                         Spacer()
                         
-                        Toggle("Switch Window to Pop Out of Status Bar Icon?", isOn: $windowPopOutInput).padding()
+                        Toggle("Switch Window to Pop Out of Status Bar Icon?", isOn: $windowPopOutInput)
+                            .disabled(hideWindowWhenNotSelectedInput)
+                            .padding()
                         
                         
                         Spacer()
@@ -615,8 +700,17 @@ struct WindowSettingsView: View {
                 .onChange(of: userDefaultsManager.darkMode) {
                     self.darkMode = userDefaultsManager.darkMode
                 }
+                .onChange(of: hideWindowWhenNotSelectedInput) {
+                    if hideWindowWhenNotSelectedInput {
+                        windowPopOutInput = !hideWindowWhenNotSelectedInput
+                    }
+                }
+                .onChange(of: windowPopOutInput) {
+                    if windowPopOutInput {
+                        hideWindowWhenNotSelectedInput = !windowPopOutInput
+                    }
+                }
             }
-//            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
     private func checkFloatValue(_ inputString: String) -> Float? {
@@ -649,6 +743,12 @@ struct ShortcutsSettingsView: View {
     @State var pasteWithoutFormattingShortcut: KeyboardShortcut = UserDefaultsManager.shared.pasteWithoutFormattingShortcut
     @Binding var pasteWithoutFormattingShortcutInput: KeyboardShortcut
     
+    @State var pasteLowerShortcut: KeyboardShortcut = UserDefaultsManager.shared.pasteLowercaseWithoutFormattingShortcut
+    @Binding var pasteLowerShortcutInput: KeyboardShortcut
+    
+    @State var pasteUpperShortcut: KeyboardShortcut = UserDefaultsManager.shared.pasteUppercaseWithoutFormattingShortcut
+    @Binding var pasteUpperShortcutInput: KeyboardShortcut
+    
     @State var toggleWindowShortcut: KeyboardShortcut = UserDefaultsManager.shared.toggleWindowShortcut
     @Binding var toggleWindowShortcutInput: KeyboardShortcut
     
@@ -667,23 +767,15 @@ struct ShortcutsSettingsView: View {
                 Form {
                     VStack {
                         VStack {
-                            Spacer()
-                            Text("Paste Without Formatting Shortcut: ")
-                            
-                            Spacer()
-                            
-                            CustomShortcutView(shortcut: $pasteWithoutFormattingShortcutInput)
-                            
-                        }.padding()
-                        
-                        VStack {
                             Text("Toggle Show/Hide Window Shortcut: ")
                             
                             Spacer()
                             
                             CustomShortcutView(shortcut: $toggleWindowShortcutInput)
                             
-                        }.padding()
+                        }.padding(.top)
+                        .padding(.leading)
+                        .padding(.trailing)
                         
                         VStack {
                             Text("Reset Window Shortcut: ")
@@ -692,7 +784,44 @@ struct ShortcutsSettingsView: View {
                             
                             CustomShortcutView(shortcut: $resetWindowShortcutInput)
                             
-                        }.padding()
+                        }.padding(.leading)
+                        .padding(.trailing)
+                        
+                        
+                        VStack {
+                            Spacer()
+                            Text("Paste Without Formatting Shortcut: ")
+                            
+                            Spacer()
+                            
+                            CustomShortcutView(shortcut: $pasteWithoutFormattingShortcutInput)
+                            
+                        }.padding(.top)
+                        .padding(.leading)
+                        .padding(.trailing)
+                        
+                        VStack {
+                            Spacer()
+                            Text("Paste Lowercase Without Formatting Shortcut: ")
+                            
+                            Spacer()
+                            
+                            CustomShortcutView(shortcut: $pasteLowerShortcutInput)
+                            
+                        }.padding(.leading)
+                        .padding(.trailing)
+                        
+                        VStack {
+                            Spacer()
+                            Text("Paste Uppercase Without Formatting Shortcut: ")
+                            
+                            Spacer()
+                            
+                            CustomShortcutView(shortcut: $pasteUpperShortcutInput)
+                            
+                        }.padding(.leading)
+                        .padding(.trailing)
+                        
                         
                         Spacer()
                         
