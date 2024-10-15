@@ -11,38 +11,49 @@ import Foundation
 
 struct SearchBarView: View {
     @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
+    @ObservedObject var viewStateManager = ViewStateManager.shared
     let windowManager = WindowManager.shared
     
-    @Binding var searchText: String
+    
     @Binding var showAlert: Bool
     @Binding var isSelectingCategory: Bool
     @Binding var searchItemCount: Int
     @Binding var fetchedItemCount: Int
+    
+    @State var currSearchText: String = ""
+    
+    @State private var forceStateUpdate: Bool = false
     @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
         ZStack(alignment: .leading) {
             HStack {
-//                Image(systemName: "magnifyingglass")
-//                    .foregroundColor(userDefaultsManager.darkMode ? .white : .black)
-//                    .padding(.leading, 8)
-//                    .onTapGesture {
-//                        isTextFieldFocused = false
-//                        print(userDefaultsManager.darkMode)
-//                    }
 
-                ClearTextField(placeholder: "Search", text: $searchText)
+                ClearTextField(placeholder: "Search", text: $currSearchText)
                     .focused($isTextFieldFocused)
                     .padding(.top, 2)
                     .padding(.bottom, 4)
-                    .padding(.trailing, searchText.isEmpty ? 21 : 0)
+                    .padding(.trailing, currSearchText.isEmpty ? 21 : 0)
                     .help("Search Bar")
+                    .onChange(of: self.viewStateManager.isSearchFocused) {
+                        self.isTextFieldFocused = self.viewStateManager.isSearchFocused
+//                        self.forceFocusUpdate.toggle()
+                    }
+                    .onChange(of: self.isTextFieldFocused) {
+                        if isTextFieldFocused {
+                            self.viewStateManager.isSearchFocused = true
+                        }
+                    }
+                    .onChange(of: self.currSearchText) {
+                        self.viewStateManager.searchText = self.currSearchText
+                    }
                     
 
-                if !searchText.isEmpty {
+                if !self.currSearchText.isEmpty {
                     Button(action: {
-                        searchText = ""
-                        isTextFieldFocused = false
+                        self.currSearchText = ""
+                        self.viewStateManager.searchText = ""
+                        self.viewStateManager.isSearchFocused = false
                     }) {
                         Image(systemName: "xmark.circle.fill")
                             .padding(.trailing, -2)
@@ -54,7 +65,11 @@ struct SearchBarView: View {
         }
         .onAppear {
             DispatchQueue.main.async {
-                isTextFieldFocused = false
+                self.viewStateManager.isSearchFocused = false
+                self.isTextFieldFocused = self.viewStateManager.isSearchFocused
+                
+                self.viewStateManager.searchText = ""
+                self.currSearchText = self.viewStateManager.searchText
             }
             setUpKeyboardHandling()
         }
@@ -65,41 +80,28 @@ struct SearchBarView: View {
             
             if event.type == .keyDown && !self.showAlert {
                 switch event.keyCode {
-                case 3:
-                    // Handle Command + F
-                    if event.modifierFlags.contains(.command) {
-                        DispatchQueue.main.async {
-                            self.isSelectingCategory = false
-                            self.isTextFieldFocused = true
-                        }
-//                        return nil // no more beeps
-                    }
                 case 53:
                     // Escape key
-                    // if searching and the search has 0 results, esc should clear the search
-                    if self.searchItemCount == 0 {
-                        self.searchText = ""
-                    }
-                    //                        // if searching and the search has 0 results, esc should clear the search
-                    else if self.isTextFieldFocused == false && self.isSelectingCategory == false &&
-                                (self.searchItemCount == 0 && self.fetchedItemCount != 0) {
-                        self.searchText = ""
-                    }
-                    // if not focused or selecting
-                    else if self.isTextFieldFocused == false {
-                        // if we didnt search for anything, hide the app
-                        if self.searchText == "" {
+                    DispatchQueue.main.async {
+                        if self.isSelectingCategory == true {
+                            self.isSelectingCategory = false
+                            self.viewStateManager.isSearchFocused = false
+                            self.isTextFieldFocused = self.viewStateManager.isSearchFocused
+                        }
+                        else if self.viewStateManager.searchText != "" || 
+                                    self.currSearchText != "" {
+                            self.viewStateManager.searchText = ""
+                            self.currSearchText = self.viewStateManager.searchText
+                            self.forceStateUpdate.toggle()
+                        }
+                        else if self.isTextFieldFocused == true {
+                            self.isSelectingCategory = false
+                            self.viewStateManager.isSearchFocused = false
+                            self.isTextFieldFocused = self.viewStateManager.isSearchFocused
+                        }
+                        else {
                             self.windowManager.hideApp()
                         }
-                        // otherwise clear the search
-                        else {
-                            self.searchText = ""
-                        }
-                    }
-                    // else stop searching or selecting categories
-                    else {
-                        self.isSelectingCategory = false
-                        self.isTextFieldFocused = false
                     }
                     return nil
                 default:

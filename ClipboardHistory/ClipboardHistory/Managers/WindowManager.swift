@@ -22,7 +22,10 @@ class WindowManager: ObservableObject {
     weak var clipboardManager: ClipboardManager?
     weak var menuManager: MenuManager?
     
+    var appDelegate: NSApplicationDelegate!
+    
     var contentView: AnyView!
+//    @State private var resetID = UUID()
 
     var window: NSWindow?
     var popover: NSPopover?
@@ -78,21 +81,33 @@ class WindowManager: ObservableObject {
         }
     }
     
-    func handleResetWindow() {
+    func handleResetWindow() {  
+        self.contentView = nil
+        self.contentView = AnyView(
+            ContentView()
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environmentObject(clipboardManager!)
+                .environmentObject(self)
+                .environmentObject(menuManager!)
+        )
+        
+        self.popover?.contentViewController?.view.window?.contentView = nil
+        self.popover?.contentViewController = nil
+        self.popover = nil
+        
+        self.window?.orderOut(nil)
+        self.window?.contentViewController = nil
+        self.window?.contentView = nil
+        self.window = nil
+        
         if userDefaultsManager.windowPopOut {
-            if self.window != nil {
-                window?.orderOut(nil)
-            }
-            self.window = nil
-            resetPopOutWindow()
+            
+            setupPopOutWindow()
         }
         else {
-            if window == nil {
-                setupWindow()
-            }
-            else {
-                resetWindow()
-            }
+            setupWindow()
+            // idk if this will work, but needed to not crash
+            self.window?.delegate = self.appDelegate as? any NSWindowDelegate
         }
     }
     
@@ -316,7 +331,7 @@ class WindowManager: ObservableObject {
             self.popover = NSPopover()
         }
                 
-        let hostingController = NSHostingController(rootView: self.contentView.focusable(true))
+        let hostingController = NSHostingController(rootView: self.contentView)
         let windowWidth: CGFloat = userDefaultsManager.windowWidth
         let windowHeight: CGFloat = userDefaultsManager.windowHeight
         hostingController.view.frame.size = CGSize(width: windowWidth, height: windowHeight)

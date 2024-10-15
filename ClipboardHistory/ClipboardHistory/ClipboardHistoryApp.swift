@@ -88,6 +88,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let userDefaultsManager: UserDefaultsManager?
     let windowManager: WindowManager?
     let menuManager: MenuManager?
+    let viewStateManager: ViewStateManager?
 
     
     
@@ -101,6 +102,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         self.userDefaultsManager = UserDefaultsManager.shared
         self.windowManager = WindowManager.shared
         self.menuManager = MenuManager.shared
+        self.viewStateManager = ViewStateManager.shared
         
         super.init()
         
@@ -182,7 +184,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if !UserDefaultsManager.shared.windowPopOut && UserDefaultsManager.shared.hideWindowWhenNotSelected {
             NotificationCenter.default.addObserver(self, selector: #selector(windowDidResignKey(_:)), name: NSWindow.didResignKeyNotification, object: nil)
         }
-        
+        self.windowManager?.appDelegate = self
         self.windowManager?.window?.delegate = self
     }
     

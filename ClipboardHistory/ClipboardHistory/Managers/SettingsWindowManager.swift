@@ -53,17 +53,14 @@ class SettingsWindowManager: ObservableObject {
         settingsWindow?.contentView = NSHostingView(rootView: settingsView)
         
         settingsWindow?.center()
-        settingsWindow?.orderFrontRegardless()
-        
+        settingsWindow?.makeKeyAndOrderFront(nil)  // Make it the key window and bring to front
+        NSApplication.shared.activate(ignoringOtherApps: true)  // Ensure the app is active
+
         //            settingsWindow?.standardWindowButton(.closeButton)?.isHidden = true
         settingsWindow?.standardWindowButton(.miniaturizeButton)?.isHidden = true
         settingsWindow?.standardWindowButton(.zoomButton)?.isHidden = true
-        
-        settingsWindow?.isReleasedWhenClosed = false // Keep the window alive
-        
-        
-        settingsWindow?.makeKeyAndOrderFront(nil)
-        NSApplication.shared.activate(ignoringOtherApps: true)
+
+        settingsWindow?.isReleasedWhenClosed = false  // Keep the window alive
     }
     
     func closeSettingsWindow() {

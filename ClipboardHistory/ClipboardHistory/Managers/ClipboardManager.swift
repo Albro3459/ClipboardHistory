@@ -104,7 +104,7 @@ class ClipboardManager: ObservableObject {
                     searchTextMatch = group.itemsArray.contains(where: { $0.imageHash != nil }) ||
                     group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("image") ?? false })
                 }
-                else if ["text", "tex", "te", "tx", "txt", "note", "not"].contains(where: { searchText.hasPrefix($0) }) {
+                else if ["text", "tex", "tx", "txt", "note", "not"].contains(where: { searchText.hasPrefix($0) }) {
                     searchTextMatch = group.itemsArray.contains(where: { $0.type?.localizedCaseInsensitiveContains("text") ?? false })
                 }
                 else if ["folder", "fol", "fo", "dir", "dire", "direc", "direct", "directo", "director", "directory"].contains(where: { searchText.hasPrefix($0) }) {

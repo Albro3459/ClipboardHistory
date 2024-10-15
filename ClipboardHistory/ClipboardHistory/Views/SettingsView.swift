@@ -499,7 +499,7 @@ struct ClipboardSettingsView: View {
                                     maxStoreCountInput = min(checkInt, 150) // Ensure maxStoreCount does not exceed 150
                                     itemCountInput = "\(maxStoreCountInput)" // Update the text field with the valid value
                                 } else {
-                                    maxStoreCountInput = 0 // or some other default value if the input is invalid
+                                    maxStoreCountInput = 0 // or some other default value if the    input is invalid
                                 }
                             }
                             .onChange(of: maxStoreCountInput) {

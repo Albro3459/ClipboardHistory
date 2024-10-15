@@ -27,25 +27,17 @@ struct ContentView: View {
     @EnvironmentObject var clipboardManager: ClipboardManager
     
     @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
+    @ObservedObject var viewStateManager = ViewStateManager.shared
     let menuManager = MenuManager.shared
     let windowManager = WindowManager.shared
-    @ObservedObject var selectListManager = SelectListManager.shared
         
     @State private var showAlert = false
     @State private var activeAlert: ActiveAlert = .clear
 
     @State private var atTopOfList = true
-            
-    @State private var searchText = ""
-    @FocusState private var isFocused: Bool
-    @State private var isSearchFocused: Bool = false
     
     @State private var isSelectingCategory: Bool = false
     @State private var selectedTypes: Set<UUID> = []
-    
-    @State private var scrollToTop: Bool = false
-    @State private var scrollToBottom: Bool = false
-    @State private var justScrolledToTop: Bool = true
     
     @State private var imageSizeMultiple: CGFloat = 1
     
@@ -64,10 +56,9 @@ struct ContentView: View {
     
     @State private var searchItemCount: Int = 0
     @State private var fetchedItemCount: Int = 0
-//    @State private var selectList: [SelectedGroup] = []
     
     private var clipboardGroups: [ClipboardGroup] {
-        return clipboardManager.search(fetchedClipboardGroups: fetchedClipboardGroups, searchText: searchText, selectedTypes: selectedTypes)
+        return clipboardManager.search(fetchedClipboardGroups: fetchedClipboardGroups, searchText: self.viewStateManager.searchText, selectedTypes: selectedTypes)
     }
     
     var body: some View {
@@ -92,7 +83,7 @@ struct ContentView: View {
                 .foregroundColor(.clear)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    isFocused = false
+                    self.viewStateManager.isSearchFocused = false
                 }
             
             if clipboardManager.isCopied {
@@ -155,96 +146,34 @@ struct ContentView: View {
                 Color.white.opacity(0.1).flash(duration: 0.3)
             }
             
-            // Switched to popover for this
-//            if self.copyStatusChanged, let monitor = clipboardManager.clipboardMonitor {
-//                ZStack(alignment: .center) {
-//                    
-//                    ZStack(alignment: .top) {
-//                        Rectangle()
-//                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
-//                            .cornerRadius(8)
-//                        Rectangle()
-//                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
-//                            .frame(height: 10)
-//                            .zIndex(1)
-//                    }
-//                    Text("Copying \(monitor.isCopyingPaused ? "Paused" : "Resumed")!")
-//                        .font(.subheadline)
-//                        .bold()
-//                        
-//                        .cornerRadius(8)
-//                        .frame(alignment: .center)
-//                }
-//                .transition(.move(edge: .top).combined(with: .opacity))
-//                .animation(.easeInOut, value: monitor.isCopyingPaused)
-//                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
-//                .position(x: (monitor.isCopyingPaused ? 110 : 120)/2, y: -(self.windowHeight/2 - 24))
-//                .frame(width: (monitor.isCopyingPaused ? 110 : 120), height: 24)
-//                .zIndex(5)
-//            
-//                
-//                Color.white.opacity(0.1).flash(duration: 0.3)
-//            }
-//            
-            // Switched to popover for this
-//            // when copying fails due to copying being paused
-//            if let monitor = clipboardManager.clipboardMonitor, self.showCopyFailedFeedback || monitor.showCopyFailedFeedback {
-//                ZStack(alignment: .center) {
-//                    
-//                    ZStack(alignment: .top) {
-//                        Rectangle()
-//                            .foregroundColor(Color(.red))
-//                            .cornerRadius(8)
-//                        Rectangle()
-//                            .foregroundColor(Color(.red))
-//                            .frame(height: 10)
-//                            .zIndex(1)
-//                    }
-//                    Text("Copying is Paused!")
-//                        .font(.subheadline)
-//                        .bold()
-//                        .cornerRadius(8)
-//                        .frame(alignment: .center)
-//                }
-//                .transition(.move(edge: .top).combined(with: .opacity))
-//                .animation(.easeInOut, value: self.showCopyFailedFeedback)
-//                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
-//                .position(x: 120/2, y: -(self.windowHeight/2 - 24) )
-//                .frame(width: 120, height: 24)
-//                .zIndex(5)
-//            
-//                
-//                Color.red.opacity(0.1).flash(duration: 0.3)
-//            }
-            
             VStack {
                 HStack {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(darkMode ? .white : .black)
                         .padding(.leading, 8)
                         .onTapGesture {
-                            self.isSearchFocused = false
-                            self.isFocused = false
+                            self.viewStateManager.isSearchFocused = false
+//                            self.isFocused = false
                         }
                     
-                    SearchBarView(searchText: $searchText, showAlert: $showAlert, isSelectingCategory: $isSelectingCategory, searchItemCount: $searchItemCount, fetchedItemCount: $fetchedItemCount)
-                        .focused($isFocused)
+                    SearchBarView(showAlert: $showAlert, isSelectingCategory: $isSelectingCategory, searchItemCount: $searchItemCount, fetchedItemCount: $fetchedItemCount)
+//                        .focused($isFocused)
                         .padding(.trailing, (fetchedClipboardGroups.count <= 0) ? 10 : 0)
                         .onAppear() {
                             fetchedItemCount = fetchedClipboardGroups.count
-                            searchItemCount = selectListManager.selectList.count
+                            searchItemCount = viewStateManager.selectList.count
                         }
                         .onChange(of: fetchedClipboardGroups.count) {
                             fetchedItemCount = fetchedClipboardGroups.count
                         }
-                        .onChange(of: selectListManager.selectList.count) {
-                            searchItemCount = selectListManager.selectList.count
+                        .onChange(of: viewStateManager.selectList.count) {
+                            searchItemCount = viewStateManager.selectList.count
                         }
                     
                     if fetchedClipboardGroups.count > 0 {
                         Button(action: {
-                            isSelectingCategory.toggle()
-                            isFocused = false
+                            self.isSelectingCategory.toggle()
+                            self.viewStateManager.isSearchFocused = false
                         }) {
                             Image(systemName: "line.horizontal.3.decrease.circle")
                                 .foregroundColor(darkMode ? .white : .black)
@@ -261,25 +190,27 @@ struct ContentView: View {
                         
                         
                         Button(action: {
-                            if !atTopOfList && !justScrolledToTop {
-                                scrollToTop = true
-                                justScrolledToTop = true
-                                self.isSearchFocused = false
-                                self.isFocused = false
+                            if !self.atTopOfList && !self.viewStateManager.justScrolledToTop {
+                                self.viewStateManager.scrollToTop = true
+                                self.viewStateManager.justScrolledToTop = true
+                                
+                                self.viewStateManager.isSearchFocused = false
+//                                self.isFocused = false
                             }
-                            else if atTopOfList || justScrolledToTop {
-                                scrollToBottom = true
-                                justScrolledToTop = false
-                                self.isSearchFocused = false
-                                self.isFocused = false
+                            else if self.atTopOfList || self.viewStateManager.justScrolledToTop {
+                                self.viewStateManager.scrollToBottom = true
+                                self.viewStateManager.justScrolledToTop = false
+                                
+                                self.viewStateManager.isSearchFocused = false
+//                                self.isFocused = false
                             }
                         }) {
-                            Image(systemName: (!atTopOfList && !justScrolledToTop) ? "arrow.up.circle" : "arrow.down.circle")
+                            Image(systemName: (!self.atTopOfList && !self.viewStateManager.justScrolledToTop) ? "arrow.up.circle" : "arrow.down.circle")
                                 .foregroundColor(darkMode ? .white : .black)
                                 .padding(.trailing, 5)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        .help(!atTopOfList && !justScrolledToTop ? "Scroll to Top" : "Scroll to Bottom")
+                        .help(!self.atTopOfList && !self.viewStateManager.justScrolledToTop ? "Scroll to Top" : "Scroll to Bottom")
                     }
                     
                 }
@@ -299,28 +230,29 @@ struct ContentView: View {
                     
                     ScrollViewReader { scrollView in
                         LazyVStack(spacing: 0) {
-                            ForEach(selectListManager.selectList.indices, id: \.self) { index in
-                                if index >= 0 && index < selectListManager.selectList.count {
-                                    ClipboardGroupView(selectGroup: selectListManager.selectList[index], showAlert: $showAlert, activeAlert: $activeAlert, isSearchFocused: $isSearchFocused, isSelectingCategory: $isSelectingCategory, windowWidth: $windowWidth, openedFileFolderOrApp: $openedFileFolderOrApp,
+                            ForEach(viewStateManager.selectList.indices, id: \.self) { index in
+                                if index >= 0 && index < viewStateManager.selectList.count {
+                                    ClipboardGroupView(selectGroup: viewStateManager.selectList[index], showAlert: $showAlert, activeAlert: $activeAlert, isSelectingCategory: $isSelectingCategory, windowWidth: $windowWidth, openedFileFolderOrApp: $openedFileFolderOrApp,
                                                        isGroupSelected: Binding(
-                                                        get: { if index >= 0 && index < selectListManager.selectList.count { return self.clipboardManager.selectedGroup == selectListManager.selectList[index] }
+                                                        get: { if index >= 0 && index < viewStateManager.selectList.count { return self.clipboardManager.selectedGroup == viewStateManager.selectList[index] }
                                                             else { return false } },
                                                         set: { isSelected in
-                                                            if index >= 0 && index < selectListManager.selectList.count{
-                                                                self.clipboardManager.selectedGroup = isSelected ? selectListManager.selectList[index] : nil
+                                                            if index >= 0 && index < viewStateManager.selectList.count{
+                                                                self.clipboardManager.selectedGroup = isSelected ? viewStateManager.selectList[index] : nil
                                                             }
-                                                            isFocused = false
+//                                                            isFocused = false
+                                                            self.viewStateManager.isSearchFocused = false
                                                         }))
-                                    .id(selectListManager.selectList[index].group.objectID)
-                                    .animation((atTopOfList || userDefaultsManager.noDuplicates) ? .default : nil, value: selectListManager.selectList.first?.group.objectID)
+                                    .id(viewStateManager.selectList[index].group.objectID)
+                                    .animation((atTopOfList || userDefaultsManager.noDuplicates) ? .default : nil, value: viewStateManager.selectList.first?.group.objectID)
                                 }
                             }
                             
                         } //scrolls when using the arrow keys
                         .onChange(of: clipboardManager.selectedGroup, initial: false) {
-                            if let selectedGroup = clipboardManager.selectedGroup, let index = selectListManager.selectList.firstIndex(of: selectedGroup) {
+                            if let selectedGroup = clipboardManager.selectedGroup, let index = viewStateManager.selectList.firstIndex(of: selectedGroup) {
                                 withAnimation(.easeInOut(duration: 0.5)) {
-                                    scrollView.scrollTo(selectListManager.selectList[index].group.objectID)
+                                    scrollView.scrollTo(viewStateManager.selectList[index].group.objectID)
                                 }
                             }
                         }
@@ -331,32 +263,32 @@ struct ContentView: View {
                                 }
                             }
                             else {
-                                if let selectedGroup = clipboardManager.selectedGroup, let index = selectListManager.selectList.firstIndex(of: selectedGroup) {
+                                if let selectedGroup = clipboardManager.selectedGroup, let index = viewStateManager.selectList.firstIndex(of: selectedGroup) {
                                         withAnimation(.easeInOut(duration: 0.5)) {
-                                            scrollView.scrollTo(selectListManager.selectList[index].group.objectID, anchor: (selectedGroup.isExpanded && clipboardManager.selectedItem == nil) ? .top : nil)
+                                            scrollView.scrollTo(viewStateManager.selectList[index].group.objectID, anchor: (selectedGroup.isExpanded && clipboardManager.selectedItem == nil) ? .top : nil)
                                         }
 //                                    }
                                 }
                             }
                         }
                         
-                        .onChange(of: scrollToTop, initial: false) {
-                            if selectListManager.selectList.count > 0 {
+                        .onChange(of: self.viewStateManager.scrollToTop, initial: false) {
+                            if viewStateManager.selectList.count > 0 {
                                 withAnimation() {
-                                    scrollView.scrollTo(selectListManager.selectList.first?.group.objectID, anchor: .top)
-                                    scrollToTop = false
-                                    justScrolledToTop = true
-                                    clipboardManager.selectedGroup = selectListManager.selectList.first
+                                    scrollView.scrollTo(viewStateManager.selectList.first?.group.objectID, anchor: .top)
+                                    self.viewStateManager.scrollToTop = false
+                                    self.viewStateManager.justScrolledToTop = true
+                                    clipboardManager.selectedGroup = viewStateManager.selectList.first
                                 }
                             }
                         }
-                        .onChange(of: scrollToBottom, initial: false) {
-                            if selectListManager.selectList.count > 0 {
+                        .onChange(of: self.viewStateManager.scrollToBottom, initial: false) {
+                            if viewStateManager.selectList.count > 0 {
                                 withAnimation() {
-                                    scrollView.scrollTo(selectListManager.selectList.last?.group.objectID)
-                                    scrollToBottom = false
-                                    justScrolledToTop = false
-                                    clipboardManager.selectedGroup = selectListManager.selectList.last
+                                    scrollView.scrollTo(viewStateManager.selectList.last?.group.objectID)
+                                    self.viewStateManager.scrollToBottom = false
+                                    self.viewStateManager.justScrolledToTop = false
+                                    clipboardManager.selectedGroup = viewStateManager.selectList.last
                                 }
                             }
                         }
@@ -406,7 +338,7 @@ struct ContentView: View {
                                         clipboardManager.deleteItem(item: item, viewContext: viewContext, shouldSave: true)
                                 }
                                 else {
-                                    clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: selectListManager.selectList, viewContext: viewContext)
+                                    clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: viewStateManager.selectList, viewContext: viewContext)
                                 }
                             },
                             secondaryButton: .cancel()
@@ -414,37 +346,34 @@ struct ContentView: View {
                     }
                 }
                 .onAppear {
-                    clipboardManager.selectedGroup = selectListManager.selectList.first
+                    clipboardManager.selectedGroup = viewStateManager.selectList.first
                 }
 
             }
             .onAppear {
-                clipboardManager.selectedGroup = selectListManager.selectList.first
+                clipboardManager.selectedGroup = viewStateManager.selectList.first
                 darkMode = userDefaultsManager.darkMode
                 setUpKeyboardHandling()
                 initializeSelectList()
             }
             .onChange(of: clipboardGroups.count) { oldValue, newValue in
                 if clipboardGroups.count == 1 {
-                    clipboardManager.selectedGroup = selectListManager.selectList.first
+                    clipboardManager.selectedGroup = viewStateManager.selectList.first
                 }
                 initializeSelectList()
             }
             .onChange(of: clipboardGroups.first) { oldValue, newValue in
                 // when last item gets deleted and so the count doesnt change
                 if clipboardGroups.count == 1 {
-                    clipboardManager.selectedGroup = selectListManager.selectList.first
+                    clipboardManager.selectedGroup = viewStateManager.selectList.first
                 }
                 initializeSelectList()
             }
-            .onChange(of: selectListManager.selectList.first) { oldValue, newValue in
+            .onChange(of: viewStateManager.selectList.first) { oldValue, newValue in
                 // is user wants no dupes, then select the top when a new copy comes in
                 if userDefaultsManager.noDuplicates {
-                    clipboardManager.selectedGroup = selectListManager.selectList.first
+                    clipboardManager.selectedGroup = viewStateManager.selectList.first
                 }
-            }
-            .onChange(of: isFocused) {
-                isSearchFocused = isFocused
             }
             .onChange(of: userDefaultsManager.darkMode) {
                 darkMode = userDefaultsManager.darkMode
@@ -458,7 +387,7 @@ struct ContentView: View {
                     }
                 }
             }
-            // I dont think this is ever triggered because pauseCopying is not published, but the onReceives below work
+            // triggered when settings changed
             .onChange(of: userDefaultsManager.pauseCopying) {
                 DispatchQueue.main.async {
                     self.copyStatusChanged = true
@@ -486,7 +415,7 @@ struct ContentView: View {
     }
     
     func initializeSelectList() {
-        self.selectListManager.selectList = clipboardGroups.map { clipboardGroup in
+        self.viewStateManager.selectList = clipboardGroups.map { clipboardGroup in
             let isExpanded = self.findExpandedState(for: clipboardGroup)
             return SelectedGroup(group: clipboardGroup, isExpanded: isExpanded)
         }
@@ -494,7 +423,7 @@ struct ContentView: View {
     
     func findExpandedState(for inputGroup: ClipboardGroup) -> Bool {
         // if this group was already in selectList, return its isExpanded
-        return selectListManager.selectList.first(where: { $0.group == inputGroup })?.isExpanded ?? false
+        return viewStateManager.selectList.first(where: { $0.group == inputGroup })?.isExpanded ?? false
     }
     
     private func clearClipboardItems() {
@@ -519,12 +448,12 @@ struct ContentView: View {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             var currentIndex: Int?
             if let group = clipboardManager.selectedGroup {
-                currentIndex = selectListManager.selectList.firstIndex(of: group)
+                currentIndex = viewStateManager.selectList.firstIndex(of: group)
 //                print("\(currentIndex)\n")
             }
             if currentIndex == nil {
-                if !selectListManager.selectList.isEmpty {
-                    clipboardManager.selectedGroup = selectListManager.selectList[0]
+                if !viewStateManager.selectList.isEmpty {
+                    clipboardManager.selectedGroup = viewStateManager.selectList[0]
                     if let group = clipboardManager.selectedGroup?.group, group.count == 1 {
                     clipboardManager.selectedGroup?.selectedItem = clipboardManager.selectedGroup?.group.itemsArray.first
                     }
@@ -551,7 +480,7 @@ struct ContentView: View {
                     }
                 case 8:
                     if event.modifierFlags.contains(.command) {
-                        if !isFocused || !isSelectingCategory {
+                        if !self.viewStateManager.isSearchFocused || !isSelectingCategory {
                             // Handle Command + C
                             if clipboardManager.selectedItem != nil {
                                 clipboardManager.copySelectedItemInGroup()
@@ -564,7 +493,7 @@ struct ContentView: View {
                     }
                 case 51:
                     // Handle Command + Del
-                    if !isFocused || !isSelectingCategory {
+                    if !self.viewStateManager.isSearchFocused || !isSelectingCategory {
 
                         if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) {
                             DispatchQueue.main.async {
@@ -584,10 +513,10 @@ struct ContentView: View {
                 case 3:
                     if event.modifierFlags.contains(.command) {
                         // Handle Command + F
-                        DispatchQueue.main.async {
-                            isSelectingCategory = false
-                            isFocused = true
-                        }
+                        
+                        isSelectingCategory = false
+                        self.viewStateManager.isSearchFocused = true
+                       
                         return nil // no more beeps
                     }
                 case 35:
@@ -599,45 +528,19 @@ struct ContentView: View {
                             return nil // no more beeps
                         }
                     }
-                    
-//                case 53:
-//                    // Escape key
-//                    DispatchQueue.main.async {
-////                        // if searching and the search has 0 results, esc should clear the search
-////                        if self.isSelectingCategory == false && (self.selectListManager.selectList.count == 0 && self.fetchedClipboardGroups.count != 0) {
-////                            searchText = ""
-////                        }
-//                        // if not focused or selecting
-//                        if self.isFocused == false && self.isSelectingCategory == false {
-//                            // if we didnt search for anything, hide the app
-//                            if searchText == "" {
-//                                self.windowManager.hideApp()
-//                            }
-//                            // otherwise clear the search
-//                            else {
-//                                searchText = ""
-//                            }
-//                        }
-//                        // else stop searching or selecting categories
-//                        else {
-//                            isSelectingCategory = false
-//                            isFocused = false
-//                        }
-//                    }
-//                    return nil
                 case 126:
                     // Handle up arrow
-                    isFocused = false
+                    self.viewStateManager.isSearchFocused = false
                     isSelectingCategory = false
                     
                     if event.modifierFlags.contains(.command) {
-                        scrollToTop = true
-                        justScrolledToTop = true
+                        self.viewStateManager.scrollToTop = true
+                        self.viewStateManager.justScrolledToTop = true
                     }
                     else {
                         if let currIndex = currentIndex, currIndex - 1 >= 0 {
-                            let aboveGroup = selectListManager.selectList[currIndex - 1]
-                            let currGroup = selectListManager.selectList[currIndex]
+                            let aboveGroup = viewStateManager.selectList[currIndex - 1]
+                            let currGroup = viewStateManager.selectList[currIndex]
                             
                             if currGroup.isExpanded {
                                 if let selectedItem = clipboardManager.selectedItem {
@@ -675,7 +578,7 @@ struct ContentView: View {
                         }
                         else if let currIndex = currentIndex {
                             // at the top of the selectList, but group is expanded
-                            let currGroup = selectListManager.selectList[currIndex]
+                            let currGroup = viewStateManager.selectList[currIndex]
                             if currGroup.isExpanded {
                                 if let selectedItem = clipboardManager.selectedItem {
                                     if let itemIndex = currGroup.group.itemsArray.firstIndex(where: { $0 == selectedItem }) {
@@ -694,19 +597,19 @@ struct ContentView: View {
                     return nil //no more beeps
                 case 125:
                     // Handle down arrow
-                    isFocused = false
-                    isSelectingCategory = false
+                    self.viewStateManager.isSearchFocused = false
+                    self.isSelectingCategory = false
 //                    print("down")
                     
                     if event.modifierFlags.contains(.command) {
-                        scrollToBottom = true
-                        justScrolledToTop = false
+                        self.viewStateManager.scrollToBottom = true
+                        self.viewStateManager.justScrolledToTop = false
                     }
                     else {
                         //print("a")
-                        if let currIndex = currentIndex, currIndex < selectListManager.selectList.count - 1 {
+                        if let currIndex = currentIndex, currIndex < viewStateManager.selectList.count - 1 {
                             //print("b")
-                            let currGroup = selectListManager.selectList[currIndex]
+                            let currGroup = viewStateManager.selectList[currIndex]
                             if currGroup.isExpanded {
                                 //print("c")
                                 if let selectedItem = clipboardManager.selectedItem {
@@ -717,9 +620,9 @@ struct ContentView: View {
                                         clipboardManager.selectedItem = currGroup.group.itemsArray[currItemIndex + 1]
                                     } else {
                                         //print("f")
-                                        if currIndex + 1 < selectListManager.selectList.count {
+                                        if currIndex + 1 < viewStateManager.selectList.count {
                                             //print("g")
-                                            clipboardManager.selectedGroup = selectListManager.selectList[currIndex + 1]
+                                            clipboardManager.selectedGroup = viewStateManager.selectList[currIndex + 1]
                                             clipboardManager.selectedItem = nil
                                         }
                                         //print("h")
@@ -731,9 +634,9 @@ struct ContentView: View {
                             }
                             else {
                                 //print("j")
-                                if currIndex + 1 < selectListManager.selectList.count {
+                                if currIndex + 1 < viewStateManager.selectList.count {
                                     //print("k")
-                                    clipboardManager.selectedGroup = selectListManager.selectList[currIndex + 1]
+                                    clipboardManager.selectedGroup = viewStateManager.selectList[currIndex + 1]
                                     clipboardManager.selectedItem = nil
                                 }
                                 else {
@@ -744,7 +647,7 @@ struct ContentView: View {
                         else if let currIndex = currentIndex {
                             //print("m")
                             // at bottom of selectList, but group is expanded
-                            let currGroup = selectListManager.selectList[currIndex]
+                            let currGroup = viewStateManager.selectList[currIndex]
                             if currGroup.isExpanded {
                                 //print("n")
                                 if let selectedItem = clipboardManager.selectedItem {
@@ -756,9 +659,9 @@ struct ContentView: View {
                                     }
                                     else {
                                         //print("q")
-                                        if currIndex + 1 < selectListManager.selectList.count {
+                                        if currIndex + 1 < viewStateManager.selectList.count {
                                             //print("r")
-                                            clipboardManager.selectedGroup = selectListManager.selectList[currIndex + 1]
+                                            clipboardManager.selectedGroup = viewStateManager.selectList[currIndex + 1]
                                             clipboardManager.selectedItem = nil
                                         }
                                         else {
@@ -781,7 +684,7 @@ struct ContentView: View {
                 case 123:
 //                    print("left arrow")
                     
-                    isFocused = false
+                    self.viewStateManager.isSearchFocused = false
                     isSelectingCategory = false
                     
                     if clipboardManager.selectedGroup?.isExpanded == true {
@@ -795,25 +698,25 @@ struct ContentView: View {
                     return nil
                 case 115, 116:
                     // Handle Home or Page Up Key action
-                    scrollToTop = true
+                    self.viewStateManager.scrollToTop = true
                     return nil
                 case 119, 121:
                     // Handle End or Page Down Key action
-                    scrollToBottom = true
+                    self.viewStateManager.scrollToBottom = true
                     return nil
                 case 33:
                     // handle cmd + [
-                    if !isFocused || !isSelectingCategory {
+                    if !self.viewStateManager.isSearchFocused || !isSelectingCategory {
                         if event.modifierFlags.contains(.command) {
-                            clipboardManager.expandAll(for: self.selectListManager.selectList)
+                            clipboardManager.expandAll(for: self.viewStateManager.selectList)
                             return nil
                         }
                     }
                 case 30:
                     // handle cmd + ]
-                    if !isFocused || !isSelectingCategory {
+                    if !self.viewStateManager.isSearchFocused || !isSelectingCategory {
                         if event.modifierFlags.contains(.command) {
-                            clipboardManager.contractAll(for: self.selectListManager.selectList)
+                            clipboardManager.contractAll(for: self.viewStateManager.selectList)
                             return nil
                         }
                     }
@@ -833,8 +736,9 @@ struct ClipboardGroupView: View {
     
     @EnvironmentObject var clipboardManager: ClipboardManager
     
+    @ObservedObject var viewStateManager = ViewStateManager.shared
+
     let userDefaultsManager = UserDefaultsManager.shared
-    @ObservedObject var selectListManager = SelectListManager.shared
     let windowManager = WindowManager.shared
     let settingsWindowManager = SettingsWindowManager.shared
     
@@ -843,7 +747,6 @@ struct ClipboardGroupView: View {
     @Binding var showAlert: Bool
     @Binding var activeAlert: ActiveAlert
     
-    @Binding var isSearchFocused: Bool
     @Binding var isSelectingCategory: Bool
     
     @Binding var windowWidth: CGFloat
@@ -1038,9 +941,9 @@ struct ClipboardGroupView: View {
                     switch event.keyCode {
                     case 124:
                         // right arrow to expand group
-                        self.isSearchFocused = false
+                        self.viewStateManager.isSearchFocused = false
                         self.isSelectingCategory = false
-                        if !self.isSearchFocused || !self.isSelectingCategory {
+                        if !self.viewStateManager.isSearchFocused || !self.isSelectingCategory {
                             if currSelectGroup.group.count > 1 {
                                 self.clipboardManager.expand(for: currSelectGroup)
                             }
@@ -1048,11 +951,11 @@ struct ClipboardGroupView: View {
                         return nil
                     case 123:
                         // left arrow to contract group
-                        self.isSearchFocused = false
+                        self.viewStateManager.isSearchFocused = false
                         self.isSelectingCategory = false
                         
                         // works like apple folder lself.ist view now
-                        if !self.isSearchFocused || !self.isSelectingCategory {
+                        if !self.viewStateManager.isSearchFocused || !self.isSelectingCategory {
                             if currSelectGroup.group.count > 1 {
                                 if self.clipboardManager.selectedGroup?.self.isExpanded == true {
                                     if self.clipboardManager.selectedItem != nil {
@@ -1067,7 +970,7 @@ struct ClipboardGroupView: View {
                         return nil
                     case 36, 76:
                         // Handle Enter or Return
-                        if !self.isSearchFocused || !self.isSelectingCategory {
+                        if !self.viewStateManager.isSearchFocused || !self.isSelectingCategory {
                             if event.modifierFlags.contains(.command) {
                                 // this is where I would open the file/folder
                                 if let selectedGroup = self.clipboardManager.selectedGroup {
@@ -1176,7 +1079,7 @@ struct ClipboardItemView: View {
     
     @EnvironmentObject var clipboardManager: ClipboardManager
     
-    @ObservedObject var selectListManager = SelectListManager.shared
+    @ObservedObject var viewStateManager = ViewStateManager.shared
     
     var item: ClipboardItem
     
