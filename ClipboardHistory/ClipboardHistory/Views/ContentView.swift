@@ -1142,12 +1142,12 @@ struct ClipboardItemView: View {
                     Image(nsImage: nsImage)
                         .resizable()
                         .scaledToFit()
-                        .frame(idealWidth: 45,  maxHeight: 60 * imageSizeMultiple)
+                        .frame(idealWidth: 60,  maxHeight: 60 * imageSizeMultiple)
                         .cornerRadius(8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(.black), lineWidth: 1)
-                        )
+//                        .overlay(
+//                            RoundedRectangle(cornerRadius: 8)
+//                                .stroke(Color(.black), lineWidth: 1)
+//                        )
                         .clipped()
                     
                     if let content = item.content {
@@ -1492,10 +1492,6 @@ private func itemIconView(_ item: ClipboardItem) -> some View {
                     .scaledToFill()
                     .frame(maxWidth: 80, maxHeight: 60, alignment: .center)
                     .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(.black), lineWidth: 1)
-                    )
                     .clipped()
                 
         }

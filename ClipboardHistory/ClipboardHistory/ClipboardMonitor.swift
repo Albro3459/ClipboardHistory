@@ -704,13 +704,19 @@ class ClipboardMonitor: ObservableObject {
             return
         }
         
+        guard FileManager.default.fileExists(atPath: filePath) else {
+            print("File does not exist at path: \(filePath)")
+            completion(nil)
+            return
+        }
+        
         let fileURL = URL(fileURLWithPath: filePath)
         let size = CGSize(width: 100, height: 100)
         let scale = NSScreen.main?.backingScaleFactor ?? 1.0
-        let request = QLThumbnailGenerator.Request(fileAt: fileURL, size: size, scale: scale, representationTypes: .thumbnail)
+        let request = QLThumbnailGenerator.Request(fileAt: fileURL, size: size, scale: scale, representationTypes: .icon)
         
         QLThumbnailGenerator.shared.generateRepresentations(for: request) { (thumbnail, _, error) in
-            if let error = error {
+            if thumbnail == nil || error != nil, let error = error {
                 print("Thumbnail generation failed: \(error)")
                 completion(nil)
             } else if let thumbnail = thumbnail {
