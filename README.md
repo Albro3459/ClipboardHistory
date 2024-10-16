@@ -94,15 +94,15 @@
   </details>
 
 * <details>
-    <summary>Instructions if you want to build the project yourself:</summary>
+    <summary>!! **IMPORTANT** Instructions if you want to build the project yourself:</summary>
+  
+  * you will need XCode, I'm on Version 15.3  
 
-  * btw if you clone the repo to run it, it is in sandbox mode, so some things will break.
+  * !! **IMPORTANT** if you clone the repo to run it, it is in sandbox mode, so some things will break.
       * to disable the sandbox, you can go to the ClipboardHistory.xcodeproj > Target: ClipboardHistory > Build Settings then search for entitlements and change the debug one to the release one.
       * instead, the downloads from the Releases tab and Google Drive are NOT sandboxed, so everything will work
 
-  * you will need XCode, I'm on Version 15.3  
-
-  * before you run anything, in XCode, you have to run the following every time you switch branches, you MUST do this again. the project is dependent on the KeyboardShortcuts package:
+  * !! **IMPORTANT** before you run anything, in XCode, you have to run the following every time. you also have to run after switching branches because the project is dependent on the KeyboardShortcuts package:
     * Go to File > Packages > click Reset Package Caches
     * Go to File > Packages > click Resolve Package Versions
       * every time you switch branches, you MUST do this again. the project is dependent on the KeyboardShortcuts package
