@@ -1,27 +1,11 @@
-## ClipboardHistory, a Mac clipboard history manager like Clipboard History from Windows
-#### Download link to try it out! [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
+## ClipboardHistory, a Mac clipboard history manager inspired by the Windows version
 
+### Info and About the app:
 <details>
-  <summary>Instructions for running the project in XCode</summary>
+  <summary>Info & About:</summary>
 
- * btw if you clone the repo to run it, it is in sandbox mode, so some things will break.
-    * the download from Google Drive is NOT sandboxed, so everything will work
-
- * you will need XCode, I'm on Version 15.3  
-
- * before you run anything, in XCode, you have to go to File > Packages > Resolve Package Versions
-     * every time you switch branches, you MUST do this again. the project is dependent on the KeyboardShortcuts package
-</details>
-
-<br></br>
-
-<details>
-  <summary>Info and About Section</summary>
-
- * scroll to the very bottom for install instructions
-
-* it is fully built by me, Alex Brodsky, in Swift for Mac OS 14.4 
-    * I could try lowering the required MacOS version if you want to try the app, email is in bio
+* the app is fully built by me, Alex Brodsky a CS student, in Swift for Mac OS 14.4 
+    * I could try lowering the required MacOS version if you want to try the app, my email is brodsky.alex22@gmail.com
 
 * it opens on the bottom right on all the desktop windows by default
 
@@ -45,64 +29,15 @@
     * maybe pinning items
 </details>
 
-<br></br>
-
-### Screenshots:
-<div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 40px;">
-    <img src="https://github.com/user-attachments/assets/5159adc7-daa6-439a-8380-c28f2f8c5863" alt="example screen shot" height="300"/>
-    <img src="https://github.com/user-attachments/assets/48884218-41e7-4273-bba7-6753feceb33d" alt="example popup window" height="300"/>
-    <img src="https://github.com/user-attachments/assets/0fc2feba-a20e-4bb0-a75e-d8a2747b75ff" alt="example screen shot with open group" height="300"/>
-    <img src="https://github.com/user-attachments/assets/816caec4-2adb-4f34-90f7-335faee855d1" alt="example folder search screen shot" height="300"/>
-</div>
-
-<br></br>
-
-### Tips for using the app:
-<details>
-  <summary>Tips</summary>
-
-* see the ListOfKeyboardShortcuts.md file for the full list of keyboard shortcuts, or scroll to the bottom
-
-* these can be changed:
-    - cmd + shift + c: open and close window
-    - option + r: reset window
-    - cmd + shift + v: paste without formatting
-
-* cmd + shift + c is default for showing/hiding the app
-    * also click the menu bar icon to show the app
-
-* use the mouse or arrow keys to select items
-    * scroll arrow button, cmd + up/down arrow, or page up/down to scroll up or down
-
-* double-click, enter, or copy button to copy an item/group
-
-* delete button or cmd + delete to delete an item/group
-
-* expand button or right-arrow when selecting group to expand
-
-* expand button or left-arrow on group to contract
-
-* cmd + f to search
-
-* escape takes you out of search or selecting clipboard types
-
-* option + r resets the window size and shows it
-
-* cmd + shift + v for paste without formatting anywhere on your computer!
-
-* the open button next to files and folders opens the file or folder
-</details>
-
-<br></br>
-
 ### Installation Guide:
+ * the download link is under the Releases tab on GitHub or [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing) to try it out!
 <details>
   <summary>Installation Guide</summary>
 
  * this application is set up to only work with MacOS 14.4+
     * if you're on a lower MacOS, email me: brodsky.alex22@gmail.com, and I'll try to a different version
 
-* download the zip from [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
+* download the zip from the Releases tab on GitHub or [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
 
 * unzip it
 
@@ -140,7 +75,59 @@
         * again, you can turn this off in the settings
 </details>
 
-<br></br>
+<details>
+  <summary>Instructions if you want to build the project yourself</summary>
+
+ * btw if you clone the repo to run it, it is in sandbox mode, so some things will break.
+    * to disable the sandbox, you can go to the ClipboardHistory.xcodeproj > Target: ClipboardHistory > Build Settings then search for entitlements and change the debug one to the release one.
+    * instead, the downloads from the Releases tab and Google Drive are NOT sandboxed, so everything will work
+
+ * you will need XCode, I'm on Version 15.3  
+
+ * before you run anything, in XCode, you have to go to File > Packages > Resolve Package Versions
+     * every time you switch branches, you MUST do this again. the project is dependent on the KeyboardShortcuts package
+</details>
+
+
+### Tips for using the app:
+<details>
+  <summary>Tips</summary>
+
+* see the ListOfKeyboardShortcuts.md file for the full list of keyboard shortcuts, or scroll to the bottom
+
+* these can be changed:
+    - cmd + shift + c: open and close window
+    - option + r: reset window
+    - cmd + shift + v: paste without formatting
+    - option + shift + l: paste All Lowercase without formatting
+    - option + shift + u: paste All Uppercase without formatting
+
+* cmd + shift + c is default for showing/hiding the app
+    * also click the menu bar icon to show the app
+
+* use the mouse or arrow keys to select items
+    * scroll arrow button, cmd + up/down arrow, or page up/down to scroll up or down
+
+* double-click, enter, or copy button to copy an item/group
+
+* delete button or cmd + delete to delete an item/group
+
+* expand button or right-arrow when selecting group to expand
+
+* expand button or left-arrow on group to contract
+
+* cmd + f to search
+
+* escape takes you out of search or selecting clipboard types, or if not selecting anything, it hides the app
+
+* option + r resets the window size and shows it
+
+* cmd + shift + v for paste without formatting anywhere on your computer!
+
+* the open button next to files and folders opens the file, folder, or app
+</details>
+
+
 
 ### Here is a list of all the Keyboard Shortcuts:
 <details>
@@ -149,6 +136,8 @@
     - cmd + shift + c: open and close window
     - option + r: reset window
     - cmd + shift + v: paste without formatting
+    - option + shift + l: paste All Lowercase without formatting
+    - option + shift + u: paste All Uppercase without formatting
 </details>
 
 <details>
@@ -171,6 +160,8 @@
     - cmd + c: copy
     - enter || return: copy
 
+    - cmd + shift + p: toggle Pause/Resume copying
+
     - cmd + enter: open item
 
     - cmd + delete: delete selected item
@@ -185,8 +176,16 @@
     - cmd + down: scroll to bottom
     - page down: scroll to bottom
 
-    - esc: exit search or type selector
+    - esc: exit search or type selector, or if not selecting anything hide the app
 </details>
+
+### Screenshots:
+<div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 40px;">
+    <img src="https://github.com/user-attachments/assets/5159adc7-daa6-439a-8380-c28f2f8c5863" alt="example screen shot" height="300"/>
+    <img src="https://github.com/user-attachments/assets/48884218-41e7-4273-bba7-6753feceb33d" alt="example popup window" height="300"/>
+    <img src="https://github.com/user-attachments/assets/0fc2feba-a20e-4bb0-a75e-d8a2747b75ff" alt="example screen shot with open group" height="300"/>
+    <img src="https://github.com/user-attachments/assets/816caec4-2adb-4f34-90f7-335faee855d1" alt="example folder search screen shot" height="300"/>
+</div>
 
 
 <!-- <br />

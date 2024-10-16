@@ -892,17 +892,20 @@ struct ClipboardGroupView: View {
                     }
                     
                     .contentShape(Rectangle()) // Makes the entire area tappable
-                    .onTapGesture(count: 2) {
+                    .onTapGesture(count: 2) { // double tap detected immediately
                         isGroupSelected = true
                         clipboardManager.selectedGroup = selectGroup
                         clipboardManager.selectedItem = nil
                         clipboardManager.copySelectedGroup()
                     }
-                    .onTapGesture(count: 1) {
-                        isGroupSelected = true
-                        clipboardManager.selectedGroup = selectGroup
-                        clipboardManager.selectedItem = nil
-                    }
+                    .simultaneousGesture( // execute single-tap immediately
+                        TapGesture(count: 1).onEnded {
+                            // Single tap action
+                            isGroupSelected = true
+                            clipboardManager.selectedGroup = selectGroup
+                            clipboardManager.selectedItem = nil
+                        }
+                    )
                     .onChange(of: clipboardManager.selectedGroup?.isExpanded) {
                         if clipboardManager.selectedGroup?.isExpanded == false {
                             clipboardManager.selectedItem = nil
@@ -1412,7 +1415,7 @@ struct ClipboardItemView: View {
             }
         }
         .contentShape(Rectangle()) // Makes the entire area tappable
-        .onTapGesture(count: 2) {
+        .onTapGesture(count: 2) { // double tap detected immediately
             isSelected = true
             clipboardManager.selectedGroup = selectGroup
             if isPartOfGroup {
@@ -1424,16 +1427,18 @@ struct ClipboardItemView: View {
                 clipboardManager.copySingleGroup()
             }
         }
-        .onTapGesture(count: 1) {
-            isSelected = true
-            clipboardManager.selectedGroup = selectGroup
-            if isPartOfGroup {
-                clipboardManager.selectedItem = item
+        .simultaneousGesture( // execute single-tap immediately
+            TapGesture(count: 1).onEnded {
+                // Single tap action
+                isSelected = true
+                clipboardManager.selectedGroup = selectGroup
+                if isPartOfGroup {
+                    clipboardManager.selectedItem = item
+                } else {
+                    clipboardManager.selectedItem = nil
+                }
             }
-            else {
-                clipboardManager.selectedItem = nil
-            }
-        }
+        )
     }
 }
 
