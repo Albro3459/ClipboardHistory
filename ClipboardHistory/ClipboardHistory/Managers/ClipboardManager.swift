@@ -50,11 +50,9 @@ class ClipboardManager: ObservableObject {
             let typeMatch: Bool
             if selectedTypes.isEmpty || selectedTypeNames.contains("Select All") || selectedTypes.count == self.types.count {
                 typeMatch = true // No filtering by type when none or all are selected.
-                //                return true
             }
             else if selectedTypeNames.contains("Groups") && group.count > 1 {
                 typeMatch = true
-                //                return true
             }
             else {
                 typeMatch = group.itemsArray.contains { item in
@@ -80,7 +78,6 @@ class ClipboardManager: ObservableObject {
             
             if searchText.isEmpty {
                 return typeMatch
-                //                return true
             }
             else {
                 // Further filter by searchText if it is not empty.
@@ -242,7 +239,6 @@ class ClipboardManager: ObservableObject {
         
         if copied(item: nil) {
             if pasteboard.writeObjects(array as [NSPasteboardWriting]) {
-//                copied()
             }
             else {
                 print("Failed to write objects to pasteboard.")
@@ -361,7 +357,6 @@ class ClipboardManager: ObservableObject {
             
             // when we delete an item inside a group
             // we need to maintain the right selection
-//            print("***in itemm")
             selectGroup.group.count -= 1
             
             let groupCount = selectGroup.group.count

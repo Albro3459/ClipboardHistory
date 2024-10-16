@@ -48,8 +48,7 @@ struct ClipboardHistoryApp: App {
             "windowWidth": 300,
             "windowHeight": 500,
             "windowLocation": "Bottom Right",
-            "windowPopOut": false, // TODO
-//            "onlyPopOutWindow": false, // TODO
+            "windowPopOut": false,
             "canWindowFloat": false,
             "hideWindowWhenNotSelected": false,
             "windowOnAllDesktops": true,
@@ -219,22 +218,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         return false
     }
     
-    
-//    @objc func windowDidAppear(_ notification: Notification) {
-//        print("window appeared")
-//        NSApplication.shared.mainMenu = nil
-//        self.menuManager.updateMainMenu(isCopyingPaused: nil)
-//    }
-    
     @objc func windowDidResignKey(_ notification: Notification) {
 //        print("Window did resign key (unfocused)")
         // App lost focus
         
-//        print(UserDefaultsManager.shared.hideWindowWhenNotSelected)
         if UserDefaultsManager.shared.hideWindowWhenNotSelected {
             // Check if the current main window is the settings window
             if let mainWindow = NSApplication.shared.mainWindow, mainWindow.title == "ClipboardHistory" {
-                print("The main window is the settings window, not hiding it.")
+//                print("The main window is the settings window, not hiding it.")
             } else {
                 windowManager?.hideWindow()
             }
@@ -247,7 +238,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     
     func applicationWillTerminate(_ notification: Notification) {
         // Remove observers
-//        NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)
+
         if let userDefaultsManager = userDefaultsManager, userDefaultsManager.hideWindowWhenNotSelected {
             NotificationCenter.default.removeObserver(self, name: NSWindow.didResignKeyNotification, object: nil)
         }

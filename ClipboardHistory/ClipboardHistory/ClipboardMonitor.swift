@@ -658,7 +658,6 @@ class ClipboardMonitor: ObservableObject {
                 self.clearTmpImages()
             }
             
-            //        do {
             var totalItems = groups.reduce(0) { $0 + ($1.items?.count ?? 0) }
             
             while totalItems > self.maxItemCount {
@@ -669,10 +668,6 @@ class ClipboardMonitor: ObservableObject {
                     totalItems -= itemCount
                 }
             }
-            //            try childContext.save()
-            //        } catch {
-            //            print("Failed to clean up groups: \(error.localizedDescription)")
-            //        }
         }
     }
     
@@ -827,17 +822,6 @@ class ClipboardMonitor: ObservableObject {
         let appResourcesIconUrl = contentsUrl.appendingPathComponent("Resources").appendingPathComponent(iconFileName).appendingPathExtension(iconExtension)
 
         return NSImage(contentsOf: appResourcesIconUrl)
-        
-//        // find appIcon in its resources folder
-//        if let appIcon = NSImage(contentsOf: appResourcesIconUrl) {
-//            return appIcon
-//        }
-//        
-//        // if icon isn't found, check the system resources (typically default apps might store icon here)
-//        let systemResourcesUrl = URL(fileURLWithPath: "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/")
-//        let systemIconUrl = systemResourcesUrl.appendingPathComponent(iconFileName).appendingPathExtension(iconExtension)
-//
-//        return NSImage(contentsOf: systemIconUrl)
     }
     
     func sendCopyStatusCangeStateChangeToUI() {

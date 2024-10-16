@@ -37,7 +37,6 @@ struct SearchBarView: View {
                     .help("Search Bar")
                     .onChange(of: self.viewStateManager.isSearchFocused) {
                         self.isTextFieldFocused = self.viewStateManager.isSearchFocused
-//                        self.forceFocusUpdate.toggle()
                     }
                     .onChange(of: self.isTextFieldFocused) {
                         if isTextFieldFocused {
@@ -204,15 +203,12 @@ struct TypeDropDownMenu: View {
                 Rectangle()
                     .fill(.background)
                     .frame(height: 26)
-//                    .zIndex(1)
                 Text("Filter by type: ")
                     .fontWeight(.bold)
                     .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                     .padding(.top, 5)
-//                    .zIndex(2)
             }
             .frame(maxWidth: .infinity)
-//            .zIndex(2)
             
             
             List(clipboardManager.types, id: \.id, selection: $multiSelection) { type in
@@ -271,7 +267,6 @@ struct TypeDropDownMenu: View {
             }
             .scrollDisabled(true)
             .padding(.top, -11)
-//            .zIndex(0)
             .onChange(of: isSelectAll) {
                 if isSelectAll {
                     insertAll()
