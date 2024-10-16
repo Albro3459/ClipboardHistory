@@ -1,5 +1,7 @@
 ## ClipboardHistory, a Mac clipboard history manager inspired by the Windows version
 
+[Demo Video](https://youtu.be/p2S1_Rhee5o)
+
 ### A summary of why I built this app and what I've learned:
 * <details>
   <summary>Summary:</summary>
@@ -103,6 +105,7 @@
   * before you run anything, in XCode, you have to go to File > Packages > Resolve Package Versions
       * every time you switch branches, you MUST do this again. the project is dependent on the KeyboardShortcuts package
   </details>
+
 
 ---
 
