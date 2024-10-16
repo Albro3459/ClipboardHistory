@@ -5,14 +5,6 @@
 //  Created by Alex Brodsky on 8/30/24.
 //
 
-/*
- 
- setting where 'enter' key will hide the app after
- 
- self.enterKeyHidesAfterCopy = UserDefaults.standard.bool(forKey: "enterKeyHidesAfterCopy")
- */
-
-
 import Foundation
 import SwiftUI
 import KeyboardShortcuts
@@ -499,7 +491,7 @@ struct ClipboardSettingsView: View {
                                     maxStoreCountInput = min(checkInt, 150) // Ensure maxStoreCount does not exceed 150
                                     itemCountInput = "\(maxStoreCountInput)" // Update the text field with the valid value
                                 } else {
-                                    maxStoreCountInput = 0 // or some other default value if the    input is invalid
+                                    maxStoreCountInput = 0 // or some other default value if the input is invalid
                                 }
                             }
                             .onChange(of: maxStoreCountInput) {
@@ -722,14 +714,14 @@ struct WindowSettingsView: View {
     }
     
     private func handleWindowDidResignKey(_ notification: Notification) {
-        print("Window did resign key (unfocused)")
+//        print("Window did resign key (unfocused)")
         // App lost focus
         
         print(UserDefaultsManager.shared.hideWindowWhenNotSelected)
         if UserDefaultsManager.shared.hideWindowWhenNotSelected {
             // Check if the current main window is the settings window
             if let mainWindow = NSApplication.shared.mainWindow, mainWindow.title == "ClipboardHistory" {
-                print("The main window is the settings window, not hiding it.")
+//                print("The main window is the settings window, not hiding it.")
             } else {
                 WindowManager.shared.hideWindow()
             }

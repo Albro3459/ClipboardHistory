@@ -106,7 +106,7 @@ class WindowManager: ObservableObject {
         }
         else {
             setupWindow()
-            // idk if this will work, but needed to not crash
+            // needed to not crash when app is closed with 'x' button and then reopened
             self.window?.delegate = self.appDelegate as? any NSWindowDelegate
         }
     }
@@ -123,7 +123,6 @@ class WindowManager: ObservableObject {
         )
                                 
         NSApplication.shared.mainMenu = nil
-//        self.menuManager.setupMainMenu(isCopyingPaused: nil)
         self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
         
         if UserDefaultsManager.shared.windowPopOut {
@@ -258,7 +257,6 @@ class WindowManager: ObservableObject {
             let frame = CGRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
             window.setFrame(frame, display: true)
             
-//            if self.userDefaultsManager.canWindowFloat {
             if UserDefaultsManager.shared.canWindowFloat {
                 window.level = .floating
             }
@@ -271,16 +269,13 @@ class WindowManager: ObservableObject {
         //                print("Cmd-Shift-C pressed: Toggling window visibility")
         
         DispatchQueue.main.async {
-//            NSApplication.shared.activate(ignoringOtherApps: true)
             if let window = self.window {
                 if !window.isKeyWindow {
                     NSApplication.shared.activate(ignoringOtherApps: true)
                     window.makeKeyAndOrderFront(nil)
-//                    if self.userDefaultsManager.windowOnAllDesktops {
                     if UserDefaultsManager.shared.windowOnAllDesktops {
                         window.collectionBehavior = .canJoinAllSpaces
                     }
-//                    if self.userDefaultsManager.canWindowFloat {
                     if UserDefaultsManager.shared.canWindowFloat {
                         window.level = .floating
                     }
@@ -299,11 +294,9 @@ class WindowManager: ObservableObject {
             self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
             if let window = self.window {
                 window.makeKeyAndOrderFront(nil)
-//                if self.userDefaultsManager.windowOnAllDesktops {
                 if UserDefaultsManager.shared.windowOnAllDesktops {
                     window.collectionBehavior = .canJoinAllSpaces
                 }
-//                if self.userDefaultsManager.canWindowFloat {
                 if UserDefaultsManager.shared.canWindowFloat {
                     window.level = .floating
                 }
@@ -339,7 +332,6 @@ class WindowManager: ObservableObject {
         
         popover?.behavior = .transient // makes window close when you click outside of it
         
-        //testing
         if let popoverWindow = popover?.contentViewController?.view.window {
             popoverWindow.makeKeyAndOrderFront(nil)
             popoverWindow.makeFirstResponder(popoverWindow.contentView)
@@ -488,7 +480,7 @@ class WindowManager: ObservableObject {
 
 
 
-// this is how I can get the popover to have a custom background color
+// this is how I can get the popover to have a custom background color. found on stack overflow
 extension NSPopover {
     
     private struct Keys {

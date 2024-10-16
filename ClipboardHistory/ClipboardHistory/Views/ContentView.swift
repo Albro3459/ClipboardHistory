@@ -472,7 +472,7 @@ struct ContentView: View {
                             WindowManager.shared.hideWindow()
                         }
                         else if let popoverWindow = WindowManager.shared.popover?.contentViewController?.view.window, popoverWindow.isKeyWindow {
-//                            WindowManager.shared.hidePopOutWindow()
+                           // WindowManager.shared.hidePopOutWindow()
                             WindowManager.shared.hideWindow()
                             SettingsWindowManager.shared.closeSettingsWindow()
                         }
@@ -599,87 +599,58 @@ struct ContentView: View {
                     // Handle down arrow
                     self.viewStateManager.isSearchFocused = false
                     self.isSelectingCategory = false
-//                    print("down")
                     
                     if event.modifierFlags.contains(.command) {
                         self.viewStateManager.scrollToBottom = true
                         self.viewStateManager.justScrolledToTop = false
                     }
                     else {
-                        //print("a")
                         if let currIndex = currentIndex, currIndex < viewStateManager.selectList.count - 1 {
-                            //print("b")
                             let currGroup = viewStateManager.selectList[currIndex]
                             if currGroup.isExpanded {
-                                //print("c")
                                 if let selectedItem = clipboardManager.selectedItem {
-                                    //print("d")
                                     if let currItemIndex = currGroup.group.itemsArray.firstIndex(where: { $0 == selectedItem }),
                                        currItemIndex + 1 < currGroup.group.itemsArray.count {
-                                        //print("e")
                                         clipboardManager.selectedItem = currGroup.group.itemsArray[currItemIndex + 1]
                                     } else {
-                                        //print("f")
                                         if currIndex + 1 < viewStateManager.selectList.count {
-                                            //print("g")
                                             clipboardManager.selectedGroup = viewStateManager.selectList[currIndex + 1]
                                             clipboardManager.selectedItem = nil
                                         }
-                                        //print("h")
                                     }
                                 } else {
-                                    //print("i")
                                     clipboardManager.selectedItem = currGroup.group.itemsArray.first
                                 }
                             }
                             else {
-                                //print("j")
                                 if currIndex + 1 < viewStateManager.selectList.count {
-                                    //print("k")
                                     clipboardManager.selectedGroup = viewStateManager.selectList[currIndex + 1]
                                     clipboardManager.selectedItem = nil
-                                }
-                                else {
-                                    //print("l")
                                 }
                             }
                         }
                         else if let currIndex = currentIndex {
-                            //print("m")
                             // at bottom of selectList, but group is expanded
                             let currGroup = viewStateManager.selectList[currIndex]
                             if currGroup.isExpanded {
-                                //print("n")
                                 if let selectedItem = clipboardManager.selectedItem {
-                                    //print("o")
                                     if let currItemIndex = currGroup.group.itemsArray.firstIndex(where: { $0 == selectedItem }),
                                        currItemIndex + 1 < currGroup.group.itemsArray.count {
-                                        //print("p")
                                         clipboardManager.selectedItem = currGroup.group.itemsArray[currItemIndex + 1]
                                     }
                                     else {
-                                        //print("q")
                                         if currIndex + 1 < viewStateManager.selectList.count {
-                                            //print("r")
                                             clipboardManager.selectedGroup = viewStateManager.selectList[currIndex + 1]
                                             clipboardManager.selectedItem = nil
-                                        }
-                                        else {
-                                            //print("s")
                                         }
                                     }
                                 }
                                 else {
-                                    //print("t")
                                     clipboardManager.selectedItem = currGroup.group.itemsArray.first
                                 }
                             }
                         }
-                        else {
-                            //print("u")
-                        }
                     }
-                    //print()
                     return nil
                 case 123:
 //                    print("left arrow")
@@ -957,7 +928,7 @@ struct ClipboardGroupView: View {
                         self.viewStateManager.isSearchFocused = false
                         self.isSelectingCategory = false
                         
-                        // works like apple folder lself.ist view now
+                        // works like apple folder list view now
                         if !self.viewStateManager.isSearchFocused || !self.isSelectingCategory {
                             if currSelectGroup.group.count > 1 {
                                 if self.clipboardManager.selectedGroup?.self.isExpanded == true {
@@ -1310,8 +1281,6 @@ struct ClipboardItemView: View {
                                 clipboardManager.openFolder(filePath: resolvedUrl.path)
                                 self.openedFileFolderOrApp = true
                             }) {
-//                                Image(systemName: "rectangle.portrait.and.arrow.right")
-//                                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                                 Image(systemName: "folder")
                                     .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                             }
@@ -1323,8 +1292,6 @@ struct ClipboardItemView: View {
                                 clipboardManager.openFile(filePath: resolvedUrl.path)
                                 self.openedFileFolderOrApp = true
                             }) {
-//                                Image(systemName: "rectangle.portrait.and.arrow.right")
-//                                    .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                                 Image(systemName: "folder")
                                     .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
 
@@ -1339,8 +1306,6 @@ struct ClipboardItemView: View {
                         clipboardManager.openFolder(filePath: filePath)
                         self.openedFileFolderOrApp = true
                     }) {
-//                        Image(systemName: "rectangle.portrait.and.arrow.right")
-//                            .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                         Image(systemName: "folder")
                             .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                     }
@@ -1352,8 +1317,6 @@ struct ClipboardItemView: View {
                         clipboardManager.openFile(filePath: filePath)
                         self.openedFileFolderOrApp = true
                     }) {
-//                        Image(systemName: "rectangle.portrait.and.arrow.right")
-//                            .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                         Image(systemName: "folder")
                             .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
                     }
@@ -1402,7 +1365,6 @@ struct ClipboardItemView: View {
         .padding(.bottom, 4)
         
         .background(RoundedRectangle(cornerRadius: 8)
-//            .fill(isPartOfGroup ? (isSelected ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5)) : Color.clear)
             .fill(isSelected ? (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray) : (UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray).opacity(0.5))
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
