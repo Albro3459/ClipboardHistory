@@ -1,183 +1,188 @@
 ## ClipboardHistory, a Mac clipboard history manager inspired by the Windows version
 
 ### Info and About the app:
-<details>
+* <details>
   <summary>Info & About:</summary>
 
-* the app is fully built by me, Alex Brodsky a CS student, in Swift for Mac OS 14.4 
-    * I could try lowering the required MacOS version if you want to try the app, my email is brodsky.alex22@gmail.com
+  * the app is fully built by me, Alex Brodsky a CS student, in Swift for Mac OS 14.4 
+      * I could try lowering the required MacOS version if you want to try the app, my email is brodsky.alex22@gmail.com
 
-* it opens on the bottom right on all the desktop windows by default
+  * it opens on the bottom right on all the desktop windows by default
 
-* once running, it can be opened and closed with (cmd + shift + c), by default
+  * once running, it can be opened and closed with (cmd + shift + c), by default
 
-* click the clipboard status menu bar icon to show the app while running
+  * click the clipboard status menu bar icon to show the app while running
 
-   * in the app settings > window, you can change the app to pop out of the status bar icon
+    * in the app settings > window, you can change the app to pop out of the status bar icon
 
-* use the mouse or arrow keys to select items
+  * use the mouse or arrow keys to select items
 
-* a full list of tips for using the app will be below the screenshots
+  * a full list of tips for using the app will be below the screenshots
 
-* it can hold text, images, files and folders. it can even hold groups
+  * it can hold text, images, files and folders. it can even hold groups
 
-* clipboard history is currently limited to 50 items, you can change this in the settings
+  * clipboard history is currently limited to 50 items, you can change this in the settings
 
-* coming not so soon!:
-    * selecting multiple items at once with cmd or shift click
+  * coming not so soon!:
+      * selecting multiple items at once with cmd or shift click
 
-    * maybe pinning items
-</details>
+      * maybe pinning items
+  </details>
+
+---
 
 ### Installation Guide:
  * the download link is under the Releases tab on GitHub or [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing) to try it out!
-<details>
-  <summary>Installation Guide</summary>
+* <details>
+    <summary>Installation Guide:</summary>
 
- * this application is set up to only work with MacOS 14.4+
-    * if you're on a lower MacOS, email me: brodsky.alex22@gmail.com, and I'll try to a different version
+  * this application is set up to only work with MacOS 14.4+
+      * if you're on a lower MacOS, email me: brodsky.alex22@gmail.com, and I'll try to a different version
 
-* download the zip from the Releases tab on GitHub or [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
+  * download the zip from the Releases tab on GitHub or [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
 
-* unzip it
+  * unzip it
 
-* move it to the applications folder
+  * move it to the applications folder
 
-* open it and you will get a pop up saying Apple can't open it because its from an unidentified developer and it can't be scanned for viruses
+  * open it and you will get a pop up saying Apple can't open it because its from an unidentified developer and it can't be scanned for viruses
 
-    <img src="https://github.com/user-attachments/assets/635ffcaf-9a00-4b14-a456-8fc1a2e759d0" alt="warning screen shot" height="250"/>
+      <img src="https://github.com/user-attachments/assets/635ffcaf-9a00-4b14-a456-8fc1a2e759d0" alt="warning screen shot" height="250"/>
 
-* click 'ok'
+  * click 'ok'
 
-* open settings > privacy & security, then scroll down to security
+  * open settings > privacy & security, then scroll down to security
 
-    <img src="https://github.com/user-attachments/assets/96da5723-6953-4fc6-9745-cb5244958c98" alt="security" height="180"/>
+      <img src="https://github.com/user-attachments/assets/96da5723-6953-4fc6-9745-cb5244958c98" alt="security" height="180"/>
 
-* click 'open anyway'
+  * click 'open anyway'
 
-* for universal paste without formatting (cmd + shift + v):
+  * for universal paste without formatting (cmd + shift + v):
 
-    * if you don't want this on you can turn it off in the app's settings under clipboard
+      * if you don't want this on you can turn it off in the app's settings under clipboard
 
-    * when you try to paste with (cmd + shift + v):
-    <br></br>
-    <img src="https://github.com/user-attachments/assets/be187fe0-0a1f-4406-8bc4-cf090e9b9698" alt="accessibility warning" height="150"/>
+      * when you try to paste with (cmd + shift + v):
+      <br></br>
+      <img src="https://github.com/user-attachments/assets/be187fe0-0a1f-4406-8bc4-cf090e9b9698" alt="accessibility warning" height="150"/>
 
-    * click 'open system settings'
-    
-    * then in settings >  privacy & security > accessibility, flip the switch next to the clipboard history app
-    <br></br>
-    <img src="https://github.com/user-attachments/assets/d75a42aa-bec5-4b10-a1f0-e1bc88b2429a" alt="accessibility toggle" height="200"/>
+      * click 'open system settings'
+      
+      * then in settings >  privacy & security > accessibility, flip the switch next to the clipboard history app
+      <br></br>
+      <img src="https://github.com/user-attachments/assets/d75a42aa-bec5-4b10-a1f0-e1bc88b2429a" alt="accessibility toggle" height="200"/>
 
-    * you can also click the plus and add the app manually
+      * you can also click the plus and add the app manually
 
-    * i know, its a lil scary because it says 'control your computer'. its just because it needs to listen to (cmd + shift + v) to paste without formatting.
-        * again, you can turn this off in the settings
-</details>
+      * i know, its a lil scary because it says 'control your computer'. its just because it needs to listen to (cmd + shift + v) to paste without formatting.
+          * again, you can turn this off in the settings
+  </details>
 
-<details>
-  <summary>Instructions if you want to build the project yourself</summary>
+* <details>
+    <summary>Instructions if you want to build the project yourself:</summary>
 
- * btw if you clone the repo to run it, it is in sandbox mode, so some things will break.
-    * to disable the sandbox, you can go to the ClipboardHistory.xcodeproj > Target: ClipboardHistory > Build Settings then search for entitlements and change the debug one to the release one.
-    * instead, the downloads from the Releases tab and Google Drive are NOT sandboxed, so everything will work
+  * btw if you clone the repo to run it, it is in sandbox mode, so some things will break.
+      * to disable the sandbox, you can go to the ClipboardHistory.xcodeproj > Target: ClipboardHistory > Build Settings then search for entitlements and change the debug one to the release one.
+      * instead, the downloads from the Releases tab and Google Drive are NOT sandboxed, so everything will work
 
- * you will need XCode, I'm on Version 15.3  
+  * you will need XCode, I'm on Version 15.3  
 
- * before you run anything, in XCode, you have to go to File > Packages > Resolve Package Versions
-     * every time you switch branches, you MUST do this again. the project is dependent on the KeyboardShortcuts package
-</details>
+  * before you run anything, in XCode, you have to go to File > Packages > Resolve Package Versions
+      * every time you switch branches, you MUST do this again. the project is dependent on the KeyboardShortcuts package
+  </details>
 
+---
 
 ### Tips for using the app:
-<details>
-  <summary>Tips</summary>
+* <details>
+    <summary>Tips:</summary>
 
-* see the ListOfKeyboardShortcuts.md file for the full list of keyboard shortcuts, or scroll to the bottom
+  * see the ListOfKeyboardShortcuts.md file for the full list of keyboard shortcuts, or scroll to the bottom
 
-* these can be changed:
-    - cmd + shift + c: open and close window
-    - option + r: reset window
-    - cmd + shift + v: paste without formatting
-    - option + shift + l: paste All Lowercase without formatting
-    - option + shift + u: paste All Uppercase without formatting
+  * these can be changed:
+      - cmd + shift + c: open and close window
+      - option + r: reset window
+      - cmd + shift + v: paste without formatting
+      - option + shift + l: paste All Lowercase without formatting
+      - option + shift + u: paste All Uppercase without formatting
 
-* cmd + shift + c is default for showing/hiding the app
-    * also click the menu bar icon to show the app
+  * cmd + shift + c is default for showing/hiding the app
+      * also click the menu bar icon to show the app
 
-* use the mouse or arrow keys to select items
-    * scroll arrow button, cmd + up/down arrow, or page up/down to scroll up or down
+  * use the mouse or arrow keys to select items
+      * scroll arrow button, cmd + up/down arrow, or page up/down to scroll up or down
 
-* double-click, enter, or copy button to copy an item/group
+  * double-click, enter, or copy button to copy an item/group
 
-* delete button or cmd + delete to delete an item/group
+  * delete button or cmd + delete to delete an item/group
 
-* expand button or right-arrow when selecting group to expand
+  * expand button or right-arrow when selecting group to expand
 
-* expand button or left-arrow on group to contract
+  * expand button or left-arrow on group to contract
 
-* cmd + f to search
+  * cmd + f to search
 
-* escape takes you out of search or selecting clipboard types, or if not selecting anything, it hides the app
+  * escape takes you out of search or selecting clipboard types, or if not selecting anything, it hides the app
 
-* option + r resets the window size and shows it
+  * option + r resets the window size and shows it
 
-* cmd + shift + v for paste without formatting anywhere on your computer!
+  * cmd + shift + v for paste without formatting anywhere on your computer!
 
-* the open button next to files and folders opens the file, folder, or app
-</details>
+  * the open button next to files and folders opens the file, folder, or app
+  </details>
 
-
+---
 
 ### Here is a list of all the Keyboard Shortcuts:
-<details>
-  <summary>changeable shortcuts:</summary>
+* <details>
+    <summary>changeable shortcuts:</summary>
 
-    - cmd + shift + c: open and close window
-    - option + r: reset window
-    - cmd + shift + v: paste without formatting
-    - option + shift + l: paste All Lowercase without formatting
-    - option + shift + u: paste All Uppercase without formatting
-</details>
+      - cmd + shift + c: open and close window
+      - option + r: reset window
+      - cmd + shift + v: paste without formatting
+      - option + shift + l: paste All Lowercase without formatting
+      - option + shift + u: paste All Uppercase without formatting
+  </details>
 
-<details>
-  <summary>unchangeable shortcuts:</summary>
+* <details>
+    <summary>unchangeable shortcuts:</summary>
 
-    - menu options:
-      - cmd + ;: Opens the GitHub link
-      - cmd + ': Opens the LinkedIn link
-      - cmd + ,: Opens the Settings
-      - cmd + /: Opens the list of Keyboard Shortcuts
-      - cmd + h: hides the app
+      - menu options:
+        - cmd + ;: Opens the GitHub link
+        - cmd + ': Opens the LinkedIn link
+        - cmd + ,: Opens the Settings
+        - cmd + /: Opens the list of Keyboard Shortcuts
+        - cmd + h: hides the app
 
-    - cmd + f: open search
-    
-    - right arrow: expand group
-    - left arrow: contract group
-    - up arrow: move up
-    - down arrow: move down
+      - cmd + f: open search
+      
+      - right arrow: expand group
+      - left arrow: contract group
+      - up arrow: move up
+      - down arrow: move down
 
-    - cmd + c: copy
-    - enter || return: copy
+      - cmd + c: copy
+      - enter || return: copy
 
-    - cmd + shift + p: toggle Pause/Resume copying
+      - cmd + shift + p: toggle Pause/Resume copying
 
-    - cmd + enter: open item
+      - cmd + enter: open item
 
-    - cmd + delete: delete selected item
-    - cmd + shift + delete: clear all items
+      - cmd + delete: delete selected item
+      - cmd + shift + delete: clear all items
 
-    - cmd + [: open all groups
-    - cmd + ]: close all groups
+      - cmd + [: open all groups
+      - cmd + ]: close all groups
 
-    - cmd + up: scroll to top
-    - page up: scroll to top
+      - cmd + up: scroll to top
+      - page up: scroll to top
 
-    - cmd + down: scroll to bottom
-    - page down: scroll to bottom
+      - cmd + down: scroll to bottom
+      - page down: scroll to bottom
 
-    - esc: exit search or type selector, or if not selecting anything hide the app
-</details>
+      - esc: exit search or type selector, or if not selecting anything hide the app
+  </details>
+
+---
 
 ### Screenshots:
 <div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 40px;">
