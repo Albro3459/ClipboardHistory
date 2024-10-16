@@ -8,3 +8,5 @@
 **/ClipboardHistory.xcodeproj/xcuserdata/*
 
 **/.DS_Store
+
+!ClipboardHistory/ClipboardHistory.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
