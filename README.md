@@ -48,14 +48,14 @@
 ---
 
 ### Installation Guide:
- * the download link is under the Releases tab on GitHub or [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing) to try it out!
+ * the download link is under the [Releases](https://github.com/Albro3459/ClipboardHistory/releases) tab on GitHub or [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing) to try it out!
 * <details>
     <summary>Installation Guide:</summary>
 
   * this application is set up to only work with MacOS 14.4+
       * if you're on a lower MacOS, email me: brodsky.alex22@gmail.com, and I'll try to a different version
 
-  * download the zip from the Releases tab on GitHub or [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
+  * download the zip from the [Releases](https://github.com/Albro3459/ClipboardHistory/releases) tab on GitHub or [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
 
   * unzip it
 
