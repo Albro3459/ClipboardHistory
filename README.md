@@ -3,10 +3,10 @@
 [Demo Video](https://youtu.be/p2S1_Rhee5o)
 
 ### A summary of why I built this app and what I've learned:
-* <details>
+* <details open>
   <summary>Summary:</summary>
   
-  As a lifelong Mac user, I never quite realized the benefits of a clipboard manager. That was until my internship in Summer '23, where I heavily used a Windows computer during development and grew to love the built in clipboard manager (WinKey + V). When I transitioned back to my Mac after the summer, I quickly realized my dependence on a clipboard manager and began searching for alternatives on Mac. I researched a few options, but they weren't exactly what I was looking for. I began to plan to build my own, but I lacked any experience with Mac software development.
+  As a lifelong Mac user, I never quite realized the benefits of a clipboard manager. That was until my summer internship in 2023, where I heavily used a Windows computer during development and grew to love the built in clipboard manager (WinKey + V). When I transitioned back to my Mac after the summer, I quickly realized my dependence on a clipboard manager and began searching for alternatives on Mac. I researched a few options, but they weren't exactly what I was looking for. I began to plan to build my own, but I lacked any experience with Mac software development.
 
   After starting with a Bash script and a Python UI that was enough for copying text, I realized that I wanted to include screenshots, files, and keyboard shortcuts to fully implement a product. My research led me to Swift, where I could access Apple's APIs and integrate my desired features. I spent my time during the summer, when I wasn't working at my internship, learning Swift and developing a prototype. I asked my friends for ideas about features and designs and eventually it all came together (not without a lot of mistakes). I eventually presented to my class a few weeks ago to get my first few users.
 
