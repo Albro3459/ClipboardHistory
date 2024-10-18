@@ -4,13 +4,12 @@
 
 ### A summary of why I built this app and what I've learned:
 * <details open>
-  <summary>Summary:</summary>
-  
-  As a lifelong Mac user, I never quite realized the benefits of a clipboard manager. That was until my summer internship in 2023, where I heavily used a Windows computer during development and grew to love the built in clipboard manager (WinKey + V). When I transitioned back to my Mac after the summer, I quickly realized my dependence on a clipboard manager and began searching for alternatives on Mac. I researched a few options, but they weren't exactly what I was looking for. I began to plan to build my own, but I lacked any experience with Mac software development.
+  <summary></summary>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As a lifelong Mac user, I never quite realized the benefits of a clipboard manager. That was until my summer internship in 2023, where I heavily used a Windows computer during development and grew to love the built in clipboard manager (WinKey + V). When I transitioned back to my Mac after the summer, I quickly realized my dependence on a clipboard manager and began searching for alternatives on Mac. I researched a few options, but they weren't exactly what I was looking for. I began to plan to build my own, but I lacked any experience with Mac software development.</p>
 
-  After starting with a Bash script and a Python UI that was enough for copying text, I realized that I wanted to include screenshots, files, and keyboard shortcuts to fully implement a product. My research led me to Swift, where I could access Apple's APIs and integrate my desired features. I spent my time during the summer, when I wasn't working at my internship, learning Swift and developing a prototype. I asked my friends for ideas about features and designs and eventually it all came together (not without a lot of mistakes). I eventually presented to my class a few weeks ago to get my first few users.
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After starting with a Bash script and a Python UI that was enough for copying text, I realized that I wanted to include screenshots, files, and keyboard shortcuts to fully implement a product. My research led me to Swift, where I could access Apple's APIs and integrate my desired features. I spent my time during the summer, when I wasn't working at my internship, learning Swift and developing a prototype. I asked my friends for ideas about features and designs and eventually it all came together (not without a lot of mistakes). I eventually presented to my class a few weeks ago to get my first few users.
 
-  This experience taught me so much about MacOS, Swift, state, and application development, as well as showing me how much I have yet to learn. I was never formally taught best practices for how to manage state and implement views, so I am well aware of my spaghetti code. However, this led to me developing my intuition and problem solving abilities, when it comes to debugging, which I believe is incredibly important as an engineer.
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This experience taught me so much about MacOS, Swift, state, and application development, as well as showing me how much I have yet to learn. I was never formally taught best practices for how to manage state and implement views, so I am well aware of my spaghetti code. However, this led to me developing my intuition and problem solving abilities, when it comes to debugging, which I believe is incredibly important as an engineer.
   </details>
 
 ---
