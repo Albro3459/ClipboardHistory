@@ -2,50 +2,6 @@
 
 [Demo Video](https://youtu.be/p2S1_Rhee5o)
 
-### A summary of why I built this app and what I've learned:
-* <details open>
-  <summary></summary>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As a lifelong Mac user, I never quite realized the benefits of a clipboard manager. That was until my summer internship in 2023, where I heavily used a Windows computer during development and grew to love the built in clipboard manager (WinKey + V). When I transitioned back to my Mac after the summer, I quickly realized my dependence on a clipboard manager and began searching for alternatives on Mac. I researched a few options, but they weren't exactly what I was looking for. I began to plan to build my own, but I lacked any experience with Mac software development.</p>
-
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After starting with a Bash script and a Python UI that was enough for copying text, I realized that I wanted to include screenshots, files, and keyboard shortcuts to fully implement a product. My research led me to Swift, where I could access Apple's APIs and integrate my desired features. I spent my time during the summer, when I wasn't working at my internship, learning Swift and developing a prototype. I asked my friends for ideas about features and designs and eventually it all came together (not without a lot of mistakes). I eventually presented to my class a few weeks ago to get my first few users.
-
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This experience taught me so much about MacOS, Swift, state, and application development, as well as showing me how much I have yet to learn. I was never formally taught best practices for how to manage state and implement views, so I am well aware of my spaghetti code. However, this led to me developing my intuition and problem solving abilities, when it comes to debugging, which I believe is incredibly important as an engineer.
-  </details>
-
----
-
-
-### Info and about the app:
-* <details>
-  <summary>Info & About:</summary>
-
-  * the app is fully built by me, Alex Brodsky a CS student, in Swift for Mac OS 14.4 
-      * I could try lowering the required MacOS version if you want to try the app, my email is brodsky.alex22@gmail.com
-
-  * it opens on the bottom right on all the desktop windows by default
-
-  * once running, it can be opened and closed with (cmd + shift + c), by default
-
-  * click the clipboard status menu bar icon to show the app while running
-
-    * in the app settings > window, you can change the app to pop out of the status bar icon
-
-  * use the mouse or arrow keys to select items
-
-  * a full list of tips for using the app will be below the screenshots
-
-  * it can hold text, images, files and folders. it can even hold groups
-
-  * clipboard history is currently limited to 50 items, you can change this in the settings
-
-  * coming not so soon!:
-      * selecting multiple items at once with cmd or shift click
-
-      * maybe pinning items
-  </details>
-
----
-
 ### Installation Guide:
  * the download link is under the [Releases](https://github.com/Albro3459/ClipboardHistory/releases) tab on GitHub or [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing) to try it out!
 * <details>
@@ -106,7 +62,50 @@
     * Go to File > Packages > click Resolve Package Versions
       * every time you switch branches, you MUST do this again. the project is dependent on the KeyboardShortcuts package
   </details>
+  
+---
 
+### A summary of why I built this app and what I've learned:
+* <details open>
+  <summary></summary>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As a lifelong Mac user, I never quite realized the benefits of a clipboard manager. That was until my summer internship in 2023, where I heavily used a Windows computer during development and grew to love the built in clipboard manager (WinKey + V). When I transitioned back to my Mac after the summer, I quickly realized my dependence on a clipboard manager and began searching for alternatives on Mac. I researched a few options, but they weren't exactly what I was looking for. I began to plan to build my own, but I lacked any experience with Mac software development.</p>
+
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After starting with a Bash script and a Python UI that was enough for copying text, I realized that I wanted to include screenshots, files, and keyboard shortcuts to fully implement a product. My research led me to Swift, where I could access Apple's APIs and integrate my desired features. I spent my time during the summer, when I wasn't working at my internship, learning Swift and developing a prototype. I asked my friends for ideas about features and designs and eventually it all came together (not without a lot of mistakes). I eventually presented to my class a few weeks ago to get my first few users.
+
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This experience taught me so much about MacOS, Swift, state, and application development, as well as showing me how much I have yet to learn. I was never formally taught best practices for how to manage state and implement views, so I am well aware of my spaghetti code. However, this led to me developing my intuition and problem solving abilities, when it comes to debugging, which I believe is incredibly important as an engineer.
+  </details>
+
+---
+
+
+### Info and about the app:
+* <details>
+  <summary>Info & About:</summary>
+
+  * the app is fully built by me, Alex Brodsky a CS student, in Swift for Mac OS 14.4 
+      * I could try lowering the required MacOS version if you want to try the app, my email is brodsky.alex22@gmail.com
+
+  * it opens on the bottom right on all the desktop windows by default
+
+  * once running, it can be opened and closed with (cmd + shift + c), by default
+
+  * click the clipboard status menu bar icon to show the app while running
+
+    * in the app settings > window, you can change the app to pop out of the status bar icon
+
+  * use the mouse or arrow keys to select items
+
+  * a full list of tips for using the app will be below the screenshots
+
+  * it can hold text, images, files and folders. it can even hold groups
+
+  * clipboard history is currently limited to 50 items, you can change this in the settings
+
+  * coming not so soon!:
+      * selecting multiple items at once with cmd or shift click
+
+      * maybe pinning items
+  </details>
 
 ---
 
