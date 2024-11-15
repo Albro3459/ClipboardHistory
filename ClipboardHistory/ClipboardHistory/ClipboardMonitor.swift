@@ -103,14 +103,15 @@ class ClipboardMonitor: ObservableObject {
 //            let context = PersistenceController.shared.container.viewContext
         childContext.parent = PersistenceController.shared.container.viewContext
 
-//        await childContext.perform {
-        childContext.performAndWait {
+        await childContext.perform {
+//        childContext.performAndWait {
             if let items = pasteboard.pasteboardItems, !items.isEmpty {
                 let group = ClipboardGroup(context: childContext)
                 group.timeStamp = Date()
                 group.count = Int16(min(items.count, self.userDefaultsManager.maxStoreCount))
                 
                 let dispatchGroup = DispatchGroup()
+                var errorOccurred = false
 
                 var counter = 0
                 for item in items {
@@ -127,6 +128,8 @@ class ClipboardMonitor: ObservableObject {
                                 }
                                 if !completion {
                                     print("Failed to process file at URL: \(fileUrl)")
+                                    errorOccurred = true
+                                    dispatchGroup.leave()
                                 }
                             }
                         }
@@ -139,6 +142,7 @@ class ClipboardMonitor: ObservableObject {
                             dispatchGroup.enter()
                             Task {
                                 await self.processImageData(imageData: imageData, inGroup: group, context: childContext)
+                                
                                 dispatchGroup.leave()
                             }
                         }
@@ -163,11 +167,18 @@ class ClipboardMonitor: ObservableObject {
                         // for copying images out of google docs cause they're weird
                         if let htmlContent = item.string(forType: .html), let imageUrl = self.extractHtmlImageURL(from: htmlContent) {
                             dispatchGroup.enter()
-                            self.downloadAndProcessImageFromURL(from: imageUrl, inGroup: group, context: childContext) {
-                                dispatchGroup.leave()
+                            Task {
+                                do {
+                                    try await self.downloadAndProcessImageFromURL(from: imageUrl, inGroup: group, context: childContext)
+                                    dispatchGroup.leave()
+                                } catch {
+                                    print("Error: \(error.localizedDescription)")
+                                    errorOccurred = true
+                                    dispatchGroup.leave()
+                                }
                             }
                         } else {
-                            continue
+                            return
                         }
                     }
                     else {
@@ -177,8 +188,13 @@ class ClipboardMonitor: ObservableObject {
                     counter += 1
                 }
                 dispatchGroup.notify(queue: .main) {
-                    self.saveClipboardGroup(childContext: childContext)
-//                    self.log("Done processing")
+                    if !errorOccurred {
+                        self.saveClipboardGroup(childContext: childContext)
+                        self.log("Done processing")
+                    }
+                    else {
+                        self.log("Not Saving since error occured")
+                    }
                 }
             }
         }
@@ -197,7 +213,7 @@ class ClipboardMonitor: ObservableObject {
 //        childContext.parent = PersistenceController.shared.container.viewContext
 //
 ////        await childContext.perform {
-//        childContext.performAndWait {
+//        await childContext.perform {
 //            if let items = pasteboard.pasteboardItems, !items.isEmpty {
 //                let group = ClipboardGroup(context: childContext)
 //                group.timeStamp = Date()
@@ -262,26 +278,21 @@ class ClipboardMonitor: ObservableObject {
         return nil
     }
     
-    private func downloadAndProcessImageFromURL(from imageUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext, completion: @escaping () -> Void) {
-
-//    private func downloadAndProcessImageFromURL(from imageUrl: URL) {
-
-        // creating a data task to download the image asynchronously
-        let task = URLSession.shared.dataTask(with: imageUrl) { data, response, error in
-            guard let data = data, error == nil else {
-                print("Failed to download image from URL: \(imageUrl), error: \(String(describing: error))")
-                completion()
-                return
-            }
-            
-            // create the image using existing function
-            Task {
-                await self.processImageData(imageData: data, inGroup: group, context: context)
-            }
+    private func downloadAndProcessImageFromURL(from imageUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext) async throws {
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await URLSession.shared.data(for: URLRequest(url: imageUrl))
+        }
+        catch {
+            throw URLError(.unknown)
         }
         
-        // Start the download task
-        task.resume()
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+        
+        // Process the image asynchronously
+        await self.processImageData(imageData: data, inGroup: group, context: context)
     }
     
     
@@ -536,7 +547,7 @@ class ClipboardMonitor: ObservableObject {
     }
     
     private func saveClipboardGroup(childContext: NSManagedObjectContext) {
-        childContext.perform {
+        childContext.performAndWait {
             if !self.checkLast(childContext: childContext) {
                 return
             }

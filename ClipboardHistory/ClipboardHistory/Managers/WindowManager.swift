@@ -339,10 +339,8 @@ class WindowManager: ObservableObject {
     }
     
     func addObserverForWindowFocus() {
-        print("Starting to add observer")
         removeObserverForWindowFocus() // dont want duplicates
         
-        print("Adding observer for window focus")
         NotificationCenter.default.addObserver(self,
                selector: #selector(applicationDidResignActive(_:)),
                name: NSWindow.didResignKeyNotification,
@@ -350,7 +348,6 @@ class WindowManager: ObservableObject {
     }
 
     func removeObserverForWindowFocus() {
-        print("Removing observer for window focus")
         NotificationCenter.default.removeObserver(self,
               name: NSWindow.didResignKeyNotification,
               object: nil)

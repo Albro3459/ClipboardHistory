@@ -179,15 +179,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 //        setupGlobalHotKey()
         
         self.windowManager?.setupApp()
-    
-        
-//        if !UserDefaultsManager.shared.windowPopOut && UserDefaultsManager.shared.hideWindowWhenNotSelected {
-//            windowManager?.addObserverForWindowFocus()
-//        }
         
         self.windowManager?.appDelegate = self
         self.windowManager?.window?.delegate = self
     }
+    
     
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
 //        print("Dock icon clicked!")
