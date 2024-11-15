@@ -256,21 +256,6 @@ struct SettingsView: View {
         }
     }
     
-    private func handleWindowDidResignKey(_ notification: Notification) {
-        print("Window did resign key (unfocused)")
-        // App lost focus
-        
-        print(UserDefaultsManager.shared.hideWindowWhenNotSelected)
-        if UserDefaultsManager.shared.hideWindowWhenNotSelected {
-            // Check if the current main window is the settings window
-            if let mainWindow = NSApplication.shared.mainWindow, mainWindow.title == "ClipboardHistory" {
-                print("The main window is the settings window, not hiding it.")
-            } else {
-                WindowManager.shared.hideWindow()
-            }
-        }
-    }
-    
     private func saveSettings() {
         
         UserDefaults.standard.set(pauseCopyingInput, forKey: "pauseCopying")
@@ -287,11 +272,6 @@ struct SettingsView: View {
         UserDefaults.standard.set(windowWidthInput, forKey: "windowWidth")
         UserDefaults.standard.set(windowHeightInput, forKey: "windowHeight")
         UserDefaults.standard.set(windowLocationInput, forKey: "windowLocation")
-        if hideWindowWhenNotSelectedInput {
-            if windowPopOut {
-                hideWindowWhenNotSelectedInput = false
-            }
-        }
         UserDefaults.standard.set(windowPopOutInput, forKey: "windowPopOut")
         if windowPopOutInput {
             canWindowFloatInput = false
@@ -336,12 +316,6 @@ struct SettingsView: View {
         
         userDefaultsManager.updateAll(savePasteNoFormatShortcut: pasteWithoutFormatting == pasteWithoutFormattingInput, savePasteLowerShortcut: pasteLower == pasteLowerInput, savePasteUpperShortcut: pasteUpper == pasteUpperInput)
         
-        if hideWindowWhenNotSelected {
-            NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification,object: nil,queue: .main) { notification in
-                self.handleWindowDidResignKey(notification)
-            }
-        }
-        
         menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput, shouldDelay: true)
         
         DispatchQueue.main.async {
@@ -366,6 +340,7 @@ struct SettingsView: View {
         windowPopOutInput = false
         canWindowFloatInput = false
         hideWindowWhenNotSelectedInput = false
+        WindowManager.shared.removeObserverForWindowFocus()
         windowOnAllDesktopsInput = true
         
         pasteWithoutFormattingShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "v")
@@ -673,19 +648,20 @@ struct WindowSettingsView: View {
                         
                         
                         Toggle("Can Window Float?", isOn: $canWindowFloatInput)
+                            .foregroundColor((windowPopOutInput || canWindowFloatInput) ? Color.gray : (darkMode ? .white : .primary))
+                            .disabled(windowPopOutInput || hideWindowWhenNotSelectedInput)
+                            .padding()
+                        
+                        Toggle("Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelectedInput)
+                            .foregroundColor((windowPopOutInput || canWindowFloatInput) ? Color.gray : (darkMode ? .white : .primary))
+                            .disabled(windowPopOutInput || canWindowFloatInput)
+                            .padding()
+                        
+                        Toggle("Show Window On All Desktops?", isOn: $windowOnAllDesktopsInput)
                             .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
                             .disabled(windowPopOutInput)
                             .padding()
                         
-                        Toggle("Show Window On All Desktops?", isOn: $windowOnAllDesktops)
-                            .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
-                            .disabled(windowPopOutInput)
-                            .padding()
-                        
-                        Toggle("**Very Buggy** Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelectedInput)
-                            .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
-                            .disabled(windowPopOutInput)
-                            .padding()
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -695,11 +671,17 @@ struct WindowSettingsView: View {
                 .onChange(of: hideWindowWhenNotSelectedInput) {
                     if hideWindowWhenNotSelectedInput {
                         windowPopOutInput = !hideWindowWhenNotSelectedInput
+                        canWindowFloatInput = !hideWindowWhenNotSelectedInput
                     }
                 }
                 .onChange(of: windowPopOutInput) {
                     if windowPopOutInput {
                         hideWindowWhenNotSelectedInput = !windowPopOutInput
+                    }
+                }
+                .onChange(of: canWindowFloatInput) {
+                    if canWindowFloatInput {
+                        hideWindowWhenNotSelectedInput = !canWindowFloatInput
                     }
                 }
             }

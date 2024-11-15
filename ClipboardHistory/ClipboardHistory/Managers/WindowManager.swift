@@ -199,6 +199,15 @@ class WindowManager: ObservableObject {
         if UserDefaultsManager.shared.windowOnAllDesktops {
             window.collectionBehavior = .canJoinAllSpaces
         }
+        if !UserDefaultsManager.shared.windowPopOut && UserDefaultsManager.shared.hideWindowWhenNotSelected {
+            addObserverForWindowFocus()
+            window.isReleasedWhenClosed = false
+        }
+        else {
+            removeObserverForWindowFocus()
+        }
+        
+        
         window.makeKeyAndOrderFront(nil)
         NSApplication.shared.activate(ignoringOtherApps: true)
         
@@ -260,6 +269,12 @@ class WindowManager: ObservableObject {
             if UserDefaultsManager.shared.canWindowFloat {
                 window.level = .floating
             }
+            if UserDefaultsManager.shared.windowOnAllDesktops {
+                window.collectionBehavior = .canJoinAllSpaces
+            }
+            if UserDefaultsManager.shared.hideWindowWhenNotSelected {
+                window.isReleasedWhenClosed = false
+            }
             
             self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
         }
@@ -273,11 +288,14 @@ class WindowManager: ObservableObject {
                 if !window.isKeyWindow {
                     NSApplication.shared.activate(ignoringOtherApps: true)
                     window.makeKeyAndOrderFront(nil)
+                    if UserDefaultsManager.shared.canWindowFloat {
+                        window.level = .floating
+                    }
                     if UserDefaultsManager.shared.windowOnAllDesktops {
                         window.collectionBehavior = .canJoinAllSpaces
                     }
-                    if UserDefaultsManager.shared.canWindowFloat {
-                        window.level = .floating
+                    if UserDefaultsManager.shared.hideWindowWhenNotSelected {
+                        window.isReleasedWhenClosed = false
                     }
                     self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
                 }
@@ -294,11 +312,14 @@ class WindowManager: ObservableObject {
             self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
             if let window = self.window {
                 window.makeKeyAndOrderFront(nil)
+                if UserDefaultsManager.shared.canWindowFloat {
+                    window.level = .floating
+                }
                 if UserDefaultsManager.shared.windowOnAllDesktops {
                     window.collectionBehavior = .canJoinAllSpaces
                 }
-                if UserDefaultsManager.shared.canWindowFloat {
-                    window.level = .floating
+                if UserDefaultsManager.shared.hideWindowWhenNotSelected {
+                    window.isReleasedWhenClosed = false
                 }
                 NSApplication.shared.activate(ignoringOtherApps: true)
             }
@@ -310,7 +331,41 @@ class WindowManager: ObservableObject {
     
     @objc func hideWindow() {
         DispatchQueue.main.async {
-            NSApp.hide(nil)
+//            NSApp.hide(nil)
+            if let window = self.window, window.title != "SettingsWindow" {
+                window.orderOut(nil)
+            }
+        }
+    }
+    
+    func addObserverForWindowFocus() {
+        print("Starting to add observer")
+        removeObserverForWindowFocus() // dont want duplicates
+        
+        print("Adding observer for window focus")
+        NotificationCenter.default.addObserver(self,
+               selector: #selector(applicationDidResignActive(_:)),
+               name: NSWindow.didResignKeyNotification,
+               object: nil)
+    }
+
+    func removeObserverForWindowFocus() {
+        print("Removing observer for window focus")
+        NotificationCenter.default.removeObserver(self,
+              name: NSWindow.didResignKeyNotification,
+              object: nil)
+    }
+    
+    @objc func applicationDidResignActive(_ notification: Notification) {
+        // Hide the window when the app loses focus
+//        print("Window did resign key (unfocused)")
+        
+        if UserDefaultsManager.shared.hideWindowWhenNotSelected {
+            if window != nil {
+                if !SettingsWindowManager.shared.isSettingsOpen {
+                    self.hideWindow()
+                }
+            }
         }
     }
     

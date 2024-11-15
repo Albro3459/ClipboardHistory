@@ -170,15 +170,15 @@ class UserDefaultsManager : ObservableObject {
         self.windowHeight = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
         self.windowLocation = UserDefaults.standard.string(forKey: "windowLocation") ?? "Bottom Right"
         self.windowPopOut = UserDefaults.standard.bool(forKey: "windowPopOut")
-//        self.onlyPopOutWindow = UserDefaults.standard.bool(forKey: "onlyPopOutWindow")
-        self.canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
-        if self.canWindowFloat {
+        if self.windowPopOut {
             self.hideWindowWhenNotSelected = false
+            UserDefaults.standard.set(false, forKey: "hideWindowWhenNotSelected")
         }
         else {
-//            print("updated hiding")
             self.hideWindowWhenNotSelected = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
         }
+//        self.onlyPopOutWindow = UserDefaults.standard.bool(forKey: "onlyPopOutWindow")
+        self.canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
         self.windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
 
         self.pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
