@@ -75,8 +75,9 @@ class ClipboardMonitor: ObservableObject {
                 let pasteboard = NSPasteboard.general
                 if pasteboard.changeCount != self.lastChangeCount {
                     self.lastChangeCount = pasteboard.changeCount
-                    Task {
-                        await self.processDataFromClipboard()
+                    // Add a slight delay to ensure the clipboard is ready
+                        // needed for copying very large images, the clipboard changes but the image isnt ready yet
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {                        self.processDataFromClipboard()
                         self.isInternalCopy = false
                     }
                 }
@@ -91,103 +92,99 @@ class ClipboardMonitor: ObservableObject {
         }
     }
     
-    @MainActor
-    private func processDataFromClipboard() async {
-//        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
-        
-        let pasteboard = NSPasteboard.general
-        
-        // making a child context because I need to be able to create Items for the group and checkLast before saving,
-        // parent context is available to the content view even without saving, so I need them seperate
-        let childContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+    private func processDataFromClipboard() {
+            
+        DispatchQueue.main.async {
+            let pasteboard = NSPasteboard.general
+            
+            // making a child context because I need to be able to create Items for the group and checkLast before saving,
+            // parent context is available to the content view even without saving, so I need them seperate
+            let childContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
 //            let context = PersistenceController.shared.container.viewContext
-        childContext.parent = PersistenceController.shared.container.viewContext
+            childContext.parent = PersistenceController.shared.container.viewContext
 
-        await childContext.perform {
-//        childContext.performAndWait {
-            if let items = pasteboard.pasteboardItems, !items.isEmpty {
-                let group = ClipboardGroup(context: childContext)
-                group.timeStamp = Date()
-                group.count = Int16(min(items.count, self.userDefaultsManager.maxStoreCount))
-                
-                let dispatchGroup = DispatchGroup()
-                var errorOccurred = false
-
-                var counter = 0
-                for item in items {
-                    if counter >= self.maxItemCount {
-                        continue
-                    }
-                    // Check for file URLs first
-                    if let urlString = item.string(forType: .fileURL), let fileUrl = URL(string: urlString) {
-                        if self.userDefaultsManager.canCopyImages || self.userDefaultsManager.canCopyFilesOrFolders {
-                            dispatchGroup.enter()
-                            self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { completion in
-                                defer {
-                                    dispatchGroup.leave()
-                                }
-                                if !completion {
-                                    print("Failed to process file at URL: \(fileUrl)")
-                                    errorOccurred = true
-                                    dispatchGroup.leave()
-                                }
-                            }
-                        }
-                        else {
-                            return
-                        }
-                    }
-                    else if let imageData = item.data(forType: .tiff) ?? item.data(forType: .png) ?? item.data(forType: NSPasteboard.PasteboardType("public.jpeg")) {
-                        if self.userDefaultsManager.canCopyImages {
-                            dispatchGroup.enter()
-                            Task {
-                                await self.processImageData(imageData: imageData, inGroup: group, context: childContext)
-                                
-                                dispatchGroup.leave()
-                            }
-                        }
-                        else {
+            childContext.perform {
+                if let items = pasteboard.pasteboardItems, !items.isEmpty {
+                    let group = ClipboardGroup(context: childContext)
+                    group.timeStamp = Date()
+                    group.count = Int16(min(items.count, self.userDefaultsManager.maxStoreCount))
+                    
+                    var operationsPending = 0
+                    var counter = 0
+                    
+                    var errorOccurred = false
+                    
+                    for item in items {
+                        if counter >= self.maxItemCount {
                             continue
                         }
-                    }
-                    else if let content = item.string(forType: .string) {
-                        let item = ClipboardItem(context: childContext)
-                        item.content = content
-                        item.type = "text"
-                        item.filePath = nil
-                        item.imageData = nil
-                        item.imageHash = nil
-                        item.group = group
-                        group.addToItems(item)
-                    }
-                    else if item.types.contains(NSPasteboard.PasteboardType("public.html")) &&
-                                item.types.contains(NSPasteboard.PasteboardType("org.chromium.web-custom-data")) &&
-                                item.types.contains(NSPasteboard.PasteboardType("org.chromium.source-url")) {
-                        
-                        // for copying images out of google docs cause they're weird
-                        if let htmlContent = item.string(forType: .html), let imageUrl = self.extractHtmlImageURL(from: htmlContent) {
-                            dispatchGroup.enter()
-                            Task {
-                                do {
-                                    try await self.downloadAndProcessImageFromURL(from: imageUrl, inGroup: group, context: childContext)
-                                    dispatchGroup.leave()
-                                } catch {
-                                    print("Error: \(error.localizedDescription)")
-                                    errorOccurred = true
-                                    dispatchGroup.leave()
+                        // Check for file URLs first
+                        if let urlString = item.string(forType: .fileURL), let fileUrl = URL(string: urlString) {
+                            if self.userDefaultsManager.canCopyImages || self.userDefaultsManager.canCopyFilesOrFolders {
+                                operationsPending += 1
+                                self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { completion in
+                                    defer {
+                                        operationsPending -= 1
+                                        if operationsPending == 0 {
+                                            self.saveClipboardGroup(childContext: childContext)
+                                        }
+                                    }
+                                    if !completion {
+                                        print("Failed to process file at URL: \(fileUrl)")
+                                        errorOccurred = true
+                                    }
                                 }
                             }
-                        } else {
+                            else {
+                                return
+                            }
+                        }
+                        else if let imageData = item.data(forType: .tiff) ?? item.data(forType: .png) ?? item.data(forType: NSPasteboard.PasteboardType("public.jpeg")) {
+                            if self.userDefaultsManager.canCopyImages {
+                                self.processImageData(imageData: imageData, inGroup: group, context: childContext)
+                            }
+                            else {
+                                continue
+                            }
+                        }
+                        else if let content = item.string(forType: .string) {
+                            let item = ClipboardItem(context: childContext)
+                            item.content = content
+                            item.type = "text"
+                            item.filePath = nil
+                            item.imageData = nil
+                            item.imageHash = nil
+                            item.group = group
+                            group.addToItems(item)
+                        }
+                        else if item.types.contains(NSPasteboard.PasteboardType("public.html")) &&
+                                    item.types.contains(NSPasteboard.PasteboardType("org.chromium.web-custom-data")) &&
+                                    item.types.contains(NSPasteboard.PasteboardType("org.chromium.source-url")) {
+                            
+                            // for copying images out of google docs cause they're weird
+                            if let htmlContent = item.string(forType: .html), let imageUrl = self.extractHtmlImageURL(from: htmlContent) {
+//                                do {
+//                                    try await self.downloadAndProcessImageFromURL(from: imageUrl, inGroup: group, context: childContext)
+//                                } catch {
+//                                    print("Error: \(error.localizedDescription)")
+//                                    errorOccurred = true
+//                                }
+                                self.downloadAndProcessImageFromURL(from: imageUrl, inGroup: group, context: childContext) { error in
+                                    if let error = error {
+                                        print("Error: \(error.localizedDescription)")
+                                        errorOccurred = true
+                                    }
+                                }
+                            } else {
+                                return
+                            }
+                        }
+                        else {
+                            print(item.types);
                             return
                         }
+                        counter += 1
                     }
-                    else {
-                        print(item.types);
-                        return
-                    }
-                    counter += 1
-                }
-                dispatchGroup.notify(queue: .main) {
                     if !errorOccurred {
                         self.saveClipboardGroup(childContext: childContext)
                         self.log("Done processing")
@@ -199,60 +196,7 @@ class ClipboardMonitor: ObservableObject {
             }
         }
     }
-    
-//    @MainActor
-//    private func processDataFromClipboard() async {
-////        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
-//        
-//        let pasteboard = NSPasteboard.general
-//        
-//        // making a child context because I need to be able to create Items for the group and checkLast before saving,
-//        // parent context is available to the content view even without saving, so I need them seperate
-//        let childContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
-////            let context = PersistenceController.shared.container.viewContext
-//        childContext.parent = PersistenceController.shared.container.viewContext
-//
-////        await childContext.perform {
-//        await childContext.perform {
-//            if let items = pasteboard.pasteboardItems, !items.isEmpty {
-//                let group = ClipboardGroup(context: childContext)
-//                group.timeStamp = Date()
-//                group.count = Int16(min(items.count, self.userDefaultsManager.maxStoreCount))
-//                
-//                let dispatchGroup = DispatchGroup()
-//
-//                var counter = 0
-//                for item in items {
-//                    if counter >= self.maxItemCount {
-//                        continue
-//                    }
-//                    // Check for file URLs first
-//                    if let imageData = item.data(forType: .tiff) ?? item.data(forType: .png) ?? item.data(forType: NSPasteboard.PasteboardType("public.jpeg")) {
-//                        if self.userDefaultsManager.canCopyImages {
-//                            dispatchGroup.enter()
-//                            Task {
-//                                await self.processImageData(imageData: imageData, inGroup: group, context: childContext)
-//                                dispatchGroup.leave()
-//                            }
-//                        }
-//                        else {
-//                            continue
-//                        }
-//                    }
-//                    else {
-//                        print(item.types);
-//                        return
-//                    }
-//                    counter += 1
-//                }
-//                dispatchGroup.notify(queue: .main) {
-//                    self.saveClipboardGroup(childContext: childContext)
-//                    self.log("Done processing")
-//                }
-//            }
-//        }
-//    }
-    
+        
     func log(_ message: String) {
         let timestamp = Date().description(with: .current)
         print("[\(timestamp)] \(message)")
@@ -278,23 +222,50 @@ class ClipboardMonitor: ObservableObject {
         return nil
     }
     
-    private func downloadAndProcessImageFromURL(from imageUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext) async throws {
-        let (data, response): (Data, URLResponse)
-        do {
-            (data, response) = try await URLSession.shared.data(for: URLRequest(url: imageUrl))
-        }
-        catch {
-            throw URLError(.unknown)
-        }
-        
-        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
-        
-        // Process the image asynchronously
-        await self.processImageData(imageData: data, inGroup: group, context: context)
-    }
+//    private func downloadAndProcessImageFromURL(from imageUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext) async throws {
+//        let (data, response): (Data, URLResponse)
+//        do {
+//            (data, response) = try await URLSession.shared.data(for: URLRequest(url: imageUrl))
+//        }
+//        catch {
+//            throw URLError(.unknown)
+//        }
+//        
+//        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+//            throw URLError(.badServerResponse)
+//        }
+//        
+//        // Process the image asynchronously
+//        self.processImageData(imageData: data, inGroup: group, context: context)
+//    }
     
+    private func downloadAndProcessImageFromURL(from imageUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext, completion: @escaping (Error?) -> Void) {
+
+        // creating a data task to download the image asynchronously
+        URLSession.shared.dataTask(with: imageUrl) { data, response, error in
+            if let error = error {
+                print("Failed to download image from URL: \(imageUrl), error: \(error.localizedDescription)")
+                completion(error)
+                return
+            }
+            
+            guard
+                let httpResponse = response as? HTTPURLResponse,
+                (200...299).contains(httpResponse.statusCode),
+                let data = data
+            else {
+                let error = URLError(.badServerResponse)
+                print("Invalid server response for URL: \(imageUrl)")
+                completion(error)
+                return
+            }
+            
+            DispatchQueue.main.async {
+                self.processImageData(imageData: data, inGroup: group, context: context)
+                completion(nil) // Indicate success
+            }
+        }.resume()
+    }
     
     private func processFileFolder(fileUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext, completion: @escaping (Bool) -> Void) {
         let acceptableFileTypes = [
@@ -472,7 +443,8 @@ class ClipboardMonitor: ObservableObject {
     
     // takes in imageData, like a screenshot, turns it into an image file
     // image file is stored as a temp file, user can copy and paste anywhere, but temp file is deleted when clipboard item is eventually deleted
-    private func processImageData(imageData: Data, inGroup group: ClipboardGroup, context: NSManagedObjectContext) async {
+    private func processImageData(imageData: Data, inGroup group: ClipboardGroup, context: NSManagedObjectContext) {
+        print("Processing image")
         
         let maxSize: CGFloat = 1000
         let finalImageData: Data
@@ -488,7 +460,7 @@ class ClipboardMonitor: ObservableObject {
         // this is called when I take the screenshot in the first place
         let imageHash = self.hashImageData(finalImageData)
         
-        if let imageFileURL = await createImageFile(imageData: finalImageData) {
+        if let imageFileURL = createImageFile(imageData: finalImageData) {
             let item = ClipboardItem(context: context)
             item.content = imageFileURL.lastPathComponent
             item.filePath = imageFileURL.path
@@ -509,6 +481,8 @@ class ClipboardMonitor: ObservableObject {
             print("\n**** Image created from Image Data \n")
             
         }
+        
+        print("Exiting image process")
     }
     
     func findItems(content: String?, type: String?, imageHash: String?, filePath: String?, context: NSManagedObjectContext?) -> [ClipboardItem] {
@@ -789,23 +763,6 @@ class ClipboardMonitor: ObservableObject {
         return resizedImage
     }
     
-//    private func downscaleImageData(image: NSImage, to targetSize: NSSize) -> Data? {
-//        let resizedImage = NSImage(size: targetSize)
-//        resizedImage.lockFocus()
-//        image.draw(in: NSRect(origin: .zero, size: targetSize),
-//                   from: NSRect(origin: .zero, size: image.size),
-//                   operation: .copy,
-//                   fraction: 1.0)
-//        resizedImage.unlockFocus()
-//        
-//        // Convert resized NSImage to PNG or JPEG data to minimize memory usage
-//        guard let bitmapRep = NSBitmapImageRep(data: resizedImage.tiffRepresentation!),
-//              let resizedData = bitmapRep.representation(using: .jpeg, properties: [.compressionFactor: 0.8]) else {
-//            return nil
-//        }
-//        
-//        return resizedData
-//    }
     // Helper function to downscale image data if needed
     private func downscaleImageData(imageData: Data, maxSize: CGFloat) -> Data? {
         guard let imageSource = CGImageSourceCreateWithData(imageData as CFData, nil) else {
@@ -900,13 +857,13 @@ class ClipboardMonitor: ObservableObject {
         }
     }
         
-    private func createImageFile(imageData: Data?) async -> URL? {
+    private func createImageFile(imageData: Data?) -> URL? {
         guard let image = NSImage(data: imageData!) else {
             print("Failed to create image from TIFF data.")
             return nil
         }
 
-        if let pngData = await convertNSImageToPNG(image: image) {
+        if let pngData = convertNSImageToPNG(image: image) {
             let formatter = DateFormatter()
             // format of: 2024-08-05 at 12.39.38 PM
             formatter.dateFormat = "yyyy-MM-dd h.mm.ss bb"
@@ -926,12 +883,12 @@ class ClipboardMonitor: ObservableObject {
         }
     }
 
-    private func convertNSImageToPNG(image: NSImage) async -> Data? {
+    private func convertNSImageToPNG(image: NSImage) -> Data? {
         guard let tiffData = image.tiffRepresentation,
-                  let bitmapImage = NSBitmapImageRep(data: tiffData) else {
-                return nil
-            }
-            return bitmapImage.representation(using: .png, properties: [:])
+              let bitmapImage = NSBitmapImageRep(data: tiffData) else {
+            return nil
+        }
+        return bitmapImage.representation(using: .png, properties: [:])
     }
     
     private func saveImageDataToFile(imageData: Data, filePath: String, fileType: NSBitmapImageRep.FileType) -> URL? {
