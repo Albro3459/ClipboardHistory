@@ -14,6 +14,7 @@ import SwiftUI
 import Combine
 import Cocoa
 import CoreData
+import Vision
 
 
 class ClipboardManager: ObservableObject {
@@ -128,9 +129,78 @@ class ClipboardManager: ObservableObject {
                         ($0.content?.lowercased().contains(searchText) ?? false)
                     })
                 }
-                return searchTextMatch && typeMatch
+                
+                
+                // OCR Image Search
+                let imageTextMatch = group.itemsArray.contains { item in
+                    
+                    if item.imageData == nil { return false }
+
+                    // Check cached OCR text
+                    if let cachedText = item.cachedImageText?.lowercased(), cachedText.contains(searchText) {
+                        return true
+                    }
+
+                    // Perform OCR if not cached
+                    if let recognizedText = recognizeAndCacheText(for: item)?.lowercased(), recognizedText.contains(searchText) {
+                        return true
+                    }
+
+                    return false
+                }
+                
+                return (searchTextMatch && typeMatch) || imageTextMatch
             }
         }
+    }
+    
+    // Searches Image Text (OCR), caches text it previously found in CoreData to reference first
+    private func recognizeAndCacheText(for item: ClipboardItem) -> String? {
+        if let cachedText = item.cachedImageText {
+            return cachedText
+        }
+
+        guard let imageData = item.imageData,
+              let nsImage = NSImage(data: imageData),
+              let cgImage = nsImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            print("Failed to convert imageData to CGImage.")
+            return nil
+        }
+
+        var recognizedText: String?
+
+        let request = VNRecognizeTextRequest { request, error in
+            guard let observations = request.results as? [VNRecognizedTextObservation], error == nil else {
+                print("Error during text recognition: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+
+            recognizedText = observations.compactMap {
+                $0.topCandidates(1).first?.string
+            }.joined(separator: " ")
+
+            // Log recognized text
+            if let text = recognizedText {
+//                print("Recognized text: \(text)")
+            }
+        }
+
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+        request.recognitionLanguages = ["en"] // Adjust based on supported languages
+
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        do {
+            try handler.perform([request])
+            if let recognizedText = recognizedText {
+                item.cachedImageText = recognizedText
+                try item.managedObjectContext?.save()
+            }
+        } catch {
+            print("Failed to perform text recognition: \(error)")
+        }
+
+        return recognizedText
     }
     
     // copying a group with just 1 item

@@ -511,26 +511,33 @@ class ClipboardMonitor: ObservableObject {
                 item.type = "image"
                 item.group = group
                 
-                if let thumbnail = self.generateImageThumbnail(for: imageFileURL.path), let thumbnailData = thumbnail.tiffRepresentation {
-                    item.imageHash = self.hashImageData(thumbnailData)
-                    item.imageData = thumbnailData
-                    group.addToItems(item)
-                    completion(true)
-                }
-                else {
-                    self.generateThumbnail(for: imageFileURL.path) { thumbnail in
-                        defer { group.addToItems(item); completion(true) } // Defer is called regardless.
-                        if let thumbnail = thumbnail, let thumbnailData = thumbnail.tiffRepresentation {
-                            item.imageHash = self.hashImageData(thumbnailData)
-                            item.imageData = thumbnailData
-                        } else {
-                            // Thumbnail generation failed but valid image data exists
-                            item.type = "randomFile"
-                            item.imageData = nil
-                            item.imageHash = nil
-                        }
-                    }
-                }
+                //testing OCR
+                item.imageData = imageData
+                item.imageHash = self.hashImageData(imageData)
+                group.addToItems(item)
+                completion(true)
+
+                
+//                if let thumbnail = self.generateImageThumbnail(for: imageFileURL.path), let thumbnailData = thumbnail.tiffRepresentation {
+//                    item.imageHash = self.hashImageData(thumbnailData)
+//                    item.imageData = thumbnailData
+//                    group.addToItems(item)
+//                    completion(true)
+//                }
+//                else {
+//                    self.generateThumbnail(for: imageFileURL.path) { thumbnail in
+//                        defer { group.addToItems(item); completion(true) } // Defer is called regardless.
+//                        if let thumbnail = thumbnail, let thumbnailData = thumbnail.tiffRepresentation {
+//                            item.imageHash = self.hashImageData(thumbnailData)
+//                            item.imageData = thumbnailData
+//                        } else {
+//                            // Thumbnail generation failed but valid image data exists
+//                            item.type = "randomFile"
+//                            item.imageData = nil
+//                            item.imageHash = nil
+//                        }
+//                    }
+//                }
             }
             else {
                 completion(false)
