@@ -119,6 +119,7 @@
       - cmd + shift + c: open and close window
       - option + r: reset window
       - cmd + shift + v: paste without formatting
+      - option + shift + c: paste Capitalized text without formatting
       - option + shift + l: paste All Lowercase without formatting
       - option + shift + u: paste All Uppercase without formatting
 
@@ -136,7 +137,7 @@
 
   * expand button or left-arrow on group to contract
 
-  * cmd + f to search
+  * cmd + f to search for text, files, folders, and even OCR by searching for text in images
 
   * escape takes you out of search or selecting clipboard types, or if not selecting anything, it hides the app
 
@@ -156,6 +157,7 @@
       - cmd + shift + c: open and close window
       - option + r: reset window
       - cmd + shift + v: paste without formatting
+      - option + shift + c: paste Capitalized text without formatting
       - option + shift + l: paste All Lowercase without formatting
       - option + shift + u: paste All Uppercase without formatting
   </details>
@@ -208,26 +210,3 @@
     <img src="https://github.com/user-attachments/assets/0fc2feba-a20e-4bb0-a75e-d8a2747b75ff" alt="example screen shot with open group" height="300"/>
     <img src="https://github.com/user-attachments/assets/816caec4-2adb-4f34-90f7-335faee855d1" alt="example folder search screen shot" height="300"/>
 </div>
-
-
-<!-- <br />
-
-##### OLD:
-
-need to activate python virtual environment every time with
-```sh
-source venv/bin/activate
-```
-
-to create venv:
-```sh
-python3 -m venv venv
-source venv/bin/activate
-pip install pyperclip ## to install pyperclip
-```
-
-
-to deactivate:
-```sh
-source deactivate
-``` -->

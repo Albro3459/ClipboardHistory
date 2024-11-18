@@ -14,6 +14,7 @@ import SwiftUI
 import Combine
 import Cocoa
 import CoreData
+import Vision
 
 
 class ClipboardManager: ObservableObject {
@@ -128,9 +129,78 @@ class ClipboardManager: ObservableObject {
                         ($0.content?.lowercased().contains(searchText) ?? false)
                     })
                 }
-                return searchTextMatch && typeMatch
+                
+                
+                // OCR Image Search
+                let imageTextMatch = group.itemsArray.contains { item in
+                    
+                    if item.imageData == nil { return false }
+
+                    // Check cached OCR text
+                    if let cachedText = item.cachedImageText?.lowercased(), cachedText.contains(searchText) {
+                        return true
+                    }
+
+                    // Perform OCR if not cached
+                    if let recognizedText = recognizeAndCacheText(for: item)?.lowercased(), recognizedText.contains(searchText) {
+                        return true
+                    }
+
+                    return false
+                }
+                
+                return (searchTextMatch && typeMatch) || imageTextMatch
             }
         }
+    }
+    
+    // Searches Image Text (OCR), caches text it previously found in CoreData to reference first
+    private func recognizeAndCacheText(for item: ClipboardItem) -> String? {
+        if let cachedText = item.cachedImageText {
+            return cachedText
+        }
+
+        guard let imageData = item.imageData,
+              let nsImage = NSImage(data: imageData),
+              let cgImage = nsImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            print("Failed to convert imageData to CGImage.")
+            return nil
+        }
+
+        var recognizedText: String?
+
+        let request = VNRecognizeTextRequest { request, error in
+            guard let observations = request.results as? [VNRecognizedTextObservation], error == nil else {
+                print("Error during text recognition: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+
+            recognizedText = observations.compactMap {
+                $0.topCandidates(1).first?.string
+            }.joined(separator: " ")
+
+            // Log recognized text
+//            if let text = recognizedText {
+//                print("Recognized text: \(text)")
+//            }
+        }
+
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+        request.recognitionLanguages = ["en", "es"]
+
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        do {
+            try handler.perform([request])
+            if let recognizedText = recognizedText {
+                item.cachedImageText = recognizedText
+                try item.managedObjectContext?.save()
+            }
+        } catch {
+            print("Failed to perform text recognition: \(error)")
+        }
+
+        return recognizedText
     }
     
     // copying a group with just 1 item
@@ -248,6 +318,7 @@ class ClipboardManager: ObservableObject {
     }
             
     func copied(item: ClipboardItem?) -> Bool {
+        if self.isCopied { return true } // dont overlap alerts
         DispatchQueue.main.async {
             self.isCopied = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -540,7 +611,29 @@ class ClipboardManager: ObservableObject {
     
     private var lastPasteNoFormatTime: Date?
     
-    public func pasteNoFormatting(lowerFalseUpperTrueText: Bool?) {
+    public enum PasteStyleEnum {
+        case `default`
+        case upper
+        case lower
+        case capital
+    }
+    
+    private func pasteStyleHelper(pasteStyle: PasteStyleEnum, text: String) {
+        var output: String
+        switch pasteStyle {
+        case .upper:
+            output = text.uppercased()
+        case .lower:
+            output = text.lowercased()
+        case .capital:
+            output = text.capitalized
+        default:
+            output = text
+        }
+        self.updatePasteboard(with: output)
+    }
+    
+    public func pasteNoFormatting(pasteStyle: PasteStyleEnum) {
         
         DispatchQueue.main.async {
 
@@ -554,23 +647,20 @@ class ClipboardManager: ObservableObject {
             else if let imageData = pasteboard.data(forType: .tiff), let _ = NSImage(data: imageData) {
             }
             else if let content = pasteboard.string(forType: .string) {
-                self.updatePasteboard(with: lowerFalseUpperTrueText == true ? content.uppercased() : 
-                                        (lowerFalseUpperTrueText == false ? content.lowercased() : content))
+                self.pasteStyleHelper(pasteStyle: pasteStyle, text: content)
             }
             else if let rtfData = pasteboard.data(forType: .rtf) {
                 // Convert RTF to plain text
                 if let attributedString = NSAttributedString(rtf: rtfData, documentAttributes: nil) {
                     let plainText = attributedString.string
-                    self.updatePasteboard(with: lowerFalseUpperTrueText == true ? plainText.uppercased() : 
-                                            (lowerFalseUpperTrueText == false ? plainText.lowercased() : plainText))
+                    self.pasteStyleHelper(pasteStyle: pasteStyle, text: plainText)
                 }
             } 
             else if let htmlData = pasteboard.data(forType: .html) {
                 // Convert HTML to plain text
                 if let attributedString = try? NSAttributedString(data: htmlData, options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil) {
                     let plainText = attributedString.string
-                    self.updatePasteboard(with: lowerFalseUpperTrueText == true ? plainText.uppercased() : 
-                                            (lowerFalseUpperTrueText == false ? plainText.lowercased() : plainText))
+                    self.pasteStyleHelper(pasteStyle: pasteStyle, text: plainText)
                 }
             }
             
@@ -584,7 +674,6 @@ class ClipboardManager: ObservableObject {
         
         pasteboard.clearContents()
         pasteboard.setString(plainText, forType: .string)
-        self.paste()
     }
     
     func paste() {

@@ -6,6 +6,7 @@
         <relationship name="items" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ClipboardItem" inverseName="group" inverseEntity="ClipboardItem"/>
     </entity>
     <entity name="ClipboardItem" representedClassName=".ClipboardItem" syncable="YES">
+        <attribute name="cachedImageText" optional="YES" attributeType="String"/>
         <attribute name="content" optional="YES" attributeType="String"/>
         <attribute name="filePath" optional="YES" attributeType="String"/>
         <attribute name="imageData" optional="YES" attributeType="Binary"/>

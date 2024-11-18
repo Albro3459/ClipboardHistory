@@ -4,6 +4,7 @@
     - cmd + shift + c: open and close window
     - option + r: reset window
     - cmd + shift + v: paste without formatting
+    - option + shift + c: paste Capitalized text without formatting
     - option + shift + l: paste All Lowercase without formatting
     - option + shift + u: paste All Uppercase without formatting
 

@@ -16,6 +16,9 @@ struct SettingsView: View {
     
     @State private var pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
     @State private var pauseCopyingInput = UserDefaults.standard.bool(forKey: "pauseCopying")
+    
+    @State private var hideDeleteAlerts = UserDefaults.standard.bool(forKey: "hideDeleteAlerts")
+    @State private var hideDeleteAlertsInput = UserDefaults.standard.bool(forKey: "hideDeleteAlerts")
 
     @State private var maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
     @State private var maxStoreCountInput = UserDefaults.standard.integer(forKey: "maxStoreCount")
@@ -40,7 +43,9 @@ struct SettingsView: View {
     
     @State private var pasteUpper = UserDefaults.standard.bool(forKey: "pasteUppercaseWithoutFormatting")
     @State private var pasteUpperInput = UserDefaults.standard.bool(forKey: "pasteUppercaseWithoutFormatting")
-
+    
+    @State private var pasteCapital = UserDefaults.standard.bool(forKey: "pasteCapitalizedWithoutFormatting")
+    @State private var pasteCapitalInput = UserDefaults.standard.bool(forKey: "pasteCapitalizedWithoutFormatting")
     
     
     @State private var darkMode = UserDefaults.standard.bool(forKey: "darkMode")
@@ -77,6 +82,9 @@ struct SettingsView: View {
     
     @State var pasteUpperShortcut: KeyboardShortcut = UserDefaultsManager.shared.pasteUppercaseWithoutFormattingShortcut
     @State var pasteUpperShortcutInput: KeyboardShortcut = UserDefaultsManager.shared.pasteUppercaseWithoutFormattingShortcut
+
+    @State var pasteCapitalShortcut: KeyboardShortcut = UserDefaultsManager.shared.pasteCapitalizedWithoutFormattingShortcut
+    @State var pasteCapitalShortcutInput: KeyboardShortcut = UserDefaultsManager.shared.pasteCapitalizedWithoutFormattingShortcut
     
     @State var toggleWindowShortcut: KeyboardShortcut = UserDefaultsManager.shared.toggleWindowShortcut
     @State var toggleWindowShortcutInput: KeyboardShortcut = UserDefaultsManager.shared.toggleWindowShortcut
@@ -92,7 +100,8 @@ struct SettingsView: View {
     @State private var resetSettings: Bool = false
     
     @State private var showingResetAlert: Bool = false
-
+    
+    @State private var selectedTab = 0
     
     var body: some View {
         ZStack {
@@ -173,12 +182,13 @@ struct SettingsView: View {
             }
             
             VStack {
-                TabView {
-                    ClipboardSettingsView(pauseCopyingInput: $pauseCopyingInput, maxStoreCountInput: $maxStoreCountInput, noDuplicatesInput: $noDuplicatesInput, canCopyFilesOrFoldersInput: $canCopyFilesOrFoldersInput, canCopyImagesInput: $canCopyImagesInput, enterKeyHidesAfterCopyInput: $enterKeyHidesAfterCopyInput, pasteWithoutFormattingInput: $pasteWithoutFormattingInput, pasteLowerInput: $pasteLowerInput, pasteUpperInput: $pasteUpperInput)
+                TabView(selection: $selectedTab) {
+                    ClipboardSettingsView(pauseCopyingInput: $pauseCopyingInput, hideDeleteAlertsInput: $hideDeleteAlertsInput, maxStoreCountInput: $maxStoreCountInput, noDuplicatesInput: $noDuplicatesInput, canCopyFilesOrFoldersInput: $canCopyFilesOrFoldersInput, canCopyImagesInput: $canCopyImagesInput, enterKeyHidesAfterCopyInput: $enterKeyHidesAfterCopyInput, pasteWithoutFormattingInput: $pasteWithoutFormattingInput, pasteLowerInput: $pasteLowerInput, pasteUpperInput: $pasteUpperInput, pasteCapitalInput: $pasteCapitalInput)
                         .tabItem {
                             Text("Clipboard")
                                 .help("View Clipboard Related Settings")
                         }
+                        .tag(0)
 
                     
                     WindowSettingsView(darkModeInput: $darkModeInput, windowWidthInput: $windowWidthInput, windowHeightInput: $windowHeightInput, windowLocationInput: $windowLocationInput, windowPopOutInput: $windowPopOutInput, canWindowFloatInput: $canWindowFloatInput, hideWindowWhenNotSelectedInput: $hideWindowWhenNotSelectedInput, windowOnAllDesktopsInput: $windowOnAllDesktopsInput)
@@ -186,14 +196,15 @@ struct SettingsView: View {
                             Text("Window")
                                 .help("View Window Settings")
                         }
+                        .tag(1)
                     
-                    ShortcutsSettingsView(pasteWithoutFormattingShortcutInput: $pasteWithoutFormattingShortcutInput, pasteLowerShortcutInput: $pasteLowerShortcutInput, pasteUpperShortcutInput: $pasteUpperShortcutInput,
+                    ShortcutsSettingsView(pasteWithoutFormattingShortcutInput: $pasteWithoutFormattingShortcutInput, pasteLowerShortcutInput: $pasteLowerShortcutInput, pasteUpperShortcutInput: $pasteUpperShortcutInput, pasteCapitalShortcutInput: $pasteCapitalShortcutInput,
                         toggleWindowShortcutInput: $toggleWindowShortcutInput, resetWindowShortcutInput: $resetWindowShortcutInput)
                         .tabItem {
                             Text("Keyboad Shortcuts")
                                 .help("View Keyboard Shortcut Settings")
                         }
-
+                        .tag(2)
                 }
 
                 ZStack {
@@ -244,36 +255,29 @@ struct SettingsView: View {
                 }
                 .onChange(of: userDefaultsManager.darkMode) {
                     self.darkMode = userDefaultsManager.darkMode
+                    self.darkModeInput = userDefaultsManager.darkMode
+                }
+                .onChange(of: userDefaultsManager.pauseCopying) {
+                    DispatchQueue.main.async {
+                        self.pauseCopying = userDefaultsManager.pauseCopying
+                        self.pauseCopyingInput = userDefaultsManager.pauseCopying
+                    }
                 }
             }
             .padding(.top, 20)
             
         }
-        .frame(width: 580, height: 500)
+        .frame(width: 580, height: 525)
         .padding()
         .onAppear() {
             self.setUpKeyboardHandling()
         }
     }
     
-    private func handleWindowDidResignKey(_ notification: Notification) {
-        print("Window did resign key (unfocused)")
-        // App lost focus
-        
-        print(UserDefaultsManager.shared.hideWindowWhenNotSelected)
-        if UserDefaultsManager.shared.hideWindowWhenNotSelected {
-            // Check if the current main window is the settings window
-            if let mainWindow = NSApplication.shared.mainWindow, mainWindow.title == "ClipboardHistory" {
-                print("The main window is the settings window, not hiding it.")
-            } else {
-                WindowManager.shared.hideWindow()
-            }
-        }
-    }
-    
     private func saveSettings() {
         
         UserDefaults.standard.set(pauseCopyingInput, forKey: "pauseCopying")
+        UserDefaults.standard.set(hideDeleteAlertsInput, forKey: "hideDeleteAlerts")
         UserDefaults.standard.set(maxStoreCountInput, forKey: "maxStoreCount")
         UserDefaults.standard.set(noDuplicatesInput, forKey: "noDuplicates")
         UserDefaults.standard.set(canCopyFilesOrFoldersInput, forKey: "canCopyFilesOrFolders")
@@ -282,16 +286,12 @@ struct SettingsView: View {
         UserDefaults.standard.set(pasteWithoutFormattingInput, forKey: "pasteWithoutFormatting")
         UserDefaults.standard.set(pasteLowerInput, forKey: "pasteLowercaseWithoutFormatting")
         UserDefaults.standard.set(pasteUpperInput, forKey: "pasteUppercaseWithoutFormatting")
+        UserDefaults.standard.set(pasteCapitalInput, forKey: "pasteCapitalizedWithoutFormatting")
         
         UserDefaults.standard.set(darkModeInput, forKey: "darkMode")
         UserDefaults.standard.set(windowWidthInput, forKey: "windowWidth")
         UserDefaults.standard.set(windowHeightInput, forKey: "windowHeight")
         UserDefaults.standard.set(windowLocationInput, forKey: "windowLocation")
-        if hideWindowWhenNotSelectedInput {
-            if windowPopOut {
-                hideWindowWhenNotSelectedInput = false
-            }
-        }
         UserDefaults.standard.set(windowPopOutInput, forKey: "windowPopOut")
         if windowPopOutInput {
             canWindowFloatInput = false
@@ -304,7 +304,7 @@ struct SettingsView: View {
         if pasteWithoutFormattingInput {
             //                        print("enabling")
             KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
-                clipboardManager.pasteNoFormatting(lowerFalseUpperTrueText: nil)
+                clipboardManager.pasteNoFormatting(pasteStyle: .default)
             }
         }
         else if !pasteWithoutFormattingInput {
@@ -314,7 +314,7 @@ struct SettingsView: View {
         
         if pasteLowerInput {
             KeyboardShortcuts.onKeyUp(for: .pasteLowerNoFormatting) {
-                clipboardManager.pasteNoFormatting(lowerFalseUpperTrueText: false)
+                clipboardManager.pasteNoFormatting(pasteStyle: .lower)
             }
         }
         else if !pasteLowerInput {
@@ -323,24 +323,31 @@ struct SettingsView: View {
         
         if pasteUpperInput {
             KeyboardShortcuts.onKeyUp(for: .pasteUpperNoFormatting) {
-                clipboardManager.pasteNoFormatting(lowerFalseUpperTrueText: true)
+                clipboardManager.pasteNoFormatting(pasteStyle: .upper)
             }
         }
         else if !pasteUpperInput {
             KeyboardShortcuts.disable(.pasteUpperNoFormatting)
         }
         
+        if pasteCapitalInput {
+            KeyboardShortcuts.onKeyUp(for: .pasteCapitalNoFormatting) {
+                clipboardManager.pasteNoFormatting(pasteStyle: .capital)
+            }
+        }
+        else if !pasteCapitalInput {
+            KeyboardShortcuts.disable(.pasteCapitalNoFormatting)
+        }
+        
         userDefaultsManager.pasteWithoutFormattingShortcut = pasteWithoutFormattingShortcutInput
+        userDefaultsManager.pasteLowercaseWithoutFormattingShortcut = pasteLowerShortcutInput
+        userDefaultsManager.pasteUppercaseWithoutFormattingShortcut = pasteUpperShortcutInput
+        userDefaultsManager.pasteCapitalizedWithoutFormattingShortcut = pasteCapitalShortcutInput
+        
         userDefaultsManager.toggleWindowShortcut = toggleWindowShortcutInput
         userDefaultsManager.resetWindowShortcut = resetWindowShortcutInput
         
-        userDefaultsManager.updateAll(savePasteNoFormatShortcut: pasteWithoutFormatting == pasteWithoutFormattingInput, savePasteLowerShortcut: pasteLower == pasteLowerInput, savePasteUpperShortcut: pasteUpper == pasteUpperInput)
-        
-        if hideWindowWhenNotSelected {
-            NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification,object: nil,queue: .main) { notification in
-                self.handleWindowDidResignKey(notification)
-            }
-        }
+        userDefaultsManager.updateAll(savePasteNoFormatShortcut: pasteWithoutFormatting == pasteWithoutFormattingInput, savePasteLowerShortcut: pasteLower == pasteLowerInput, savePasteUpperShortcut: pasteUpper == pasteUpperInput, savePasteCapitalShortcut: pasteCapital == pasteCapitalInput)
         
         menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput, shouldDelay: true)
         
@@ -352,7 +359,10 @@ struct SettingsView: View {
     }
     
     private func resetSettingsToDefault() {
+        selectedTab = 0 // reset to first tab, this also allows shortcuts to visually reset
+        
         pauseCopyingInput = false
+        hideDeleteAlerts = false
         maxStoreCountInput = 50
         noDuplicatesInput = true
         canCopyFilesOrFoldersInput = true
@@ -366,11 +376,14 @@ struct SettingsView: View {
         windowPopOutInput = false
         canWindowFloatInput = false
         hideWindowWhenNotSelectedInput = false
+        WindowManager.shared.removeObserverForWindowFocus()
         windowOnAllDesktopsInput = true
         
         pasteWithoutFormattingShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "v")
         pasteLowerShortcutInput = KeyboardShortcut(modifiers: ["option", "shift"], key: "l")
         pasteUpperShortcutInput = KeyboardShortcut(modifiers: ["option", "shift"], key: "u")
+        pasteCapitalShortcutInput = KeyboardShortcut(modifiers: ["option", "shift"], key: "c")
+        
         toggleWindowShortcutInput = KeyboardShortcut(modifiers: ["command", "shift"], key: "c")
         resetWindowShortcutInput = KeyboardShortcut(modifiers: ["option"], key: "r")
         
@@ -394,12 +407,14 @@ struct SettingsView: View {
         userDefaultsManager.pasteWithoutFormattingShortcut = pasteWithoutFormattingShortcutInput
         userDefaultsManager.pasteLowercaseWithoutFormattingShortcut = pasteLowerShortcutInput
         userDefaultsManager.pasteUppercaseWithoutFormattingShortcut = pasteUpperShortcutInput
+        userDefaultsManager.pasteCapitalizedWithoutFormattingShortcut = pasteCapitalShortcutInput
+        
         userDefaultsManager.toggleWindowShortcut = toggleWindowShortcutInput
         userDefaultsManager.resetWindowShortcut = resetWindowShortcutInput
         
         menuManager.updateMainMenu(isCopyingPaused: pauseCopyingInput, shouldDelay: true)
         
-        userDefaultsManager.updateAll(savePasteNoFormatShortcut: true, savePasteLowerShortcut: true, savePasteUpperShortcut: true)
+        userDefaultsManager.updateAll(savePasteNoFormatShortcut: true, savePasteLowerShortcut: true, savePasteUpperShortcut: true, savePasteCapitalShortcut: true)
 
         
         DispatchQueue.main.async {
@@ -432,6 +447,9 @@ struct ClipboardSettingsView: View {
 
     @State private var pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
     @Binding var pauseCopyingInput: Bool
+    
+    @State private var hideDeleteAlerts = UserDefaults.standard.bool(forKey: "hideDeleteAlerts")
+    @Binding var hideDeleteAlertsInput: Bool
 
     @State private var maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
     @Binding var maxStoreCountInput: Int
@@ -457,6 +475,9 @@ struct ClipboardSettingsView: View {
     @State private var pasteUpper = UserDefaults.standard.bool(forKey: "pasteUppercaseWithoutFormatting")
     @Binding var pasteUpperInput: Bool
     
+    @State private var pasteCapital = UserDefaults.standard.bool(forKey: "pasteCapitalizedWithoutFormatting")
+    @Binding var pasteCapitalInput: Bool
+    
     
     @State private var geoWidth: CGFloat = 0.0
     @State private var geoHeight: CGFloat = 0.0
@@ -471,7 +492,10 @@ struct ClipboardSettingsView: View {
                 Form {
                     VStack {
                         Spacer()
-                        Toggle("Pause Copying?", isOn: $pauseCopyingInput).padding().padding(.top, -5)
+                        HStack {
+                            Toggle("Pause Copying?", isOn: $pauseCopyingInput).padding().padding(.top, -5)
+                            Toggle("Hide Delete Alerts?", isOn: $hideDeleteAlertsInput).padding().padding(.top, -5)
+                        }
                         
                         HStack {
                             Text("Max Number of Items to Store: ")
@@ -509,15 +533,20 @@ struct ClipboardSettingsView: View {
                         
                         Spacer()
                         Spacer()
-                        Spacer()
                         
                         Text("Enable/Disable Paste Without Formatting Shorcuts?")
-                        Text("They are individual shortcuts. Check the shortcuts tab")
+                        Text("They are individual shortcuts. Check the shortcuts tab to change them")
                             .font(.footnote)
-                        HStack {
-                            Toggle("General No Formatting", isOn: $pasteWithoutFormattingInput).padding().padding(.top, -5)
-                            Toggle("All Lowercase", isOn: $pasteLowerInput).padding().padding(.top, -5)
-                            Toggle("All Uppercase", isOn: $pasteUpperInput).padding().padding(.top, -5)
+                        VStack {
+                            HStack {
+                                Toggle("General No Formatting", isOn: $pasteWithoutFormattingInput).padding().padding(.top, -5)
+                                Toggle("Capitalized No Formatting", isOn: $pasteCapitalInput).padding().padding(.top, -5)
+                            }
+                            HStack {
+                                Toggle("All Lowercase", isOn: $pasteLowerInput).padding().padding(.top, -5)
+                                Toggle("All Uppercase", isOn: $pasteUpperInput).padding().padding(.top, -5)
+                            }
+                            .padding(.top, -15)
                         }
                     }
                 }
@@ -582,7 +611,6 @@ struct WindowSettingsView: View {
                         Toggle("Dark Mode On?", isOn: $darkModeInput).padding()
                         
                         Spacer()
-                        Spacer()
                         
                         Text("Window Width: ")
                         
@@ -619,13 +647,13 @@ struct WindowSettingsView: View {
                         .frame(width: 500)
                         
                         Spacer()
+                        Spacer()
                         
                         Toggle("Switch Window to Pop Out of Status Bar Icon?", isOn: $windowPopOutInput)
                             .disabled(hideWindowWhenNotSelectedInput)
                             .padding()
                         
                         
-                        Spacer()
                         Spacer()
                         
                         Text("Default Window Location: ")
@@ -672,20 +700,24 @@ struct WindowSettingsView: View {
                         }
                         
                         
-                        Toggle("Can Window Float?", isOn: $canWindowFloatInput)
-                            .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
-                            .disabled(windowPopOutInput)
-                            .padding()
+                        HStack {
+                            Toggle("Can Window Float?", isOn: $canWindowFloatInput)
+                                .foregroundColor((windowPopOutInput || canWindowFloatInput) ? Color.gray : (darkMode ? .white : .primary))
+                                .disabled(windowPopOutInput || hideWindowWhenNotSelectedInput)
+                                .padding()
+                            
+                            Toggle("Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelectedInput)
+                                .foregroundColor((windowPopOutInput || canWindowFloatInput) ? Color.gray : (darkMode ? .white : .primary))
+                                .disabled(windowPopOutInput || canWindowFloatInput)
+                                .padding()
+                        }
                         
-                        Toggle("Show Window On All Desktops?", isOn: $windowOnAllDesktops)
+                        Toggle("Show Window On All Desktops?", isOn: $windowOnAllDesktopsInput)
                             .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
                             .disabled(windowPopOutInput)
                             .padding()
+                            .padding(.top, -15)
                         
-                        Toggle("**Very Buggy** Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelectedInput)
-                            .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))
-                            .disabled(windowPopOutInput)
-                            .padding()
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -695,11 +727,17 @@ struct WindowSettingsView: View {
                 .onChange(of: hideWindowWhenNotSelectedInput) {
                     if hideWindowWhenNotSelectedInput {
                         windowPopOutInput = !hideWindowWhenNotSelectedInput
+                        canWindowFloatInput = !hideWindowWhenNotSelectedInput
                     }
                 }
                 .onChange(of: windowPopOutInput) {
                     if windowPopOutInput {
                         hideWindowWhenNotSelectedInput = !windowPopOutInput
+                    }
+                }
+                .onChange(of: canWindowFloatInput) {
+                    if canWindowFloatInput {
+                        hideWindowWhenNotSelectedInput = !canWindowFloatInput
                     }
                 }
             }
@@ -740,6 +778,9 @@ struct ShortcutsSettingsView: View {
     
     @State var pasteUpperShortcut: KeyboardShortcut = UserDefaultsManager.shared.pasteUppercaseWithoutFormattingShortcut
     @Binding var pasteUpperShortcutInput: KeyboardShortcut
+    
+    @State var pasteCapitalShortcut: KeyboardShortcut = UserDefaultsManager.shared.pasteCapitalizedWithoutFormattingShortcut
+    @Binding var pasteCapitalShortcutInput: KeyboardShortcut
     
     @State var toggleWindowShortcut: KeyboardShortcut = UserDefaultsManager.shared.toggleWindowShortcut
     @Binding var toggleWindowShortcutInput: KeyboardShortcut
@@ -788,8 +829,19 @@ struct ShortcutsSettingsView: View {
                             
                             CustomShortcutView(shortcut: $pasteWithoutFormattingShortcutInput)
                             
-                        }.padding(.top)
+                        }
                         .padding(.leading)
+                        .padding(.trailing)
+                        
+                        VStack {
+                            Spacer()
+                            Text("Paste Capitalized Without Formatting Shortcut: ")
+                            
+                            Spacer()
+                            
+                            CustomShortcutView(shortcut: $pasteCapitalShortcutInput)
+                            
+                        }.padding(.leading)
                         .padding(.trailing)
                         
                         VStack {

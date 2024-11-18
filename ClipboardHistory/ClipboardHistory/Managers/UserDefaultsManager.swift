@@ -40,7 +40,8 @@ class UserDefaultsManager : ObservableObject {
     var hideWindowWhenNotSelected: Bool
     var windowOnAllDesktops: Bool
     
-    var pauseCopying: Bool
+    @Published var pauseCopying: Bool
+    @Published var hideDeleteAlerts: Bool
     
     var noDuplicates: Bool
     var maxStoreCount: Int
@@ -51,10 +52,12 @@ class UserDefaultsManager : ObservableObject {
     var pasteWithoutFormatting: Bool
     var pasteLowercaseWithoutFormatting: Bool
     var pasteUppercaseWithoutFormatting: Bool
+    var pasteCapitalizedWithoutFormatting: Bool
     
     var pasteWithoutFormattingShortcut: KeyboardShortcut
     var pasteLowercaseWithoutFormattingShortcut: KeyboardShortcut
     var pasteUppercaseWithoutFormattingShortcut: KeyboardShortcut
+    var pasteCapitalizedWithoutFormattingShortcut: KeyboardShortcut
     var toggleWindowShortcut: KeyboardShortcut
     var resetWindowShortcut: KeyboardShortcut
     
@@ -78,6 +81,7 @@ class UserDefaultsManager : ObservableObject {
         self.windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
 
         self.pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
+        self.hideDeleteAlerts = UserDefaults.standard.bool(forKey: "hideDeleteAlerts")
         
         self.maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
         self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
@@ -88,6 +92,7 @@ class UserDefaultsManager : ObservableObject {
         self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
         self.pasteLowercaseWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteLowercaseWithoutFormatting")
         self.pasteUppercaseWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteUppercaseWithoutFormatting")
+        self.pasteCapitalizedWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteCapitalizedWithoutFormatting")
         
         if let data = UserDefaults.standard.data(forKey: "pasteWithoutFormattingShortcut") {
             self.pasteWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
@@ -100,14 +105,21 @@ class UserDefaultsManager : ObservableObject {
             self.pasteLowercaseWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
         } else {
             print("pasteLowercaseWithoutFormattingShortcut Decode Failed!!")
-            self.pasteLowercaseWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "l")
+            self.pasteLowercaseWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["option", "shift"], key: "l")
         }
         
         if let data = UserDefaults.standard.data(forKey: "pasteUppercaseWithoutFormattingShortcut") {
             self.pasteUppercaseWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
         } else {
             print("pasteUppercaseWithoutFormattingShortcut Decode Failed!!")
-            self.pasteUppercaseWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "u")
+            self.pasteUppercaseWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["option", "shift"], key: "u")
+        }
+        
+        if let data = UserDefaults.standard.data(forKey: "pasteCapitalizedWithoutFormattingShortcut") {
+            self.pasteCapitalizedWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
+        } else {
+            print("pasteCapitalizedWithoutFormattingShortcut Decode Failed!!")
+            self.pasteCapitalizedWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["option", "shift"], key: "c")
         }
         
         if let data = UserDefaults.standard.data(forKey: "toggleWindowShortcut") {
@@ -125,7 +137,7 @@ class UserDefaultsManager : ObservableObject {
         }
     }
     
-    func saveShortcuts(savePasteNoFormatShortcut: Bool, savePasteLowerShortcut: Bool, savePasteUpperShortcut: Bool) {
+    func saveShortcuts(savePasteNoFormatShortcut: Bool, savePasteLowerShortcut: Bool, savePasteUpperShortcut: Bool, savePasteCapitalShortcut: Bool) {
         if let data = try? encoder.encode(pasteWithoutFormattingShortcut) {
             UserDefaults.standard.set(data, forKey: "pasteWithoutFormattingShortcut")
         }
@@ -134,6 +146,9 @@ class UserDefaultsManager : ObservableObject {
         }
         if let data = try? encoder.encode(pasteUppercaseWithoutFormattingShortcut) {
             UserDefaults.standard.set(data, forKey: "pasteUppercaseWithoutFormattingShortcut")
+        }
+        if let data = try? encoder.encode(pasteCapitalizedWithoutFormattingShortcut) {
+            UserDefaults.standard.set(data, forKey: "pasteCapitalizedWithoutFormattingShortcut")
         }
         
         if let data = try? encoder.encode(toggleWindowShortcut) {
@@ -155,13 +170,14 @@ class UserDefaultsManager : ObservableObject {
         if savePasteUpperShortcut {
             KeyboardShortcuts.reset(.pasteUpperNoFormatting)
         }
+        if savePasteCapitalShortcut {
+            KeyboardShortcuts.reset(.pasteCapitalNoFormatting)
+        }
     }
     
-    func updateAll(savePasteNoFormatShortcut: Bool, savePasteLowerShortcut: Bool, savePasteUpperShortcut: Bool) {
+    func updateAll(savePasteNoFormatShortcut: Bool, savePasteLowerShortcut: Bool, savePasteUpperShortcut: Bool, savePasteCapitalShortcut: Bool) {
         
-//        if saveShortcuts {
-        self.saveShortcuts(savePasteNoFormatShortcut: savePasteNoFormatShortcut, savePasteLowerShortcut: savePasteLowerShortcut, savePasteUpperShortcut: savePasteUpperShortcut)
-//        }
+        self.saveShortcuts(savePasteNoFormatShortcut: savePasteNoFormatShortcut, savePasteLowerShortcut: savePasteLowerShortcut, savePasteUpperShortcut: savePasteUpperShortcut, savePasteCapitalShortcut: savePasteCapitalShortcut)
             
         self.appName = UserDefaults.standard.string(forKey: "appName") ?? "test App Name"
         
@@ -170,18 +186,20 @@ class UserDefaultsManager : ObservableObject {
         self.windowHeight = CGFloat(UserDefaults.standard.float(forKey: "windowHeight"))
         self.windowLocation = UserDefaults.standard.string(forKey: "windowLocation") ?? "Bottom Right"
         self.windowPopOut = UserDefaults.standard.bool(forKey: "windowPopOut")
-//        self.onlyPopOutWindow = UserDefaults.standard.bool(forKey: "onlyPopOutWindow")
-        self.canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
-        if self.canWindowFloat {
+        if self.windowPopOut {
             self.hideWindowWhenNotSelected = false
+            UserDefaults.standard.set(false, forKey: "hideWindowWhenNotSelected")
         }
         else {
-//            print("updated hiding")
             self.hideWindowWhenNotSelected = UserDefaults.standard.bool(forKey: "hideWindowWhenNotSelected")
         }
+//        self.onlyPopOutWindow = UserDefaults.standard.bool(forKey: "onlyPopOutWindow")
+        self.canWindowFloat = UserDefaults.standard.bool(forKey: "canWindowFloat")
         self.windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
 
         self.pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
+        self.hideDeleteAlerts = UserDefaults.standard.bool(forKey: "hideDeleteAlerts")
+        
         self.maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
         self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
         self.canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")
@@ -191,6 +209,7 @@ class UserDefaultsManager : ObservableObject {
         self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
         self.pasteLowercaseWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteLowercaseWithoutFormatting")
         self.pasteUppercaseWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteUppercaseWithoutFormatting")
+        self.pasteCapitalizedWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteCapitalizedWithoutFormatting")
                 
         ClipboardManager.shared.clipboardMonitor?.reloadVars()
         

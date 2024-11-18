@@ -1,4 +1,4 @@
-### Installation Guide:
+### Installation Guide: (Troubleshooting at the bottom)
 
 * this application is set up to only work with MacOS 14.4+
     * if you're on a lower MacOS, email me: brodsky.alex22@gmail.com, and I'll try to have it work with lower versions
@@ -31,7 +31,7 @@
 
     * click 'open system settings'
     
-    * then in settings >  privacy & security > accessibility, flip the switch next to the clipboard history app
+    * then in settings > privacy & security > accessibility, flip the switch next to the clipboard history app
     <br></br>
     <img src="https://github.com/user-attachments/assets/d75a42aa-bec5-4b10-a1f0-e1bc88b2429a" alt="accessibility toggle" height="200"/>
 
@@ -39,3 +39,10 @@
 
     * I know, its a lil scary because it says 'control your computer', but its just because it needs to listen to (cmd + shift + v) to paste without formatting.
         * again, you can turn this off in the settings
+
+### Troubleshooting:
+ * If the paste without formatting shortcuts aren't working or random stuff isn't working:
+    * Make sure you only have one version of the app downloaded
+    * In Settings > Privacy & Security > Accessibility, 
+        * try removing the app, then quitting and restarting it, 
+        * then trying the shortcuts again and re-enabling the accessibility

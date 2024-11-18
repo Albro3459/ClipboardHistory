@@ -19,6 +19,7 @@ extension ClipboardItem {
     @NSManaged public var content: String?
     @NSManaged public var filePath: String?
     @NSManaged public var imageData: Data?
+    @NSManaged public var cachedImageText: String?
     @NSManaged public var imageHash: String?
     @NSManaged public var timeStamp: Date?
     @NSManaged public var type: String?

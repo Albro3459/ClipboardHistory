@@ -12,6 +12,7 @@ import Cocoa
 import CoreData
 import AppKit
 import CryptoKit
+import ImageIO
 
 class ClipboardMonitor: ObservableObject {
     @Published var tmpFolderPath = FileManager.default.temporaryDirectory
@@ -24,6 +25,7 @@ class ClipboardMonitor: ObservableObject {
 
     
     private var checkTimer: Timer?
+    private static let CHECK_TIMER_FREQUENCY: TimeInterval = 0.5
     private var lastChangeCount: Int = NSPasteboard.general.changeCount
     
     // User defaults
@@ -49,7 +51,7 @@ class ClipboardMonitor: ObservableObject {
     }
     
     func startMonitoring() {
-        checkTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(checkClipboard), userInfo: nil, repeats: true)
+        checkTimer = Timer.scheduledTimer(timeInterval: ClipboardMonitor.CHECK_TIMER_FREQUENCY, target: self, selector: #selector(checkClipboard), userInfo: nil, repeats: true)
     }
     
     @objc private func checkClipboard() {
@@ -70,13 +72,12 @@ class ClipboardMonitor: ObservableObject {
                     }
                 }
             }
-            else if !self.isCopyingPaused || self.isInternalCopy {
+            else if !self.isCopyingPaused || self.isInternalCopy  {
                 let pasteboard = NSPasteboard.general
                 if pasteboard.changeCount != self.lastChangeCount {
                     self.lastChangeCount = pasteboard.changeCount
-                    self.processDataFromClipboard()
                     
-                    self.isInternalCopy = false
+                    self.checkPasteboardItemCount(startTime: Date.now, timeout: ClipboardMonitor.CHECK_TIMER_FREQUENCY-0.1)
                 }
             }
             else if self.isCopyingPaused || self.isPasteNoFormattingCopy {
@@ -88,16 +89,34 @@ class ClipboardMonitor: ObservableObject {
             }
         }
     }
-    
+    // Function that either starts processing the clipboard, but if its empty and we are waiting on the items, then wait 0.25 sec and then start checking the clipboard every 0.1 sec, up until the frequency we check the pasteboard at - 0.1 sec so we dont overlap
+        // It will immediately start processDataFromClipboard when the items.count > 0
+    func checkPasteboardItemCount(startTime: Date, timeout: TimeInterval = ClipboardMonitor.CHECK_TIMER_FREQUENCY-0.05) {
+        let elapsedTime = Date.now.timeIntervalSince(startTime)
+
+        if let items = NSPasteboard.general.pasteboardItems, !items.isEmpty {
+            self.processDataFromClipboard()
+            self.isInternalCopy = false
+//            print("startTime: \(startTime), endTime: \(Date.now) | totalTime: \(elapsedTime)")
+        } else if elapsedTime < timeout {
+//            print("waiting")
+            // Check at intervals
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.checkPasteboardItemCount(startTime: startTime, timeout: timeout)
+            }
+        } else {
+            print("Failed to load pasteboard items after \(timeout) seconds")
+        }
+    }
+
     private func processDataFromClipboard() {
-        
+            
         DispatchQueue.main.async {
             let pasteboard = NSPasteboard.general
             
             // making a child context because I need to be able to create Items for the group and checkLast before saving,
             // parent context is available to the content view even without saving, so I need them seperate
             let childContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
-//            let context = PersistenceController.shared.container.viewContext
             childContext.parent = PersistenceController.shared.container.viewContext
 
             childContext.perform {
@@ -108,6 +127,9 @@ class ClipboardMonitor: ObservableObject {
                     
                     var operationsPending = 0
                     var counter = 0
+                    
+                    var errorOccurred = false
+                    
                     for item in items {
                         if counter >= self.maxItemCount {
                             continue
@@ -116,28 +138,29 @@ class ClipboardMonitor: ObservableObject {
                         if let urlString = item.string(forType: .fileURL), let fileUrl = URL(string: urlString) {
                             if self.userDefaultsManager.canCopyImages || self.userDefaultsManager.canCopyFilesOrFolders {
                                 operationsPending += 1
-                                self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { completion in
+                                self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { success in
                                     defer {
                                         operationsPending -= 1
-                                        if operationsPending == 0 {
-                                            self.saveClipboardGroup(childContext: childContext)
-                                        }
                                     }
-                                    if !completion {
+                                    if !success {
                                         print("Failed to process file at URL: \(fileUrl)")
+                                        errorOccurred = true
                                     }
                                 }
                             }
-                            else {
-                                return
-                            }
                         }
-                        else if let imageData = item.data(forType: .tiff) ?? item.data(forType: .png) ?? item.data(forType: NSPasteboard.PasteboardType("public.jpeg")), let image = NSImage(data: imageData) {
+                        else if let imageData = item.data(forType: .tiff) ?? item.data(forType: .png) ?? item.data(forType: NSPasteboard.PasteboardType("public.jpeg")) {
                             if self.userDefaultsManager.canCopyImages {
-                                self.processImageData(image: image, inGroup: group, context: childContext)
-                            }
-                            else {
-                                return
+                                operationsPending += 1
+                                self.processImageData(imageData: imageData, inGroup: group, context: childContext) { success in
+                                    defer {
+                                        operationsPending -= 1
+                                    }
+                                    if !success {
+                                        print("Failed to process image data")
+                                        errorOccurred = true
+                                    }
+                                }
                             }
                         }
                         else if let content = item.string(forType: .string) {
@@ -156,29 +179,48 @@ class ClipboardMonitor: ObservableObject {
                             
                             // for copying images out of google docs cause they're weird
                             if let htmlContent = item.string(forType: .html), let imageUrl = self.extractHtmlImageURL(from: htmlContent) {
-                                operationsPending += 1 // Track pending download operation
-                                self.downloadAndProcessImageFromURL(from: imageUrl, inGroup: group, context: childContext) {
-                                    operationsPending -= 1
-                                    if operationsPending == 0 {
-                                        self.saveClipboardGroup(childContext: childContext)
+                                operationsPending += 1
+                                self.downloadAndProcessImageFromURL(from: imageUrl, inGroup: group, context: childContext) { error in
+                                    defer {
+                                        operationsPending -= 1
+                                        if !errorOccurred && operationsPending == 0 {
+                                            self.saveClipboardGroup(childContext: childContext)
+//                                            self.log("Done IMAGE URL processing")
+                                        }
+                                    }
+                                    if let error = error {
+                                        print("Error: \(error.localizedDescription)")
+                                        errorOccurred = true
                                     }
                                 }
-                            } else {
-                                continue
                             }
                         }
                         else {
-                            print(item.types);
-                            return
+                            print(item.types)
+                            continue
                         }
                         counter += 1
                     }
-                    if operationsPending == 0 {
-                        self.saveClipboardGroup(childContext: childContext)
+                    if !errorOccurred {
+                        if operationsPending == 0 {
+                            self.saveClipboardGroup(childContext: childContext)
+//                            self.log("Done processing")
+                        }
+                        else {
+//                            self.log("Not Saving Since OPERATIONS PENDING")
+                        }
+                    }
+                    else {
+//                        self.log("Not Saving since error occured")
                     }
                 }
             }
         }
+    }
+        
+    func log(_ message: String) {
+        let timestamp = Date().description(with: .current)
+        print("[\(timestamp)] \(message)")
     }
     
     // from google docs typically
@@ -201,37 +243,55 @@ class ClipboardMonitor: ObservableObject {
         return nil
     }
     
-    private func downloadAndProcessImageFromURL(from imageUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext, completion: @escaping () -> Void) {
-
-//    private func downloadAndProcessImageFromURL(from imageUrl: URL) {
+    enum ImageDownloadError: Error {
+        case imageDownloadError
+        
+        var localizedDescription: String {
+            switch self {
+            case .imageDownloadError:
+                return "Image Download Error"
+            }
+        }
+    }
+    
+    private func downloadAndProcessImageFromURL(from imageUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext, completion: @escaping (Error?) -> Void) {
 
         // creating a data task to download the image asynchronously
-        let task = URLSession.shared.dataTask(with: imageUrl) { data, response, error in
-            guard let data = data, error == nil else {
-                print("Failed to download image from URL: \(imageUrl), error: \(String(describing: error))")
-                completion()
+        URLSession.shared.dataTask(with: imageUrl) { data, response, error in
+            if let error = error {
+                print("Failed to download image from URL: \(imageUrl), error: \(error.localizedDescription)")
+                completion(error)
                 return
             }
             
-            // create the image using existing function
-            if let image = NSImage(data: data) {
-                DispatchQueue.main.async {
-                    self.processImageData(image: image, inGroup: group, context: context)
-                    completion()
-                }
-            } else {
-                print("Failed to create NSImage from downloaded data.")
-                completion()
+            guard
+                let httpResponse = response as? HTTPURLResponse,
+                (200...299).contains(httpResponse.statusCode),
+                let data = data
+            else {
+                let error = URLError(.badServerResponse)
+                print("Invalid server response for URL: \(imageUrl)")
+                completion(error)
+                return
             }
-        }
-        
-        // Start the download task
-        task.resume()
+            
+            DispatchQueue.main.async {
+                self.processImageData(imageData: data, inGroup: group, context: context) { success in
+                    if !success {
+//                        print("Failed to process image data")
+                        let error = ImageDownloadError.imageDownloadError
+                        print(error)
+                        completion(error)
+                    }
+                    else {
+                        completion(nil) // Indicate success
+                    }
+                }
+            }
+        }.resume()
     }
     
-    
-    private func processFileFolder(fileUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext,
-                                   completion: @escaping (Bool) -> Void) {
+    private func processFileFolder(fileUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext, completion: @escaping (Bool) -> Void) {
         let acceptableFileTypes = [
             "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "pages", "numbers", "key",
             "txt", "rtf", "odt", "md", "csv",
@@ -246,25 +306,34 @@ class ClipboardMonitor: ObservableObject {
 
         let fileExtension = fileUrl.pathExtension.lowercased()
         
-        context.perform {
+        context.performAndWait {
             let item = ClipboardItem(context: context)
             item.content = fileUrl.lastPathComponent
             item.filePath = fileUrl.path
             item.group = group
             
             if self.userDefaultsManager.canCopyImages && imageExtensions.contains(fileExtension) {
-                if let image = NSImage(contentsOf: fileUrl) {
-                    if let tiffRep = image.tiffRepresentation {
-                        let imageHash = self.hashImageData(tiffRep)
-                        item.type = "image"
-                        item.imageData = image.tiffRepresentation
-                        item.imageHash = imageHash
-                        group.addToItems(item)
-                        completion(true)
-                        return
+                item.type = "image"
+                if let thumbnail = self.generateImageThumbnail(for: fileUrl.path), let thumbnailData = thumbnail.tiffRepresentation {
+                    item.imageHash = self.hashImageData(thumbnailData)
+                    item.imageData = thumbnailData
+                    group.addToItems(item)
+                    completion(true)
+                }
+                else {
+                    self.generateThumbnail(for: fileUrl.path) { thumbnail in
+                        defer { group.addToItems(item); completion(true) } // Defer is called regardless.
+                        if let thumbnail = thumbnail, let thumbnailData = thumbnail.tiffRepresentation {
+                            item.imageHash = self.hashImageData(thumbnailData)
+                            item.imageData = thumbnailData
+                        } else {
+                            // Thumbnail generation failed but valid image data exists
+                            item.type = "randomFile"
+                            item.imageData = nil
+                            item.imageHash = nil
+                        }
                     }
                 }
-                completion(false)
             }
             else if self.userDefaultsManager.canCopyFilesOrFolders {
                 do {
@@ -313,23 +382,33 @@ class ClipboardMonitor: ObservableObject {
                             
                             if let isDirectory = resolvedResourceValues.isDirectory, isDirectory {
                                 // It's a directory/folder, do nothing because the alias image is set as the folder icon
+                                group.addToItems(item)
+                                completion(true)
                             }
                             else {
-                                if let contentType = resolvedResourceValues.contentType {
-                                    if contentType.conforms(to: .image) {
-                                        if let image = NSImage(contentsOf: resolvedUrl) {
-                                            item.imageData = image.tiffRepresentation
-                                        }
-                                    } else {
-                                        self.generateThumbnail(for: resolvedUrl.path) { thumbnail in
-                                            item.imageData = thumbnail?.tiffRepresentation
+                                if let _ = resolvedResourceValues.contentType {
+                                    if let thumbnail = self.generateImageThumbnail(for: fileUrl.path), let thumbnailData = thumbnail.tiffRepresentation {
+                                        item.imageData = thumbnailData
+                                        group.addToItems(item)
+                                        completion(true)
+                                    }
+                                    else {
+                                        self.generateThumbnail(for: fileUrl.path) { thumbnail in
+                                            defer { group.addToItems(item); completion(true) } // Defer is called regardless.
+                                            if let thumbnail = thumbnail, let thumbnailData = thumbnail.tiffRepresentation {
+                                                item.imageData = thumbnailData
+                                                group.addToItems(item)
+                                                completion(true)
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                        group.addToItems(item)
-                        completion(true)
+                        else {
+                            group.addToItems(item)
+                            completion(false)
+                        }
                     }
                     else if let isExecutable = resourceValues.isExecutable, isExecutable {
                         item.type = "execFile"
@@ -355,21 +434,23 @@ class ClipboardMonitor: ObservableObject {
                             completion(true)
                         }
                         else if acceptableFileTypes.contains(fileExtension) {
-                            self.generateThumbnail(for: fileUrl.path) { thumbnail in
-                                if let thumbnail = thumbnail {
-                                    item.type = "file"
-                                    item.imageData = thumbnail.tiffRepresentation
-                                    item.imageHash = nil
-                                    group.addToItems(item)
-                                    completion(true)
-                                }
-                                else {
-                                    // thumbnail failed, not a typical file
-                                    item.type = "randomFile"
-                                    item.imageData = nil
-                                    item.imageHash = nil
-                                    group.addToItems(item)
-                                    completion(true)
+                            item.type = "file"
+                            item.imageHash = nil
+                            if let thumbnail = self.generateImageThumbnail(for: fileUrl.path), let thumbnailData = thumbnail.tiffRepresentation {
+                                item.imageData = thumbnailData
+                                group.addToItems(item)
+                                completion(true)
+                            }
+                            else {
+                                self.generateThumbnail(for: fileUrl.path) { thumbnail in
+                                    defer { group.addToItems(item); completion(true) } // Defer is called regardless.
+                                    if let thumbnail = thumbnail, let thumbnailData = thumbnail.tiffRepresentation {
+                                        item.imageData = thumbnailData
+                                    } else {
+                                        // thumbnail failed, not a typical file
+                                        item.type = "randomFile"
+                                        item.imageData = nil
+                                    }
                                 }
                             }
                         }
@@ -387,7 +468,6 @@ class ClipboardMonitor: ObservableObject {
                     completion(false)
                 }
             }
-            //        group.addToItems(item)
         }
     }
     
@@ -407,27 +487,56 @@ class ClipboardMonitor: ObservableObject {
     
     // takes in imageData, like a screenshot, turns it into an image file
     // image file is stored as a temp file, user can copy and paste anywhere, but temp file is deleted when clipboard item is eventually deleted
-    private func processImageData(image: NSImage, inGroup group: ClipboardGroup, context: NSManagedObjectContext) {
-        if let imageData = image.tiffRepresentation {
-            // this is called when I take the screenshot in the first place
-            let imageHash = self.hashImageData(imageData)
-            
+    private func processImageData(imageData: Data, inGroup group: ClipboardGroup, context: NSManagedObjectContext, completion: @escaping (Bool) -> Void) {
+         
+        context.performAndWait {
+                        
             if let imageFileURL = createImageFile(imageData: imageData) {
-                let item = ClipboardItem(context: context)
-                item.content = imageFileURL.lastPathComponent
-                item.filePath = imageFileURL.path
-                item.type = "image"
-                item.imageData = image.tiffRepresentation
-                item.imageHash = imageHash
-                item.group = group
-                group.addToItems(item)
-                
-//                saveClipboard(content: imageFileURL.lastPathComponent, type: "image", imageData: image.tiffRepresentation, filePath: imageFileURL.path, imageHash: imageHash)
                 
                 let url = URL(fileURLWithPath: imageFileURL.path)
                 let pasteboard = NSPasteboard.general
                 pasteboard.clearContents()
                 pasteboard.writeObjects([url as NSURL])
+                self.lastChangeCount = pasteboard.changeCount // NEED TO TEST THIS LINE
+                
+                print("\n**** Image created from Image Data \n")
+                
+                let item = ClipboardItem(context: context)
+                item.content = imageFileURL.lastPathComponent
+                item.filePath = imageFileURL.path
+                item.type = "image"
+                item.group = group
+                
+                //testing OCR
+//                item.imageData = imageData
+//                item.imageHash = self.hashImageData(imageData)
+//                group.addToItems(item)
+//                completion(true)
+
+                
+                if let thumbnail = self.generateImageThumbnail(for: imageFileURL.path), let thumbnailData = thumbnail.tiffRepresentation {
+                    item.imageHash = self.hashImageData(thumbnailData)
+                    item.imageData = thumbnailData
+                    group.addToItems(item)
+                    completion(true)
+                }
+                else {
+                    self.generateThumbnail(for: imageFileURL.path) { thumbnail in
+                        defer { group.addToItems(item); completion(true) } // Defer is called regardless.
+                        if let thumbnail = thumbnail, let thumbnailData = thumbnail.tiffRepresentation {
+                            item.imageHash = self.hashImageData(thumbnailData)
+                            item.imageData = thumbnailData
+                        } else {
+                            // Thumbnail generation failed but valid image data exists
+                            item.type = "randomFile"
+                            item.imageData = nil
+                            item.imageHash = nil
+                        }
+                    }
+                }
+            }
+            else {
+                completion(false)
             }
         }
     }
@@ -496,11 +605,11 @@ class ClipboardMonitor: ObservableObject {
                 }
                 
                 try childContext.save()
-                //            try childContext.parent?.save()
                 if let parentContext = childContext.parent {
                     parentContext.performAndWait {
                         do {
                             try parentContext.save()
+//                            print("saved")
                         } catch {
                             print("Failed to save parent context: \(error)")
                         }
@@ -721,11 +830,35 @@ class ClipboardMonitor: ObservableObject {
                 completion(nil)
             } else if let thumbnail = thumbnail {
                 let nsImage = NSImage(cgImage: thumbnail.cgImage, size: size)
+//                print("THUMBNAIL FINISHED")
                 completion(nsImage)
             } else {
                 completion(nil)
             }
         }
+    }
+    
+    private func generateImageThumbnail(for filePath: String) -> NSImage? {
+        guard let image = NSImage(contentsOfFile: filePath) else {
+            print("Failed to load image at path: \(filePath)")
+            return nil
+        }
+        let thumbnailSize = self.calculateAspectRatio(for: image.size, maxSize: 100)
+        let thumbnail = NSImage(size: thumbnailSize)
+        thumbnail.lockFocus()
+        image.draw(in: NSRect(origin: .zero, size: thumbnailSize),
+                   from: NSRect(origin: .zero, size: image.size),
+                   operation: .copy,
+                   fraction: 1.0)
+        thumbnail.unlockFocus()
+        return thumbnail
+    }
+    
+    private func calculateAspectRatio(for originalSize: NSSize, maxSize: CGFloat) -> NSSize {
+        let widthRatio = maxSize / originalSize.width
+        let heightRatio = maxSize / originalSize.height
+        let scaleFactor = min(widthRatio, heightRatio)
+        return NSSize(width: originalSize.width * scaleFactor, height: originalSize.height * scaleFactor)
     }
         
     private func createImageFile(imageData: Data?) -> URL? {
@@ -742,12 +875,14 @@ class ClipboardMonitor: ObservableObject {
             let splitDate = fileDate.split(separator: " ")
             let filePathDate = splitDate[0] + " at " + splitDate[1]
             
-            if let imageFileURL = saveImageDataToFile(imageData: pngData, filePath: "Image \(filePathDate)", fileType: .png) {
+            if let imageFileURL = self.saveImageDataToFile(imageData: pngData, filePath: "Image \(filePathDate)", fileType: .png) {
                 return imageFileURL
             }
-            else { return nil }
-        } else {
-            print("Failed to convert image to JPEG.")
+            else {
+                return nil
+            }
+        }
+        else {
             return nil
         }
     }

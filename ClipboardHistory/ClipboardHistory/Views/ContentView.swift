@@ -116,6 +116,36 @@ struct ContentView: View {
                 Color.white.opacity(0.1).flash(duration: 0.3)
             }
             
+            if userDefaultsManager.hideDeleteAlerts && viewStateManager.deleteOccurred {
+                ZStack(alignment: .center) {
+                    
+                    ZStack(alignment: .top) {
+                        Rectangle()
+                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
+                            .cornerRadius(8)
+                        Rectangle()
+                            .foregroundColor(UserDefaultsManager.shared.darkMode ? Color(.darkGray) : Color.gray)
+                            .frame(height: 10)
+                            .zIndex(1)
+                    }
+                    Text("Item Deleted!")
+                        .font(.subheadline)
+                        .bold()
+                        
+                        .cornerRadius(8)
+                        .frame(alignment: .center)
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.easeInOut, value: viewStateManager.deleteOccurred)
+                // x: frame_width/2  |  y: -(window_height/2 - frame_height)
+                .position(x: 90/2, y: -(self.windowHeight/2 - 24))
+                .frame(width: 90, height: 24)
+                .zIndex(5)
+            
+                
+                Color.white.opacity(0.1).flash(duration: 0.3)
+            }
+            
             if self.openedStateChanged {
                 ZStack(alignment: .center) {
                     
@@ -504,8 +534,19 @@ struct ContentView: View {
                         }
                         else if event.modifierFlags.contains(.command) {
                             DispatchQueue.main.async {
-                                self.showAlert = true
-                                activeAlert = .delete
+                                if userDefaultsManager.hideDeleteAlerts {
+                                    if let item = clipboardManager.selectedItem {
+                                        clipboardManager.deleteItem(item: item, viewContext: viewContext, shouldSave: true)
+                                    }
+                                    else {
+                                        clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: viewStateManager.selectList, viewContext: viewContext)
+                                    }
+                                    viewStateManager.deleted()
+                                }
+                                else {
+                                    self.showAlert = true
+                                    activeAlert = .delete
+                                }
                             }
                             return nil
                         }
@@ -833,8 +874,19 @@ struct ClipboardGroupView: View {
                         Button(action: {
                             isGroupSelected = true
                             clipboardManager.selectedGroup = selectGroup
-                            showAlert = true
-                            activeAlert = .delete
+                            if userDefaultsManager.hideDeleteAlerts {
+                                if let item = clipboardManager.selectedItem {
+                                    clipboardManager.deleteItem(item: item, viewContext: viewContext, shouldSave: true)
+                                }
+                                else {
+                                    clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: viewStateManager.selectList, viewContext: viewContext)
+                                }
+                                viewStateManager.deleted()
+                            }
+                            else {
+                                self.showAlert = true
+                                activeAlert = .delete
+                            }
                         }) {
                             Image(systemName: "trash")
                                 .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
@@ -1054,6 +1106,7 @@ struct ClipboardItemView: View {
     @EnvironmentObject var clipboardManager: ClipboardManager
     
     @ObservedObject var viewStateManager = ViewStateManager.shared
+    @ObservedObject var userDefaultsManager = UserDefaultsManager.shared
     
     var item: ClipboardItem
     
@@ -1348,8 +1401,20 @@ struct ClipboardItemView: View {
                     clipboardManager.selectedItem = item
                 }
                 clipboardManager.selectedGroup = selectGroup
-                showAlert = true
-                activeAlert = .delete
+                
+                if userDefaultsManager.hideDeleteAlerts {
+                    if let item = clipboardManager.selectedItem {
+                        clipboardManager.deleteItem(item: item, viewContext: viewContext, shouldSave: true)
+                    }
+                    else {
+                        clipboardManager.deleteGroup(group: clipboardManager.selectedGroup?.group, selectList: viewStateManager.selectList, viewContext: viewContext)
+                    }
+                    viewStateManager.deleted()
+                }
+                else {
+                    self.showAlert = true
+                    activeAlert = .delete
+                }
             }) {
                 Image(systemName: "trash")
                     .foregroundColor(UserDefaultsManager.shared.darkMode ? .white : .black)
