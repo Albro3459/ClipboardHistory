@@ -405,6 +405,9 @@ struct ContentView: View {
                     clipboardManager.selectedGroup = viewStateManager.selectList.first
                 }
             }
+            .onChange(of: showAlert) {
+                viewStateManager.showingAlert = showAlert
+            }
             .onChange(of: userDefaultsManager.darkMode) {
                 darkMode = userDefaultsManager.darkMode
             }

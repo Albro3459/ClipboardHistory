@@ -18,7 +18,7 @@ class WindowManager: ObservableObject {
         
     let persistenceController = PersistenceController.shared
     let userDefaultsManager = UserDefaultsManager.shared
-//    let clipboardManager = ClipboardManager.shared
+    let viewStateManager = ViewStateManager.shared
     weak var clipboardManager: ClipboardManager?
     weak var menuManager: MenuManager?
     
@@ -360,7 +360,7 @@ class WindowManager: ObservableObject {
         // Hide the window when the app loses focus
 //        print("Window did resign key (unfocused)")
         
-        if UserDefaultsManager.shared.hideWindowWhenNotSelected {
+        if UserDefaultsManager.shared.hideWindowWhenNotSelected && !viewStateManager.showingAlert {
             if window != nil {
                 if !SettingsWindowManager.shared.isSettingsOpen {
                     self.hideWindow()

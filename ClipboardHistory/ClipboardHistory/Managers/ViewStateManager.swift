@@ -22,6 +22,7 @@ class ViewStateManager: ObservableObject {
     @Published var justScrolledToTop: Bool = true
     
     @Published var deleteOccurred: Bool = false
+    @Published var showingAlert: Bool = false
     
     private init() { }
     
