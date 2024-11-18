@@ -185,7 +185,7 @@ class ClipboardManager: ObservableObject {
 //            }
         }
 
-        request.recognitionLevel = .fast
+        request.recognitionLevel = .accurate
         request.usesLanguageCorrection = true
         request.recognitionLanguages = ["en", "es"]
 

@@ -117,10 +117,13 @@ struct ClearTextField: NSViewRepresentable {
     @Binding var text: String
 
     func makeNSView(context: Context) -> NSTextField {
-        let textField = NSTextField()
+        let textField = CustomTextField()
         textField.isBordered = false
         textField.drawsBackground = false
         textField.placeholderString = placeholder
+        textField.isEditable = true
+        textField.isSelectable = true
+        
         textField.delegate = context.coordinator
         
         textField.font = NSFont.systemFont(ofSize: 14)
@@ -149,6 +152,26 @@ struct ClearTextField: NSViewRepresentable {
                 self.parent.text = textField.stringValue
             }
         }
+    }
+}
+
+class CustomTextField: NSTextField {
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if event.modifierFlags.contains(.command) {
+            switch event.charactersIgnoringModifiers {
+            case "a": // Command + A (Select All)
+                self.currentEditor()?.selectAll(nil)
+                return true
+            case "v": // Command + V (Paste)
+                if let clipboardText = NSPasteboard.general.string(forType: .string) {
+                    self.currentEditor()?.insertText(clipboardText)
+                    return true
+                }
+            default:
+                break
+            }
+        }
+        return super.performKeyEquivalent(with: event)
     }
 }
 
