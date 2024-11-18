@@ -40,7 +40,7 @@ class UserDefaultsManager : ObservableObject {
     var hideWindowWhenNotSelected: Bool
     var windowOnAllDesktops: Bool
     
-    var pauseCopying: Bool
+    @Published var pauseCopying: Bool
     
     var noDuplicates: Bool
     var maxStoreCount: Int

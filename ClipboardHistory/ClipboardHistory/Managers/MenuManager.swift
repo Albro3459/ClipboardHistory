@@ -208,6 +208,10 @@ class MenuManager: ObservableObject {
             
             self.updateMainMenu(isCopyingPaused: newIsCopyingPausedState, shouldDelay: shouldDelay)
             
+            if self.settingsWindowManager.isSettingsOpen && self.settingsWindowManager.settingsWindow != nil {
+                self.settingsWindowManager.setupSettingsWindow()
+            }
+            
             self.clipboardManager.clipboardMonitor?.sendCopyStatusCangeStateChangeToUI()
         }
     }

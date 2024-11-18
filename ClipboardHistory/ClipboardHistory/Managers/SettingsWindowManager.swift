@@ -26,12 +26,13 @@ class SettingsWindowManager: NSObject, ObservableObject, NSWindowDelegate {
     private override init() {}
     
     func setupSettingsWindow() {
-        isSettingsOpen = true
         if let settingsWindow = settingsWindow {
             settingsWindow.close()
             
         }
         self.settingsWindow = nil
+        
+        isSettingsOpen = true
         
         settingsWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 500, height: 1000),

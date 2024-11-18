@@ -35,6 +35,8 @@
 
   * it can hold text, images, files and folders. it can even hold groups
 
+  * cmd + f to search for text, files, folders, and even OCR by searching for text in images
+
   * clipboard history is currently limited to 50 items, you can change this in the settings
 
   * coming not so soon!:
@@ -116,6 +118,7 @@
       - cmd + shift + c: open and close window
       - option + r: reset window
       - cmd + shift + v: paste without formatting
+      - option + shift + c: paste Capitalized text without formatting
       - option + shift + l: paste All Lowercase without formatting
       - option + shift + u: paste All Uppercase without formatting
 
@@ -153,6 +156,7 @@
       - cmd + shift + c: open and close window
       - option + r: reset window
       - cmd + shift + v: paste without formatting
+      - option + shift + c: paste Capitalized text without formatting
       - option + shift + l: paste All Lowercase without formatting
       - option + shift + u: paste All Uppercase without formatting
   </details>

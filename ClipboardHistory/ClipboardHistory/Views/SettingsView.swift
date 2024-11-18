@@ -252,6 +252,13 @@ struct SettingsView: View {
                 }
                 .onChange(of: userDefaultsManager.darkMode) {
                     self.darkMode = userDefaultsManager.darkMode
+                    self.darkModeInput = userDefaultsManager.darkMode
+                }
+                .onChange(of: userDefaultsManager.pauseCopying) {
+                    DispatchQueue.main.async {
+                        self.pauseCopying = userDefaultsManager.pauseCopying
+                        self.pauseCopyingInput = userDefaultsManager.pauseCopying
+                    }
                 }
             }
             .padding(.top, 20)
