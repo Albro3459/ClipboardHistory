@@ -318,6 +318,7 @@ class ClipboardManager: ObservableObject {
     }
             
     func copied(item: ClipboardItem?) -> Bool {
+        if self.isCopied { return true } // dont overlap alerts
         DispatchQueue.main.async {
             self.isCopied = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {

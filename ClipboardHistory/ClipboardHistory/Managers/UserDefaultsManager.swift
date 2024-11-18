@@ -41,6 +41,7 @@ class UserDefaultsManager : ObservableObject {
     var windowOnAllDesktops: Bool
     
     @Published var pauseCopying: Bool
+    @Published var hideDeleteAlerts: Bool
     
     var noDuplicates: Bool
     var maxStoreCount: Int
@@ -80,6 +81,7 @@ class UserDefaultsManager : ObservableObject {
         self.windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
 
         self.pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
+        self.hideDeleteAlerts = UserDefaults.standard.bool(forKey: "hideDeleteAlerts")
         
         self.maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
         self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
@@ -196,6 +198,8 @@ class UserDefaultsManager : ObservableObject {
         self.windowOnAllDesktops = UserDefaults.standard.bool(forKey: "windowOnAllDesktops")
 
         self.pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
+        self.hideDeleteAlerts = UserDefaults.standard.bool(forKey: "hideDeleteAlerts")
+        
         self.maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
         self.noDuplicates = UserDefaults.standard.bool(forKey: "noDuplicates")
         self.canCopyFilesOrFolders = UserDefaults.standard.bool(forKey: "canCopyFilesOrFolders")

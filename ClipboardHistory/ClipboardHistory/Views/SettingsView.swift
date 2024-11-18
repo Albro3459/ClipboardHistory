@@ -16,6 +16,9 @@ struct SettingsView: View {
     
     @State private var pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
     @State private var pauseCopyingInput = UserDefaults.standard.bool(forKey: "pauseCopying")
+    
+    @State private var hideDeleteAlerts = UserDefaults.standard.bool(forKey: "hideDeleteAlerts")
+    @State private var hideDeleteAlertsInput = UserDefaults.standard.bool(forKey: "hideDeleteAlerts")
 
     @State private var maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
     @State private var maxStoreCountInput = UserDefaults.standard.integer(forKey: "maxStoreCount")
@@ -180,7 +183,7 @@ struct SettingsView: View {
             
             VStack {
                 TabView(selection: $selectedTab) {
-                    ClipboardSettingsView(pauseCopyingInput: $pauseCopyingInput, maxStoreCountInput: $maxStoreCountInput, noDuplicatesInput: $noDuplicatesInput, canCopyFilesOrFoldersInput: $canCopyFilesOrFoldersInput, canCopyImagesInput: $canCopyImagesInput, enterKeyHidesAfterCopyInput: $enterKeyHidesAfterCopyInput, pasteWithoutFormattingInput: $pasteWithoutFormattingInput, pasteLowerInput: $pasteLowerInput, pasteUpperInput: $pasteUpperInput, pasteCapitalInput: $pasteCapitalInput)
+                    ClipboardSettingsView(pauseCopyingInput: $pauseCopyingInput, hideDeleteAlertsInput: $hideDeleteAlertsInput, maxStoreCountInput: $maxStoreCountInput, noDuplicatesInput: $noDuplicatesInput, canCopyFilesOrFoldersInput: $canCopyFilesOrFoldersInput, canCopyImagesInput: $canCopyImagesInput, enterKeyHidesAfterCopyInput: $enterKeyHidesAfterCopyInput, pasteWithoutFormattingInput: $pasteWithoutFormattingInput, pasteLowerInput: $pasteLowerInput, pasteUpperInput: $pasteUpperInput, pasteCapitalInput: $pasteCapitalInput)
                         .tabItem {
                             Text("Clipboard")
                                 .help("View Clipboard Related Settings")
@@ -264,7 +267,7 @@ struct SettingsView: View {
             .padding(.top, 20)
             
         }
-        .frame(width: 580, height: 520)
+        .frame(width: 580, height: 525)
         .padding()
         .onAppear() {
             self.setUpKeyboardHandling()
@@ -274,6 +277,7 @@ struct SettingsView: View {
     private func saveSettings() {
         
         UserDefaults.standard.set(pauseCopyingInput, forKey: "pauseCopying")
+        UserDefaults.standard.set(hideDeleteAlertsInput, forKey: "hideDeleteAlerts")
         UserDefaults.standard.set(maxStoreCountInput, forKey: "maxStoreCount")
         UserDefaults.standard.set(noDuplicatesInput, forKey: "noDuplicates")
         UserDefaults.standard.set(canCopyFilesOrFoldersInput, forKey: "canCopyFilesOrFolders")
@@ -358,6 +362,7 @@ struct SettingsView: View {
         selectedTab = 0 // reset to first tab, this also allows shortcuts to visually reset
         
         pauseCopyingInput = false
+        hideDeleteAlerts = false
         maxStoreCountInput = 50
         noDuplicatesInput = true
         canCopyFilesOrFoldersInput = true
@@ -442,6 +447,9 @@ struct ClipboardSettingsView: View {
 
     @State private var pauseCopying = UserDefaults.standard.bool(forKey: "pauseCopying")
     @Binding var pauseCopyingInput: Bool
+    
+    @State private var hideDeleteAlerts = UserDefaults.standard.bool(forKey: "hideDeleteAlerts")
+    @Binding var hideDeleteAlertsInput: Bool
 
     @State private var maxStoreCount = UserDefaults.standard.integer(forKey: "maxStoreCount")
     @Binding var maxStoreCountInput: Int
@@ -484,7 +492,10 @@ struct ClipboardSettingsView: View {
                 Form {
                     VStack {
                         Spacer()
-                        Toggle("Pause Copying?", isOn: $pauseCopyingInput).padding().padding(.top, -5)
+                        HStack {
+                            Toggle("Pause Copying?", isOn: $pauseCopyingInput).padding().padding(.top, -5)
+                            Toggle("Hide Delete Alerts?", isOn: $hideDeleteAlertsInput).padding().padding(.top, -5)
+                        }
                         
                         HStack {
                             Text("Max Number of Items to Store: ")
@@ -600,7 +611,6 @@ struct WindowSettingsView: View {
                         Toggle("Dark Mode On?", isOn: $darkModeInput).padding()
                         
                         Spacer()
-                        Spacer()
                         
                         Text("Window Width: ")
                         
@@ -690,16 +700,17 @@ struct WindowSettingsView: View {
                         }
                         
                         
-                        Toggle("Can Window Float?", isOn: $canWindowFloatInput)
-                            .foregroundColor((windowPopOutInput || canWindowFloatInput) ? Color.gray : (darkMode ? .white : .primary))
-                            .disabled(windowPopOutInput || hideWindowWhenNotSelectedInput)
-                            .padding()
-                        
-                        Toggle("Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelectedInput)
-                            .foregroundColor((windowPopOutInput || canWindowFloatInput) ? Color.gray : (darkMode ? .white : .primary))
-                            .disabled(windowPopOutInput || canWindowFloatInput)
-                            .padding()
-                            .padding(.top, -15)
+                        HStack {
+                            Toggle("Can Window Float?", isOn: $canWindowFloatInput)
+                                .foregroundColor((windowPopOutInput || canWindowFloatInput) ? Color.gray : (darkMode ? .white : .primary))
+                                .disabled(windowPopOutInput || hideWindowWhenNotSelectedInput)
+                                .padding()
+                            
+                            Toggle("Hide Window When Not Primary App?", isOn: $hideWindowWhenNotSelectedInput)
+                                .foregroundColor((windowPopOutInput || canWindowFloatInput) ? Color.gray : (darkMode ? .white : .primary))
+                                .disabled(windowPopOutInput || canWindowFloatInput)
+                                .padding()
+                        }
                         
                         Toggle("Show Window On All Desktops?", isOn: $windowOnAllDesktopsInput)
                             .foregroundColor(windowPopOutInput ? Color.gray : (darkMode ? .white : .primary))

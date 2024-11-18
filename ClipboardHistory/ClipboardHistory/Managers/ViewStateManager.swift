@@ -21,5 +21,17 @@ class ViewStateManager: ObservableObject {
     @Published var scrollToBottom: Bool = false
     @Published var justScrolledToTop: Bool = true
     
+    @Published var deleteOccurred: Bool = false
+    
     private init() { }
+    
+    func deleted() {
+        if self.deleteOccurred { return } // dont overlap alerts
+        DispatchQueue.main.async {
+            self.deleteOccurred = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                self.deleteOccurred = false
+            }
+        }
+    }
 }

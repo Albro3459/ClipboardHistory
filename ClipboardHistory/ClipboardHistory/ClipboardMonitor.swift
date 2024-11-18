@@ -108,7 +108,7 @@ class ClipboardMonitor: ObservableObject {
             print("Failed to load pasteboard items after \(timeout) seconds")
         }
     }
-    
+
     private func processDataFromClipboard() {
             
         DispatchQueue.main.async {
@@ -138,35 +138,29 @@ class ClipboardMonitor: ObservableObject {
                         if let urlString = item.string(forType: .fileURL), let fileUrl = URL(string: urlString) {
                             if self.userDefaultsManager.canCopyImages || self.userDefaultsManager.canCopyFilesOrFolders {
                                 operationsPending += 1
-                                self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { completion in
+                                self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { success in
                                     defer {
                                         operationsPending -= 1
                                     }
-                                    if !completion {
+                                    if !success {
                                         print("Failed to process file at URL: \(fileUrl)")
                                         errorOccurred = true
                                     }
                                 }
                             }
-                            else {
-                                return
-                            }
                         }
                         else if let imageData = item.data(forType: .tiff) ?? item.data(forType: .png) ?? item.data(forType: NSPasteboard.PasteboardType("public.jpeg")) {
                             if self.userDefaultsManager.canCopyImages {
                                 operationsPending += 1
-                                self.processImageData(imageData: imageData, inGroup: group, context: childContext) { completion in
+                                self.processImageData(imageData: imageData, inGroup: group, context: childContext) { success in
                                     defer {
                                         operationsPending -= 1
                                     }
-                                    if !completion {
+                                    if !success {
                                         print("Failed to process image data")
                                         errorOccurred = true
                                     }
                                 }
-                            }
-                            else {
-                                continue
                             }
                         }
                         else if let content = item.string(forType: .string) {
@@ -187,21 +181,23 @@ class ClipboardMonitor: ObservableObject {
                             if let htmlContent = item.string(forType: .html), let imageUrl = self.extractHtmlImageURL(from: htmlContent) {
                                 operationsPending += 1
                                 self.downloadAndProcessImageFromURL(from: imageUrl, inGroup: group, context: childContext) { error in
+                                    defer {
+                                        operationsPending -= 1
+                                        if !errorOccurred && operationsPending == 0 {
+                                            self.saveClipboardGroup(childContext: childContext)
+//                                            self.log("Done IMAGE URL processing")
+                                        }
+                                    }
                                     if let error = error {
                                         print("Error: \(error.localizedDescription)")
                                         errorOccurred = true
                                     }
-                                    else {
-                                        operationsPending -= 1
-                                    }
                                 }
-                            } else {
-                                return
                             }
                         }
                         else {
-                            print(item.types);
-                            return
+                            print(item.types)
+                            continue
                         }
                         counter += 1
                     }
@@ -512,32 +508,32 @@ class ClipboardMonitor: ObservableObject {
                 item.group = group
                 
                 //testing OCR
-                item.imageData = imageData
-                item.imageHash = self.hashImageData(imageData)
-                group.addToItems(item)
-                completion(true)
+//                item.imageData = imageData
+//                item.imageHash = self.hashImageData(imageData)
+//                group.addToItems(item)
+//                completion(true)
 
                 
-//                if let thumbnail = self.generateImageThumbnail(for: imageFileURL.path), let thumbnailData = thumbnail.tiffRepresentation {
-//                    item.imageHash = self.hashImageData(thumbnailData)
-//                    item.imageData = thumbnailData
-//                    group.addToItems(item)
-//                    completion(true)
-//                }
-//                else {
-//                    self.generateThumbnail(for: imageFileURL.path) { thumbnail in
-//                        defer { group.addToItems(item); completion(true) } // Defer is called regardless.
-//                        if let thumbnail = thumbnail, let thumbnailData = thumbnail.tiffRepresentation {
-//                            item.imageHash = self.hashImageData(thumbnailData)
-//                            item.imageData = thumbnailData
-//                        } else {
-//                            // Thumbnail generation failed but valid image data exists
-//                            item.type = "randomFile"
-//                            item.imageData = nil
-//                            item.imageHash = nil
-//                        }
-//                    }
-//                }
+                if let thumbnail = self.generateImageThumbnail(for: imageFileURL.path), let thumbnailData = thumbnail.tiffRepresentation {
+                    item.imageHash = self.hashImageData(thumbnailData)
+                    item.imageData = thumbnailData
+                    group.addToItems(item)
+                    completion(true)
+                }
+                else {
+                    self.generateThumbnail(for: imageFileURL.path) { thumbnail in
+                        defer { group.addToItems(item); completion(true) } // Defer is called regardless.
+                        if let thumbnail = thumbnail, let thumbnailData = thumbnail.tiffRepresentation {
+                            item.imageHash = self.hashImageData(thumbnailData)
+                            item.imageData = thumbnailData
+                        } else {
+                            // Thumbnail generation failed but valid image data exists
+                            item.type = "randomFile"
+                            item.imageData = nil
+                            item.imageHash = nil
+                        }
+                    }
+                }
             }
             else {
                 completion(false)
@@ -609,7 +605,6 @@ class ClipboardMonitor: ObservableObject {
                 }
                 
                 try childContext.save()
-                //            try childContext.parent?.save()
                 if let parentContext = childContext.parent {
                     parentContext.performAndWait {
                         do {
@@ -835,7 +830,7 @@ class ClipboardMonitor: ObservableObject {
                 completion(nil)
             } else if let thumbnail = thumbnail {
                 let nsImage = NSImage(cgImage: thumbnail.cgImage, size: size)
-                print("THUMBNAIL FINISHED")
+//                print("THUMBNAIL FINISHED")
                 completion(nsImage)
             } else {
                 completion(nil)

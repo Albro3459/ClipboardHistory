@@ -54,6 +54,7 @@ struct ClipboardHistoryApp: App {
             "windowOnAllDesktops": true,
             
             "pauseCopying": false,
+            "hideDeleteAlerts": false,
             
             "maxStoreCount": 50,
             "noDuplicates": true,
