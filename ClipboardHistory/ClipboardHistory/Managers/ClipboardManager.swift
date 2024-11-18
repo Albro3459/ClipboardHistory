@@ -180,14 +180,14 @@ class ClipboardManager: ObservableObject {
             }.joined(separator: " ")
 
             // Log recognized text
-            if let text = recognizedText {
+//            if let text = recognizedText {
 //                print("Recognized text: \(text)")
-            }
+//            }
         }
 
-        request.recognitionLevel = .accurate
+        request.recognitionLevel = .fast
         request.usesLanguageCorrection = true
-        request.recognitionLanguages = ["en"] // Adjust based on supported languages
+        request.recognitionLanguages = ["en", "es"]
 
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
         do {
