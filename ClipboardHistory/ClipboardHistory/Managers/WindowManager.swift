@@ -335,6 +335,9 @@ class WindowManager: ObservableObject {
             if let window = self.window, window.title != "SettingsWindow" {
                 window.orderOut(nil)
             }
+            else if self.popover != nil {
+                NSApp.hide(nil)
+            }
         }
     }
     

@@ -64,11 +64,13 @@ struct ClipboardHistoryApp: App {
             "pasteWithoutFormatting": false,
             "pasteLowercaseWithoutFormatting": false,
             "pasteUppercaseWithoutFormatting": false,
+            "pasteCapitalizedWithoutFormatting": false,
             
             // out of app shortcuts
             "pasteWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["command", "shift"], key: "v")),
             "pasteLowercaseWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["option", "shift"], key: "l")),
             "pasteUppercaseWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["option", "shift"], key: "u")),
+            "pasteCapitalizedWithoutFormattingShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["option", "shift"], key: "c")),
             "toggleWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["command", "shift"], key: "c")),
             "resetWindowShortcut": try! encoder.encode(KeyboardShortcut(modifiers: ["option"], key: "r"))
         ]
@@ -138,17 +140,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         
         KeyboardShortcuts.onKeyDown(for: .hideWindow) {
-//            if UserDefaultsManager.shared.windowPopOut {
-//                self.windowManager?.hidePopOutWindow()
-//            }
-//            else {
-                self.windowManager?.hideWindow()
-//            }
+            self.windowManager?.hideWindow()
         }
         
         if let userDefaultsManager = self.userDefaultsManager, userDefaultsManager.pasteWithoutFormatting {
             KeyboardShortcuts.onKeyUp(for: .pasteNoFormatting) {
-                self.clipboardManager?.pasteNoFormatting(lowerFalseUpperTrueText: nil)
+                self.clipboardManager?.pasteNoFormatting(pasteStyle: .default)
             }
         }
         else { // otherwise free it up, so I dont consume the keystroke
@@ -157,7 +154,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         if let userDefaultsManager = self.userDefaultsManager, userDefaultsManager.pasteLowercaseWithoutFormatting {
             KeyboardShortcuts.onKeyUp(for: .pasteLowerNoFormatting) {
-                self.clipboardManager?.pasteNoFormatting(lowerFalseUpperTrueText: false)
+                self.clipboardManager?.pasteNoFormatting(pasteStyle: .lower)
             }
         }
         else { // otherwise free it up, so I dont consume the keystroke
@@ -166,11 +163,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         if let userDefaultsManager = self.userDefaultsManager, userDefaultsManager.pasteUppercaseWithoutFormatting {
             KeyboardShortcuts.onKeyUp(for: .pasteUpperNoFormatting) {
-                self.clipboardManager?.pasteNoFormatting(lowerFalseUpperTrueText: true)
+                self.clipboardManager?.pasteNoFormatting(pasteStyle: .upper)
             }
         }
         else { // otherwise free it up, so I dont consume the keystroke
             KeyboardShortcuts.disable(.pasteUpperNoFormatting)
+        }
+        
+        if let userDefaultsManager = self.userDefaultsManager, userDefaultsManager.pasteCapitalizedWithoutFormatting {
+            KeyboardShortcuts.onKeyUp(for: .pasteCapitalNoFormatting) {
+                self.clipboardManager?.pasteNoFormatting(pasteStyle: .capital)
+            }
+        }
+        else { // otherwise free it up, so I dont consume the keystroke
+            KeyboardShortcuts.disable(.pasteCapitalNoFormatting)
         }
         
     }
@@ -243,6 +249,11 @@ extension KeyboardShortcuts.Name {
     static var pasteUpperNoFormatting: Self {
         let userDefaultsManager = UserDefaultsManager.shared
         return Self("pasteUpperNoFormatting", default: .from(userDefaultsManager.pasteUppercaseWithoutFormattingShortcut))
+    }
+    
+    static var pasteCapitalNoFormatting: Self {
+        let userDefaultsManager = UserDefaultsManager.shared
+        return Self("pasteCapitalNoFormatting", default: .from(userDefaultsManager.pasteCapitalizedWithoutFormattingShortcut))
     }
 
     static var resetWindow: Self {

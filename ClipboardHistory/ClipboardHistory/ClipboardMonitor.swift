@@ -25,6 +25,7 @@ class ClipboardMonitor: ObservableObject {
 
     
     private var checkTimer: Timer?
+    private static let CHECK_TIMER_FREQUENCY: TimeInterval = 0.5
     private var lastChangeCount: Int = NSPasteboard.general.changeCount
     
     // User defaults
@@ -50,7 +51,7 @@ class ClipboardMonitor: ObservableObject {
     }
     
     func startMonitoring() {
-        checkTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(checkClipboard), userInfo: nil, repeats: true)
+        checkTimer = Timer.scheduledTimer(timeInterval: ClipboardMonitor.CHECK_TIMER_FREQUENCY, target: self, selector: #selector(checkClipboard), userInfo: nil, repeats: true)
     }
     
     @objc private func checkClipboard() {
@@ -75,12 +76,8 @@ class ClipboardMonitor: ObservableObject {
                 let pasteboard = NSPasteboard.general
                 if pasteboard.changeCount != self.lastChangeCount {
                     self.lastChangeCount = pasteboard.changeCount
-                    // Add a slight delay to ensure the clipboard is ready
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {   
-                        // needed for copying very large images, the clipboard changes but the image isnt ready yet
-                        self.processDataFromClipboard()
-                        self.isInternalCopy = false
-                    }
+                    
+                    self.checkPasteboardItemCount(startTime: Date.now, timeout: ClipboardMonitor.CHECK_TIMER_FREQUENCY-0.1)
                 }
             }
             else if self.isCopyingPaused || self.isPasteNoFormattingCopy {
@@ -92,6 +89,25 @@ class ClipboardMonitor: ObservableObject {
             }
         }
     }
+    // Function that either starts processing the clipboard, but if its empty and we are waiting on the items, then wait 0.25 sec and then start checking the clipboard every 0.1 sec, up until the frequency we check the pasteboard at - 0.1 sec so we dont overlap
+        // It will immediately start processDataFromClipboard when the items.count > 0
+    func checkPasteboardItemCount(startTime: Date, timeout: TimeInterval = ClipboardMonitor.CHECK_TIMER_FREQUENCY-0.05) {
+        let elapsedTime = Date.now.timeIntervalSince(startTime)
+
+        if let items = NSPasteboard.general.pasteboardItems, !items.isEmpty {
+            self.processDataFromClipboard()
+            self.isInternalCopy = false
+//            print("startTime: \(startTime), endTime: \(Date.now) | totalTime: \(elapsedTime)")
+        } else if elapsedTime < timeout {
+//            print("waiting")
+            // Check at intervals
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.checkPasteboardItemCount(startTime: startTime, timeout: timeout)
+            }
+        } else {
+            print("Failed to load pasteboard items after \(timeout) seconds")
+        }
+    }
     
     private func processDataFromClipboard() {
             
@@ -101,7 +117,6 @@ class ClipboardMonitor: ObservableObject {
             // making a child context because I need to be able to create Items for the group and checkLast before saving,
             // parent context is available to the content view even without saving, so I need them seperate
             let childContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
-//            let context = PersistenceController.shared.container.viewContext
             childContext.parent = PersistenceController.shared.container.viewContext
 
             childContext.perform {
@@ -126,10 +141,6 @@ class ClipboardMonitor: ObservableObject {
                                 self.processFileFolder(fileUrl: fileUrl, inGroup: group, context: childContext) { completion in
                                     defer {
                                         operationsPending -= 1
-                                        if operationsPending == 0 {
-                                            print("SAVING UP HERE")
-                                            self.saveClipboardGroup(childContext: childContext)
-                                        }
                                     }
                                     if !completion {
                                         print("Failed to process file at URL: \(fileUrl)")
@@ -147,9 +158,6 @@ class ClipboardMonitor: ObservableObject {
                                 self.processImageData(imageData: imageData, inGroup: group, context: childContext) { completion in
                                     defer {
                                         operationsPending -= 1
-                                        if operationsPending == 0 {
-                                            self.saveClipboardGroup(childContext: childContext)
-                                        }
                                     }
                                     if !completion {
                                         print("Failed to process image data")
@@ -177,13 +185,6 @@ class ClipboardMonitor: ObservableObject {
                             
                             // for copying images out of google docs cause they're weird
                             if let htmlContent = item.string(forType: .html), let imageUrl = self.extractHtmlImageURL(from: htmlContent) {
-                                
-//                                self.downloadAndProcessImageFromURL(from: imageUrl, inGroup: group, context: childContext) { error in
-//                                    if let error = error {
-//                                        print("Error: \(error.localizedDescription)")
-//                                        errorOccurred = true
-//                                    }
-//                                }
                                 operationsPending += 1
                                 self.downloadAndProcessImageFromURL(from: imageUrl, inGroup: group, context: childContext) { error in
                                     if let error = error {
@@ -192,9 +193,6 @@ class ClipboardMonitor: ObservableObject {
                                     }
                                     else {
                                         operationsPending -= 1
-                                        if operationsPending == 0 {
-                                            self.saveClipboardGroup(childContext: childContext)
-                                        }
                                     }
                                 }
                             } else {
@@ -210,14 +208,14 @@ class ClipboardMonitor: ObservableObject {
                     if !errorOccurred {
                         if operationsPending == 0 {
                             self.saveClipboardGroup(childContext: childContext)
-                            self.log("Done processing")
+//                            self.log("Done processing")
                         }
                         else {
-                            self.log("Not Saving Since OPERATIONS PENDING")
+//                            self.log("Not Saving Since OPERATIONS PENDING")
                         }
                     }
                     else {
-                        self.log("Not Saving since error occured")
+//                        self.log("Not Saving since error occured")
                     }
                 }
             }
@@ -248,23 +246,6 @@ class ClipboardMonitor: ObservableObject {
         
         return nil
     }
-    
-//    private func downloadAndProcessImageFromURL(from imageUrl: URL, inGroup group: ClipboardGroup, context: NSManagedObjectContext) async throws {
-//        let (data, response): (Data, URLResponse)
-//        do {
-//            (data, response) = try await URLSession.shared.data(for: URLRequest(url: imageUrl))
-//        }
-//        catch {
-//            throw URLError(.unknown)
-//        }
-//        
-//        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-//            throw URLError(.badServerResponse)
-//        }
-//        
-//        // Process the image asynchronously
-//        self.processImageData(imageData: data, inGroup: group, context: context)
-//    }
     
     enum ImageDownloadError: Error {
         case imageDownloadError
@@ -299,7 +280,6 @@ class ClipboardMonitor: ObservableObject {
             }
             
             DispatchQueue.main.async {
-//                self.processImageData(imageData: data, inGroup: group, context: context)
                 self.processImageData(imageData: data, inGroup: group, context: context) { success in
                     if !success {
 //                        print("Failed to process image data")
@@ -512,22 +492,9 @@ class ClipboardMonitor: ObservableObject {
     // takes in imageData, like a screenshot, turns it into an image file
     // image file is stored as a temp file, user can copy and paste anywhere, but temp file is deleted when clipboard item is eventually deleted
     private func processImageData(imageData: Data, inGroup group: ClipboardGroup, context: NSManagedObjectContext, completion: @escaping (Bool) -> Void) {
-        
-        // *** Dont need to downsize, we will use the thumbnail
-//        let maxSize: CGFloat = 1000
-//        let finalImageData: Data
-//        
-//        // Downscale using CGImageSource if the image is large
-//        if let downscaledData = downscaleImageData(imageData: imageData, maxSize: maxSize) {
-//            finalImageData = downscaledData
-//        } else {
-//            finalImageData = imageData // Use original data if no resizing is needed or if downscaling failed
-//        }
-//        
+         
         context.performAndWait {
-            
-            // this is called when I take the screenshot in the first place
-            
+                        
             if let imageFileURL = createImageFile(imageData: imageData) {
                 
                 let url = URL(fileURLWithPath: imageFileURL.path)
@@ -607,7 +574,6 @@ class ClipboardMonitor: ObservableObject {
     }
     
     private func saveClipboardGroup(childContext: NSManagedObjectContext) {
-        print("SAVE CALLED")
         childContext.perform {
             if !self.checkLast(childContext: childContext) {
                 return
@@ -647,20 +613,6 @@ class ClipboardMonitor: ObservableObject {
                         }
                     }
                 }
-                
-                // Verify saved data
-                        let itemFetchRequest: NSFetchRequest<ClipboardItem> = ClipboardItem.fetchRequest()
-                        itemFetchRequest.predicate = NSPredicate(format: "group == %@", groups.first!)
-                        
-                        let savedItems = try childContext.fetch(itemFetchRequest)
-                        for item in savedItems {
-                            print("Saved Item - Type: \(item.type ?? "unknown")")
-                            if let imageData = item.imageData {
-                                print("Saved Item - Image Data Length: \(imageData.count) bytes")
-                            } else {
-                                print("Saved Item - No Image Data")
-                            }
-                        }
                 
                 return
             } catch {
@@ -853,81 +805,6 @@ class ClipboardMonitor: ObservableObject {
         }
     }
     
-//    private func resizeImage(image: NSImage, to targetSize: NSSize) -> NSImage? {
-//        let resizedImage = NSImage(size: targetSize)
-//        resizedImage.lockFocus()
-//        image.draw(in: NSRect(origin: .zero, size: targetSize),
-//                   from: NSRect(origin: .zero, size: image.size),
-//                   operation: .copy,
-//                   fraction: 1.0)
-//        resizedImage.unlockFocus()
-//        return resizedImage
-//    }
-//    
-//    // Helper function to downscale image data if needed
-//    private func downscaleImageData(imageData: Data, maxSize: CGFloat) -> Data? {
-//        guard let imageSource = CGImageSourceCreateWithData(imageData as CFData, nil) else {
-//            print("Failed to create image source.")
-//            return nil
-//        }
-//        
-//        // Get the original dimensions
-//        let options: [NSString: Any] = [kCGImageSourceShouldCache: false]
-//        guard let properties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, options as CFDictionary) as? [CFString: Any],
-//              let width = properties[kCGImagePropertyPixelWidth] as? CGFloat,
-//              let height = properties[kCGImagePropertyPixelHeight] as? CGFloat else {
-//            return nil
-//        }
-//        
-//        // Check if resizing is needed
-//        if width <= maxSize && height <= maxSize {
-//            return imageData // No resizing needed
-//        }
-//        
-//        // Calculate target size while preserving aspect ratio
-//        let aspectRatio = min(maxSize / width, maxSize / height)
-//        let targetWidth = width * aspectRatio
-//        let targetHeight = height * aspectRatio
-//
-//        // Set up the options for resizing
-//        let resizeOptions: [NSString: Any] = [
-//            kCGImageSourceThumbnailMaxPixelSize: max(targetWidth, targetHeight),
-//            kCGImageSourceCreateThumbnailFromImageAlways: true
-//        ]
-//
-//        // Create the downscaled image
-//        guard let downscaledImage = CGImageSourceCreateThumbnailAtIndex(imageSource, 0, resizeOptions as CFDictionary) else {
-//            print("Failed to create thumbnail image.")
-//            return nil
-//        }
-//
-//        // Convert the downscaled image to Data
-//        let mutableData = NSMutableData()
-//        guard let imageDestination = CGImageDestinationCreateWithData(mutableData, UTType.jpeg.identifier as CFString, 1, nil) else {
-//            return nil
-//        }
-//        
-//        // Set JPEG quality if desired
-//        let jpegOptions: [NSString: Any] = [kCGImageDestinationLossyCompressionQuality: 1.0]
-//        CGImageDestinationAddImage(imageDestination, downscaledImage, jpegOptions as CFDictionary)
-//        
-//        // Finalize the destination and return data
-//        guard CGImageDestinationFinalize(imageDestination) else {
-//            print("Failed to finalize image destination.")
-//            return nil
-//        }
-//        
-//        return mutableData as Data
-//    }
-//    
-    private func calculateAspectRatio(for originalSize: NSSize, maxSize: CGFloat) -> NSSize {
-        let widthRatio = maxSize / originalSize.width
-        let heightRatio = maxSize / originalSize.height
-        let scaleFactor = min(widthRatio, heightRatio)
-        return NSSize(width: originalSize.width * scaleFactor, height: originalSize.height * scaleFactor)
-    }
-    
-    
     private func generateThumbnail(for filePath: String?, completion: @escaping (NSImage?) -> Void) {
         guard let filePath = filePath else {
             completion(nil)
@@ -973,6 +850,13 @@ class ClipboardMonitor: ObservableObject {
                    fraction: 1.0)
         thumbnail.unlockFocus()
         return thumbnail
+    }
+    
+    private func calculateAspectRatio(for originalSize: NSSize, maxSize: CGFloat) -> NSSize {
+        let widthRatio = maxSize / originalSize.width
+        let heightRatio = maxSize / originalSize.height
+        let scaleFactor = min(widthRatio, heightRatio)
+        return NSSize(width: originalSize.width * scaleFactor, height: originalSize.height * scaleFactor)
     }
         
     private func createImageFile(imageData: Data?) -> URL? {

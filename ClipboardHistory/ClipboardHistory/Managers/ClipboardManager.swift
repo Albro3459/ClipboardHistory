@@ -540,7 +540,29 @@ class ClipboardManager: ObservableObject {
     
     private var lastPasteNoFormatTime: Date?
     
-    public func pasteNoFormatting(lowerFalseUpperTrueText: Bool?) {
+    public enum PasteStyleEnum {
+        case `default`
+        case upper
+        case lower
+        case capital
+    }
+    
+    private func pasteStyleHelper(pasteStyle: PasteStyleEnum, text: String) {
+        var output: String
+        switch pasteStyle {
+        case .upper:
+            output = text.uppercased()
+        case .lower:
+            output = text.lowercased()
+        case .capital:
+            output = text.capitalized
+        default:
+            output = text
+        }
+        self.updatePasteboard(with: output)
+    }
+    
+    public func pasteNoFormatting(pasteStyle: PasteStyleEnum) {
         
         DispatchQueue.main.async {
 
@@ -554,23 +576,20 @@ class ClipboardManager: ObservableObject {
             else if let imageData = pasteboard.data(forType: .tiff), let _ = NSImage(data: imageData) {
             }
             else if let content = pasteboard.string(forType: .string) {
-                self.updatePasteboard(with: lowerFalseUpperTrueText == true ? content.uppercased() : 
-                                        (lowerFalseUpperTrueText == false ? content.lowercased() : content))
+                self.pasteStyleHelper(pasteStyle: pasteStyle, text: content)
             }
             else if let rtfData = pasteboard.data(forType: .rtf) {
                 // Convert RTF to plain text
                 if let attributedString = NSAttributedString(rtf: rtfData, documentAttributes: nil) {
                     let plainText = attributedString.string
-                    self.updatePasteboard(with: lowerFalseUpperTrueText == true ? plainText.uppercased() : 
-                                            (lowerFalseUpperTrueText == false ? plainText.lowercased() : plainText))
+                    self.pasteStyleHelper(pasteStyle: pasteStyle, text: plainText)
                 }
             } 
             else if let htmlData = pasteboard.data(forType: .html) {
                 // Convert HTML to plain text
                 if let attributedString = try? NSAttributedString(data: htmlData, options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil) {
                     let plainText = attributedString.string
-                    self.updatePasteboard(with: lowerFalseUpperTrueText == true ? plainText.uppercased() : 
-                                            (lowerFalseUpperTrueText == false ? plainText.lowercased() : plainText))
+                    self.pasteStyleHelper(pasteStyle: pasteStyle, text: plainText)
                 }
             }
             
@@ -584,7 +603,6 @@ class ClipboardManager: ObservableObject {
         
         pasteboard.clearContents()
         pasteboard.setString(plainText, forType: .string)
-        self.paste()
     }
     
     func paste() {

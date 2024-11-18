@@ -51,10 +51,12 @@ class UserDefaultsManager : ObservableObject {
     var pasteWithoutFormatting: Bool
     var pasteLowercaseWithoutFormatting: Bool
     var pasteUppercaseWithoutFormatting: Bool
+    var pasteCapitalizedWithoutFormatting: Bool
     
     var pasteWithoutFormattingShortcut: KeyboardShortcut
     var pasteLowercaseWithoutFormattingShortcut: KeyboardShortcut
     var pasteUppercaseWithoutFormattingShortcut: KeyboardShortcut
+    var pasteCapitalizedWithoutFormattingShortcut: KeyboardShortcut
     var toggleWindowShortcut: KeyboardShortcut
     var resetWindowShortcut: KeyboardShortcut
     
@@ -88,6 +90,7 @@ class UserDefaultsManager : ObservableObject {
         self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
         self.pasteLowercaseWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteLowercaseWithoutFormatting")
         self.pasteUppercaseWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteUppercaseWithoutFormatting")
+        self.pasteCapitalizedWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteCapitalizedWithoutFormatting")
         
         if let data = UserDefaults.standard.data(forKey: "pasteWithoutFormattingShortcut") {
             self.pasteWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
@@ -100,14 +103,21 @@ class UserDefaultsManager : ObservableObject {
             self.pasteLowercaseWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
         } else {
             print("pasteLowercaseWithoutFormattingShortcut Decode Failed!!")
-            self.pasteLowercaseWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "l")
+            self.pasteLowercaseWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["option", "shift"], key: "l")
         }
         
         if let data = UserDefaults.standard.data(forKey: "pasteUppercaseWithoutFormattingShortcut") {
             self.pasteUppercaseWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
         } else {
             print("pasteUppercaseWithoutFormattingShortcut Decode Failed!!")
-            self.pasteUppercaseWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["cmd", "shift"], key: "u")
+            self.pasteUppercaseWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["option", "shift"], key: "u")
+        }
+        
+        if let data = UserDefaults.standard.data(forKey: "pasteCapitalizedWithoutFormattingShortcut") {
+            self.pasteCapitalizedWithoutFormattingShortcut = try! decoder.decode(KeyboardShortcut.self, from: data)
+        } else {
+            print("pasteCapitalizedWithoutFormattingShortcut Decode Failed!!")
+            self.pasteCapitalizedWithoutFormattingShortcut = KeyboardShortcut(modifiers: ["option", "shift"], key: "c")
         }
         
         if let data = UserDefaults.standard.data(forKey: "toggleWindowShortcut") {
@@ -125,7 +135,7 @@ class UserDefaultsManager : ObservableObject {
         }
     }
     
-    func saveShortcuts(savePasteNoFormatShortcut: Bool, savePasteLowerShortcut: Bool, savePasteUpperShortcut: Bool) {
+    func saveShortcuts(savePasteNoFormatShortcut: Bool, savePasteLowerShortcut: Bool, savePasteUpperShortcut: Bool, savePasteCapitalShortcut: Bool) {
         if let data = try? encoder.encode(pasteWithoutFormattingShortcut) {
             UserDefaults.standard.set(data, forKey: "pasteWithoutFormattingShortcut")
         }
@@ -134,6 +144,9 @@ class UserDefaultsManager : ObservableObject {
         }
         if let data = try? encoder.encode(pasteUppercaseWithoutFormattingShortcut) {
             UserDefaults.standard.set(data, forKey: "pasteUppercaseWithoutFormattingShortcut")
+        }
+        if let data = try? encoder.encode(pasteCapitalizedWithoutFormattingShortcut) {
+            UserDefaults.standard.set(data, forKey: "pasteCapitalizedWithoutFormattingShortcut")
         }
         
         if let data = try? encoder.encode(toggleWindowShortcut) {
@@ -155,13 +168,14 @@ class UserDefaultsManager : ObservableObject {
         if savePasteUpperShortcut {
             KeyboardShortcuts.reset(.pasteUpperNoFormatting)
         }
+        if savePasteCapitalShortcut {
+            KeyboardShortcuts.reset(.pasteCapitalNoFormatting)
+        }
     }
     
-    func updateAll(savePasteNoFormatShortcut: Bool, savePasteLowerShortcut: Bool, savePasteUpperShortcut: Bool) {
+    func updateAll(savePasteNoFormatShortcut: Bool, savePasteLowerShortcut: Bool, savePasteUpperShortcut: Bool, savePasteCapitalShortcut: Bool) {
         
-//        if saveShortcuts {
-        self.saveShortcuts(savePasteNoFormatShortcut: savePasteNoFormatShortcut, savePasteLowerShortcut: savePasteLowerShortcut, savePasteUpperShortcut: savePasteUpperShortcut)
-//        }
+        self.saveShortcuts(savePasteNoFormatShortcut: savePasteNoFormatShortcut, savePasteLowerShortcut: savePasteLowerShortcut, savePasteUpperShortcut: savePasteUpperShortcut, savePasteCapitalShortcut: savePasteCapitalShortcut)
             
         self.appName = UserDefaults.standard.string(forKey: "appName") ?? "test App Name"
         
@@ -191,6 +205,7 @@ class UserDefaultsManager : ObservableObject {
         self.pasteWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteWithoutFormatting")
         self.pasteLowercaseWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteLowercaseWithoutFormatting")
         self.pasteUppercaseWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteUppercaseWithoutFormatting")
+        self.pasteCapitalizedWithoutFormatting = UserDefaults.standard.bool(forKey: "pasteCapitalizedWithoutFormatting")
                 
         ClipboardManager.shared.clipboardMonitor?.reloadVars()
         
