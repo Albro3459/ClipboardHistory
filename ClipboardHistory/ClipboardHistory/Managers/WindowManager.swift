@@ -19,6 +19,7 @@ class WindowManager: ObservableObject {
     let persistenceController = PersistenceController.shared
     let userDefaultsManager = UserDefaultsManager.shared
     let viewStateManager = ViewStateManager.shared
+    let settingsWindowManager = SettingsWindowManager.shared
     weak var clipboardManager: ClipboardManager?
     weak var menuManager: MenuManager?
     
@@ -332,8 +333,9 @@ class WindowManager: ObservableObject {
     @objc func hideWindow() {
         DispatchQueue.main.async {
 //            NSApp.hide(nil)
-            if let window = self.window, window.title != "SettingsWindow" {
-                window.orderOut(nil)
+            if let window = self.window, !self.settingsWindowManager.isSettingsOpen, window.title != "SettingsWindow" {
+//                window.orderOut(nil)
+                NSApp.hide(nil)
             }
             else if self.popover != nil {
                 NSApp.hide(nil)
