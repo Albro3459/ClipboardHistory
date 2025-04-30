@@ -66,7 +66,7 @@
 ---
 
 ### A summary of why I built this app and what I've learned:
-* <details open>
+* <details>
   <summary></summary>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As a lifelong Mac user, I never quite realized the benefits of a clipboard manager. That was until my summer internship in 2023, where I heavily used a Windows computer during development and grew to love the built in clipboard manager (WinKey + V). When I transitioned back to my Mac after the summer, I quickly realized my dependence on a clipboard manager and began searching for alternatives on Mac. I researched a few options, but they weren't exactly what I was looking for. I began to plan to build my own, but I lacked any experience with Mac software development.</p>
 
