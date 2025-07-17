@@ -7,7 +7,7 @@
 * <details>
     <summary>Installation Guide:</summary>
 
-  * this application is set up to only work with MacOS [14.4](https://github.com/Albro3459/ClipboardHistory/releases/tag/v2.955) or [15.5](https://github.com/Albro3459/ClipboardHistory/releases/tag/macOS15.5)
+  * this application is set up to only work with MacOS [14.4](https://github.com/Albro3459/ClipboardHistory/releases/tag/v2.955) or [15.5](https://github.com/Albro3459/ClipboardHistory/releases/tag/v2.96)
       * if you're on a lower MacOS, email me: brodsky.alex22@gmail.com, and I'll try to a different version
 
   * download the zip from the [Releases](https://github.com/Albro3459/ClipboardHistory/releases) tab on GitHub
