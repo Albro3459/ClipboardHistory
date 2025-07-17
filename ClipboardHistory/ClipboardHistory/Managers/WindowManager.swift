@@ -447,8 +447,8 @@ class WindowManager: ObservableObject {
             
             self.menuManager?.updateMainMenu(isCopyingPaused: nil, shouldDelay: true)
             
-            NSApplication.shared.activate(ignoringOtherApps: true)
             popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            NSApplication.shared.activate(ignoringOtherApps: true)
         }
     }
     

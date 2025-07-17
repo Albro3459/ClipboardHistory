@@ -7,10 +7,10 @@
 * <details>
     <summary>Installation Guide:</summary>
 
-  * this application is set up to only work with MacOS 14.4+
+  * this application is set up to only work with MacOS [14.4](https://github.com/Albro3459/ClipboardHistory/releases/tag/v2.955) or [15.5](https://github.com/Albro3459/ClipboardHistory/releases/tag/macOS15.5)
       * if you're on a lower MacOS, email me: brodsky.alex22@gmail.com, and I'll try to a different version
 
-  * download the zip from the [Releases](https://github.com/Albro3459/ClipboardHistory/releases) tab on GitHub or [Google Drive link](https://drive.google.com/drive/folders/1m8X2TRyfuec3BwHg0ln5yIVTkW53AYCk?usp=sharing)
+  * download the zip from the [Releases](https://github.com/Albro3459/ClipboardHistory/releases) tab on GitHub
 
   * unzip it
 
@@ -51,7 +51,7 @@
 * <details>
     <summary>!! **IMPORTANT** Instructions if you want to build the project yourself:</summary>
   
-  * you will need XCode, I'm on Version 15.3  
+  * you will need XCode, I was originally on Version 15.3, but now I am on 16.4
 
   * !! **IMPORTANT** if you clone the repo to run it, it is in sandbox mode, so some things will break.
       * to disable the sandbox, you can go to the ClipboardHistory.xcodeproj > Target: ClipboardHistory > Build Settings then search for entitlements and change the debug one to the release one.
@@ -66,8 +66,8 @@
 ---
 
 ### A summary of why I built this app and what I've learned:
-* <details open>
-  <summary></summary>
+* <details>
+  <summary>Summary:</summary>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As a lifelong Mac user, I never quite realized the benefits of a clipboard manager. That was until my summer internship in 2023, where I heavily used a Windows computer during development and grew to love the built in clipboard manager (WinKey + V). When I transitioned back to my Mac after the summer, I quickly realized my dependence on a clipboard manager and began searching for alternatives on Mac. I researched a few options, but they weren't exactly what I was looking for. I began to plan to build my own, but I lacked any experience with Mac software development.</p>
 
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After starting with a Bash script and a Python UI that was enough for copying text, I realized that I wanted to include screenshots, files, and keyboard shortcuts to fully implement a product. My research led me to Swift, where I could access Apple's APIs and integrate my desired features. I spent my time during the summer, when I wasn't working at my internship, learning Swift and developing a prototype. I asked my friends for ideas about features and designs and eventually it all came together (not without a lot of mistakes). I eventually presented to my class a few weeks ago to get my first few users.
@@ -82,7 +82,7 @@
 * <details>
   <summary>Info & About:</summary>
 
-  * the app is fully built by me, Alex Brodsky a CS student, in Swift for Mac OS 14.4 
+  * the app is fully built by me, Alex Brodsky a CS student, in Swift for Mac OS 14.4 or 15.5
       * I could try lowering the required MacOS version if you want to try the app, my email is brodsky.alex22@gmail.com
 
   * it opens on the bottom right on all the desktop windows by default
