@@ -562,8 +562,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ClipboardHistory/ClipboardHistory_Release.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development: Alexander Brodsky (8V438ZE7YZ)";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development: Alexander Brodsky (8V438ZE7YZ)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
